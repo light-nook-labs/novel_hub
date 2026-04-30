@@ -20,3 +20,16 @@ def pc2m_detail(url):
     return MOBILE_NOVEL_DETAIL + book_id + '/'
 
 
+def get_novel_id(url: str) -> int:
+    """Get novel id from both PC & mobile URLs."""
+    for pattern in (pc_pattern, m_pattern):
+        match = pattern.search(url)
+        if match:
+            return int(match.group(1))
+    
+    raise ValueError('Invalid novel URL')
+
+    
+    
+
+
