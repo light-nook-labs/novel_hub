@@ -1,6 +1,6 @@
 from scrapy import spiders
 
-from meta_spider.utils import get_clean, get_clean_all, get_attribute
+from meta_spider.utils import get_clean, get_clean_all, get_attribute, get_novel_id
 
 
 class MetaSpider(spiders.Spider):
@@ -15,6 +15,7 @@ class MetaSpider(spiders.Spider):
 
     
     def parse(self, response):
+        """Parse list page to acquire detail links."""
         detail_anchors = response.css('.Conjunction a')
         yield from response.follow_all(detail_anchors, callback=self.parse_detail)
         
@@ -27,21 +28,21 @@ class MetaSpider(spiders.Spider):
 
 
     def parse_detail(self, response):
-        
+        """Parse meta data from PC detail page."""
+        # ['恋爱', '纯爱', '日常', '女性主角', '变身']
+        tags=get_clean_all(response, '.tag-list .tag .highlight .text'),
         yield dict(
-            novel_id=int(response.url.split('/')[-2]),
+            novel_id=get_novel_id(response.url),
             novel_title=get_clean(response, '.title .text'),
+            cover=get_attribute(response, '.summary-pic img'),
+            author=get_clean(response, '.author-name > span'),
+
             # ['VIP', '第九届冬季征文']
             title_tags=get_clean_all(response, '.title .tag'),
-            cover=get_attribute('.summary-pic img'),
-            author=get_clean(response, '.author-name > span'),
             # ['类型：都市', '字数：237905字[连载中]', '点击：203167', '更新：2026/4/30 16:11:48']
             row=get_clean_all(response, '.count-detail .text-row .text'),
+            # ['点击阅读', '赞 294', '收藏 3066']
             btns=get_clean_all(response, '#BasicOperation .btn'),
-            # ['恋爱', '纯爱', '日常', '女性主角', '变身']
-            tags=get_clean_all(response, '.tag-list .tag .highlight .text'),
-            # ticket_num=get_clean(response, '.votes-row .text span'),
-            # comment_num=get_clean(response, '#CommentNum .nav-item')
         )
 
 """
