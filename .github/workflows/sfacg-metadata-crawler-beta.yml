@@ -1,0 +1,34 @@
+name: sfacg-metadata-crawler-beta
+
+on:
+  schedule:
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Execute scrapy spider
+        run: uv run scrapy crawl meta_spider -o meta.jsonl
+
+      - name: Commit and push output file
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions@github.com"
+          git add meta.jsonl
+          git commit -m "Auto update meta.jsonl by scheduled crawler"
+          git push
