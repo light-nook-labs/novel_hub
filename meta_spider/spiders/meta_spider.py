@@ -1,3 +1,4 @@
+import scrapy
 from scrapy import spiders
 
 from meta_spider import utils
@@ -6,13 +7,20 @@ from meta_spider import utils
 class MetaSpider(spiders.Spider):
     """PC Website"""
     name = 'meta_spider'
-    start_urls = [
-        # 'https://book.sfacg.com/List/'
-        # 'https://book.sfacg.com/List/default.aspx?PageIndex=1'
-        # 'https://book.sfacg.com/List/default.aspx?PageIndex=12420'
-        'https://book.sfacg.com/List/default.aspx?PageIndex=12418'
-        # 'https://book.sfacg.com/List/default.aspx?PageIndex=12419',
-    ]
+    # start_urls = [
+    #     # 'https://book.sfacg.com/List/'
+    #     # 'https://book.sfacg.com/List/default.aspx?PageIndex=1'
+    #     # 'https://book.sfacg.com/List/default.aspx?PageIndex=12420'
+    #     # 'https://book.sfacg.com/List/default.aspx?PageIndex=12418'
+    #     'https://book.sfacg.com/List/default.aspx?PageIndex=12419',
+    # ]
+    async def start(self):
+        url = 'https://book.sfacg.com/List/default.aspx?PageIndex='
+        self.begin_num = int(getattr(self, "begin", '1'))
+        self.num = int(getattr(self, "num", '500'))
+        if self.begin_num is not None:
+            url = f'{url}{self.begin_num}'
+        yield scrapy.Request(url, self.parse)
 
     
     def parse(self, response):
@@ -24,17 +32,17 @@ class MetaSpider(spiders.Spider):
         if response.css('.Conjunction a::attr(href)'):
             url, page_index = response.url.split('=')
             page_index = int(page_index) + 1
+
+            # Stop
+            if page_index - self.begin_num > self.num:
+                return
+
             next_page = f'{url}={page_index}'
             yield response.follow(next_page, callback=self.parse)
 
 
     def parse_detail(self, response):
         """Parse meta data from PC detail page."""
-
-        # ['恋爱', '纯爱', '日常', '女性主角', '变身']
-        # It will be used to create another table
-        # tags = utils.get_clean_all(response, '.tag-list .tag .highlight .text')
-
         row = utils.get_clean_all(response, '.count-detail .text-row .text')
         btns = utils.get_clean_all(response, '#BasicOperation .btn')
         title_tags = utils.get_clean_all(response, '.title .tag')    
@@ -50,4 +58,8 @@ class MetaSpider(spiders.Spider):
             **utils.btns_parser(btns),
 
             "cover": utils.get_attribute(response, '.summary-pic img'),
+
+            # ['恋爱', '纯爱', '日常', '女性主角', '变身']
+            # It will be used to create another table
+            'tags': utils.get_clean_all(response, '.tag-list .tag .highlight .text')
         }
