@@ -1,5 +1,5 @@
 from meta_spider.utils.novel import pc2m_detail, get_novel_id
-from meta_spider.utils.field_parser import row_parser, btns_parser
+from meta_spider.utils.field_parser import row_parser, btns_parser, title_tags_parser
 
 
 pc_detail = 'https://book.sfacg.com/Novel/770214/'
@@ -65,4 +65,37 @@ def test_btns_parser_case2():
         'praise_num': 294,
         'like_num': 3066,
         'status_id': 3,
+    }
+
+
+def test_title_tags_parser_case1():
+    case1 = ['VIP', '第九届冬季征文']  
+    print(title_tags_parser(case1))   
+    assert title_tags_parser(case1) == {
+        'price_type_id': 2,
+        'contest': '第九届冬季征文',
+    }
+
+
+def test_title_tags_parser_case2():
+    case2 = ['第九届冬季征文']     
+    assert title_tags_parser(case2) == {
+        'price_type_id': 0,
+        'contest': '第九届冬季征文',
+    }
+
+
+def test_title_tags_parser_case3():
+    case3 = ['VIP']     
+    assert title_tags_parser(case3) == {
+        'price_type_id': 2,
+        'contest': '',
+    }
+
+
+def test_title_tags_parser_case4():
+    case4 = []     
+    assert title_tags_parser(case4) == {
+        'price_type_id': 0,
+        'contest': '',
     }

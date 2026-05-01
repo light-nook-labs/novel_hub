@@ -29,3 +29,8 @@ COMMENT = 'https://book.sfacg.com/ajax/ashx/Common.ashx'
 
 
 STATUS_LIST = ['已完结', '连载中', '断更']
+
+
+PRICE_TYPES = ['免费', '签约', 'VIP']
+
+GENRES = ['魔幻', '玄幻', '古风', '科幻', '校园', '都市', '游戏', '同人', '悬疑']
