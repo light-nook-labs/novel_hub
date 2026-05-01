@@ -15,12 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
     env:
       GH_TOKEN: ${{ github.token }}
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
@@ -30,26 +32,17 @@ jobs:
 
       - name: Run spider
         run: |
+          set -o pipefail
           if [ -n "${{ inputs.begin }}" ]; then
             uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -o meta.jsonl 2>&1 | tee crawler_log.txt
-            echo "CURRENT_BEGIN=${{ inputs.begin }}" >> $GITHUB_ENV
           else
             uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -o meta.jsonl 2>&1 | tee crawler_log.txt
-            echo "CURRENT_BEGIN=${{ vars.BEGIN }}" >> $GITHUB_ENV
           fi
-
-      - name: Increase page by 500
-        run: |
-          NEW_BEGIN=$(( ${{ env.CURRENT_BEGIN }} + 500 ))
-          echo "NEW_BEGIN=$NEW_BEGIN" >> $GITHUB_ENV
-
-      - name: Update BEGIN variable
-        run: gh variable set BEGIN --body ${{ env.NEW_BEGIN }}
 
       - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions@github.com"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Auto update"
+          git commit -m "Auto update" --allow-empty
           git push -f origin HEAD:workflows
