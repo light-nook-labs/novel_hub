@@ -17,7 +17,7 @@ class MetaSpider(spiders.Spider):
     async def start(self):
         url = 'https://book.sfacg.com/List/default.aspx?PageIndex='
         self.begin_num = int(getattr(self, "begin", '1'))
-        self.num = int(getattr(self, "num", '500'))
+        self.num = int(getattr(self, "num", '49'))
         if self.begin_num is not None:
             url = f'{url}{self.begin_num}'
         yield scrapy.Request(url, self.parse)
