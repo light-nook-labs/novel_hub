@@ -1,17 +1,32 @@
 import re
 from datetime import datetime
 
+from .constants import STATUS_LIST
+
 
 pattern = re.compile(r'(\d+)字[(.+)]')
 
+
+def get_status_id(status: str) -> int:
+    """STATUS_LIST = ['已完结', '连载中', '断更']
+    + 0: fin
+    + 1: on-going
+    + 2: died, more than 1 month without updating
+    """
+    status_id = STATUS_LIST.index(status)
+    if status_id:
+        pass
+    return status_id
+
+
 def row_parser(row: list[str]) -> dict[str, str|int]:
-    """Parse structure data from row. The number of fields in row is 4:
+    """Parse structure data from row. We can always extract 5 items form a row:
     * genre
     * word_num
     * status 
         + 0: fin
         + 1: on-going
-        + 2: died, more than 6 without updating
+        + 2: died, more than 1 month without updating
     * click_num
     * last_update
     >>> row=get_clean_all(response, '.count-detail .text-row .text'),
