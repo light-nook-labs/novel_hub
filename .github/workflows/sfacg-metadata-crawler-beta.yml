@@ -11,26 +11,21 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
+      - uses: actions/checkout@v4
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: latest
+        uses: astral-sh/setup-uv@3
 
       - name: Install dependencies
         run: uv sync
 
-      - name: Execute scrapy spider and save log
-        run: uv run scrapy crawl meta_spider -o meta.jsonl 2>&1 | tee crawler.log
+      - name: Run spider
+        run: uv run scrapy crawl meta_spider -o meta.jsonl 2>&1 | tee crawler_log.txt
 
-      - name: Commit and push output file to workflows branch
+      - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-          git add -f meta.jsonl crawler.log
-          git commit -m "Auto update data and log"
+          git add .
+          git commit -m "Auto update"
           git push origin HEAD:workflows
