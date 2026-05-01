@@ -28,4 +28,4 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add .
           git commit -m "Auto update"
-          git push origin HEAD:workflows
+          git push -f origin HEAD:workflows
