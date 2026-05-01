@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 
-from .constants import STATUS_LIST
+from .constants import STATUS_LIST, PRICE_TYPES
 
 
 pattern = re.compile(r'(\d+)字\[(.+)\]')
@@ -67,8 +67,8 @@ def btns_parser(btns: list[str]) -> dict[str, int]:
     return data
 
 
-def title_tags_parser(title_tags: list[str]) -> dict[str, str]:
-    """Extract data from title_tags.
+def title_tags_parser(title_tags: list[str]) -> dict[str, str|int]:
+    """Extract data from title_tags. PRICE_TYPES = ['免费', '签约', 'VIP']
     >>> title_tags=get_clean_all(response, '.title .tag'),
     >>> ['VIP', '第九届冬季征文']        
     >>> ['签约', '2026春季征文']        
@@ -76,6 +76,22 @@ def title_tags_parser(title_tags: list[str]) -> dict[str, str]:
     >>> ['VIP'] 
     >>> []        
     """
-    pass
+    price_type_id = 0
+    contest = ''
+    length = len(title_tags)
+    if length:
+        # Assume index 0 is price_type
+        price_type = title_tags[0]
+        try:
+            price_type_id = PRICE_TYPES.index(price_type)
+        except ValueError:
+            price_type_id = 0
+            contest = price_type
+        if length >= 2:
+            contest = title_tags[-1]
+    return dict(
+        price_type_id=price_type_id,
+        contest=contest,
+    )
 
 
