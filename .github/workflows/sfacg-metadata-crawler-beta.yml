@@ -25,10 +25,10 @@ jobs:
       - name: Execute scrapy spider
         run: uv run scrapy crawl meta_spider -o meta.jsonl
 
-      - name: Commit and push output file
+      - name: Commit and push output file to workflows branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
           git add meta.jsonl
           git commit -m "Auto update meta.jsonl by scheduled crawler"
-          git push
+          git push origin HEAD:workflows
