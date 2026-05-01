@@ -10,7 +10,8 @@ class MetaSpider(spiders.Spider):
         # 'https://book.sfacg.com/List/'
         # 'https://book.sfacg.com/List/default.aspx?PageIndex=1'
         # 'https://book.sfacg.com/List/default.aspx?PageIndex=12420'
-        'https://book.sfacg.com/List/default.aspx?PageIndex=12418'
+        # 'https://book.sfacg.com/List/default.aspx?PageIndex=12418'
+        'https://book.sfacg.com/List/default.aspx?PageIndex=12419',
     ]
 
     
