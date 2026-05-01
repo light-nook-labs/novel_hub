@@ -1,4 +1,4 @@
-name: sfacg-metadata-crawler-beta
+name: sfacg-metadata-crawler
 
 on:
   schedule:
