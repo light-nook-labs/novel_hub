@@ -46,9 +46,10 @@ class MetaSpider(spiders.Spider):
         row = utils.get_clean_all(response, '.count-detail .text-row .text')
         btns = utils.get_clean_all(response, '#BasicOperation .btn')
         title_tags = utils.get_clean_all(response, '.title .tag')    
-        # Cannot use dict(), it doesn't allow the same key appear more than once   
+        # Cannot use dict(), it doesn't allow the same key appear more than once
+        banner = utils.get_banner(response)
         yield {
-            "novel_id": utils.get_novel_id(response.url),
+            "nid": utils.get_novel_id(response.url),
             "novel_title": utils.get_clean(response, '.title .text'),
             "author": utils.get_clean(response, '.author-name > span'),
             **utils.title_tags_parser(title_tags),
@@ -58,7 +59,7 @@ class MetaSpider(spiders.Spider):
             **utils.btns_parser(btns),
 
             "cover": utils.get_attribute(response, '.summary-pic img'),
-
+            'banner': banner,
             # ['恋爱', '纯爱', '日常', '女性主角', '变身']
             # It will be used to create another table
             'tags': utils.get_clean_all(response, '.tag-list .tag .highlight .text')

@@ -1,4 +1,4 @@
-from .selector import get_clean, get_clean_all, get_attribute
+from .selector import get_clean, get_clean_all, get_attribute, get_banner
 from .constants import PC_NOVEL_DETAIL, MOBILE_NOVEL_DETAIL, COMMENT, TICKET_INFO
 from .novel import pc2m_detail, get_novel_id
 from .field_parser import row_parser, btns_parser, title_tags_parser
