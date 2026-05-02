@@ -9,6 +9,10 @@ on:
         description: "Start page number"
         required: false
         default: ""
+      num:
+        description: "Number"
+        required: false
+        default: ""
 
 jobs:
   crawl:
@@ -20,7 +24,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+        with:
+          ref: main
+
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
 
@@ -30,11 +36,22 @@ jobs:
       - name: Run spider
         run: |
           set -o pipefail
-          if [ -n "${{ inputs.begin }}" ]; then
-            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -o meta.jsonl
+          mkdir -p output
+          if [ -n "${{ inputs.begin }}" ] && [ -n "${{ inputs.num }}" ]; then
+            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -a num=${{ inputs.num }} -o output/meta.jsonl
+          elif [ -n "${{ inputs.begin }}" ]; then
+            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -o output/meta.jsonl
+          elif [ -n "${{ inputs.num }}" ]; then
+            uv run scrapy crawl meta_spider -a num=${{ inputs.num }} -o output/meta.jsonl
           else
-            uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -o meta.jsonl
+            uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -a num=${{ vars.NUM }} -o output/meta.jsonl
           fi
+
+      - name: Update BEGIN variable +5
+        if: ${{ inputs.begin == '' }}
+        run: |
+          NEW_BEGIN=$(({{ vars.BEGIN }} + 5))
+          gh variable set BEGIN -b $NEW_BEGIN
 
       - name: Commit and push
         run: |
@@ -42,4 +59,4 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add .
           git commit -m "Auto update" --allow-empty
-          git push origin HEAD:workflows
+          git push origin main
