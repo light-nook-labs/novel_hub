@@ -40,9 +40,11 @@ def row_parser(row: list[str]) -> dict[str, str|int]:
     * click_num
     * last_update
     >>> row=get_clean_all(response, '.count-detail .text-row .text'),
-    >>> ['类型：都市', '字数：237905字[连载中]', '点击：203167', '更新：2026/4/30 16:11:48']
+    >>> ['类型：都市', '字数：237905字[连载中]', '点击：2031.1万', '更新：2026/4/30 16:11:48']
     """
     genre, data, click_num, last_update = [item.split('：')[-1] for item in row]
+    if '万' in click_num:
+        click_num = float(click_num.rstrip('万')) * 10_000
     return dict(
         genre=genre,
         click_num=int(click_num),
