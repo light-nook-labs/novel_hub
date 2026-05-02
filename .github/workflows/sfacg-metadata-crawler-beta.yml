@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
 
@@ -54,10 +53,11 @@ jobs:
           NEW_BEGIN=$(({{ vars.BEGIN }} + 5))
           gh variable set BEGIN -b $NEW_BEGIN
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          branch: auto-update
-          title: Auto update metadata
-          body: "Auto-generated PR from GitHub Actions"
-          commit-message: "Auto update"
+      - name: Commit and push to workflow branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions@github.com"
+          git checkout -B data-branch
+          git add output/meta.jsonl
+          git commit -m "Auto update" --allow-empty
+          git push -f origin data-branch
