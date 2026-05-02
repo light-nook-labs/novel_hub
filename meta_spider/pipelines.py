@@ -12,8 +12,8 @@ from itemadapter import ItemAdapter
 class MetaSpiderPipeline:
     def process_item(self, item, spider):
         field = ['novel_id', 'tags']
-        item = {key: item[key] for key in field}
-        line = json.dumps(item, ensure_ascii=False) + '\n'
+        line = {key: item[key] for key in field}
+        line = json.dumps(line, ensure_ascii=False) + '\n'
         self.file.write(line)
         return item
     

@@ -51,6 +51,18 @@ def test_row_parser_case3_died():
     }
 
 
+def test_row_parser_case4_died():
+    case3 = ['类型：校园', '字数：50000字[连载中]', '点击：1234.5万', '更新：2024/1/1 00:00:00']
+    print(row_parser(case3))
+    assert row_parser(case3) == {
+        "genre": "校园",
+        "word_num": 50000,
+        "status_id": 2,
+        "click_num": 12345000,
+        "last_update": "2024-01-01 00:00:00"
+    }
+
+
 def test_btns_parser_case1():
     case1 = ['点击阅读', '赞 294', '收藏 3066']
     assert btns_parser(case1) == {

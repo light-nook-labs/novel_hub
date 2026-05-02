@@ -4,16 +4,23 @@ on:
   schedule:
     - cron: "0 19 * * *"
   workflow_dispatch:
+    inputs:
+      begin:
+        description: "Start page number"
+        required: false
+        default: ""
 
 jobs:
   crawl:
-    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
 
@@ -21,12 +28,18 @@ jobs:
         run: uv sync
 
       - name: Run spider
-        run: uv run scrapy crawl meta_spider -o meta.jsonl 2>&1 | tee crawler_log.txt
+        run: |
+          set -o pipefail
+          if [ -n "${{ inputs.begin }}" ]; then
+            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -o meta.jsonl
+          else
+            uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -o meta.jsonl
+          fi
 
       - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
           git add .
-          git commit -m "Auto update"
-          git push -f origin HEAD:workflows
+          git commit -m "Auto update" --allow-empty
+          git push origin HEAD:workflows
