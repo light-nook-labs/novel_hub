@@ -7,17 +7,12 @@ from meta_spider import utils
 class MetaSpider(spiders.Spider):
     """PC Website"""
     name = 'meta_spider'
-    # start_urls = [
-    #     # 'https://book.sfacg.com/List/'
-    #     # 'https://book.sfacg.com/List/default.aspx?PageIndex=1'
-    #     # 'https://book.sfacg.com/List/default.aspx?PageIndex=12420'
-    #     # 'https://book.sfacg.com/List/default.aspx?PageIndex=12418'
-    #     'https://book.sfacg.com/List/default.aspx?PageIndex=12419',
-    # ]
+
     async def start(self):
         url = 'https://book.sfacg.com/List/default.aspx?PageIndex='
+        # 'https://book.sfacg.com/List/default.aspx?PageIndex=12419',
         self.begin_num = int(getattr(self, "begin", '1'))
-        self.num = int(getattr(self, "num", '49'))
+        self.num = int(getattr(self, "num", '2'))
         if self.begin_num is not None:
             url = f'{url}{self.begin_num}'
         yield scrapy.Request(url, self.parse)
