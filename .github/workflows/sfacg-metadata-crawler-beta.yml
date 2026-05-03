@@ -19,7 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
 
@@ -38,9 +37,9 @@ jobs:
         run: |
           git fetch origin
           git checkout -B data-branch origin/main || git checkout -B data-branch
-          git reset --hard origin/main
 
       - name: Read BEGIN
+        if: ${{ github.event_name == 'schedule' }}
         run: |
           if [ -f BEGIN.txt ]; then
             echo "BEGIN=$(cat BEGIN.txt)" >> "$GITHUB_ENV"
@@ -53,8 +52,6 @@ jobs:
         run: |
           echo "inputs.begin: ${{ inputs.begin }}"
           echo "inputs.num: ${{ inputs.num }}"
-          echo "BEGIN: ${{ env.BEGIN }}"
-          echo "NUM: ${{ env.NUM }}"
 
       - name: Run spider
         run: |
@@ -70,27 +67,23 @@ jobs:
             uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o output/meta.jsonl
           fi
 
-      - name: Update BEGIN
-        if: ${{ github.event_name == 'schedule' || inputs.begin == '1' }}
+      - name: Update BEGIN schedule
+        if: ${{ github.event_name == 'schedule' }}
         run: |
           NEW_BEGIN=$(( ${{ env.BEGIN }} + ${{ env.NUM }} ))
           echo $NEW_BEGIN > BEGIN.txt
 
-      - name: Echo variables at end
+      - name: Update BEGIN manual 1
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.begin == '1' }}
         run: |
-          echo "inputs.begin: ${{ inputs.begin }}"
-          echo "inputs.num: ${{ inputs.num }}"
-          echo "BEGIN: ${{ env.BEGIN }}"
-          echo "NUM: ${{ env.NUM }}"
+          NEW_BEGIN=$(( ${{ inputs.begin }} + ${{ inputs.num }} ))
+          echo $NEW_BEGIN > BEGIN.txt
 
       - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-          git add output/meta.jsonl BEGIN.txt
+          git add output/meta.jsonl
+          git add -f BEGIN.txt
           git commit -m "Auto update" --allow-empty
           git push -f origin data-branch
-
-      - name: Create PR
-        run: |
-          gh pr create --base main --head data-branch --title "Auto update data" --body "Auto generated PR" || true
