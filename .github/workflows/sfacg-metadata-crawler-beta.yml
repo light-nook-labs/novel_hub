@@ -19,14 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write 
+      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
 
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: data-branch
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
@@ -34,12 +34,21 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Read BEGIN
+        run: |
+          if [ -f BEGIN.txt ]; then
+            echo "BEGIN=$(cat BEGIN.txt)" >> "$GITHUB_ENV"
+          else
+            echo "BEGIN=1" >> "$GITHUB_ENV"
+          fi
+          echo "NUM=5" >> "$GITHUB_ENV"
+
       - name: Echo variables at start
         run: |
           echo "inputs.begin: ${{ inputs.begin }}"
           echo "inputs.num: ${{ inputs.num }}"
-          echo "vars.BEGIN: ${{ vars.BEGIN }}"
-          echo "vars.NUM: ${{ vars.NUM }}"
+          echo "BEGIN: ${{ env.BEGIN }}"
+          echo "NUM: ${{ env.NUM }}"
 
       - name: Run spider
         run: |
@@ -52,27 +61,30 @@ jobs:
           elif [ -n "${{ inputs.num }}" ]; then
             uv run scrapy crawl meta_spider -a num=${{ inputs.num }} -o output/meta.jsonl
           else
-            uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -a num=${{ vars.NUM }} -o output/meta.jsonl
+            uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o output/meta.jsonl
           fi
 
-      - name: Update BEGIN = BEGIN + NUM
+      - name: Update BEGIN
         if: ${{ github.event_name == 'schedule' || inputs.begin == '1' }}
         run: |
-          NEW_BEGIN=$(( ${{ vars.BEGIN }} + ${{ vars.NUM }} ))
-          gh variable set BEGIN -b $NEW_BEGIN
+          NEW_BEGIN=$(( ${{ env.BEGIN }} + ${{ env.NUM }} ))
+          echo $NEW_BEGIN > BEGIN.txt
 
       - name: Echo variables at end
         run: |
           echo "inputs.begin: ${{ inputs.begin }}"
           echo "inputs.num: ${{ inputs.num }}"
-          echo "vars.BEGIN: ${{ vars.BEGIN }}"
-          echo "vars.NUM: ${{ vars.NUM }}"
+          echo "BEGIN: ${{ env.BEGIN }}"
+          echo "NUM: ${{ env.NUM }}"
 
-      - name: Commit and push to workflow branch
+      - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-          git checkout -B data-branch
-          git add output/meta.jsonl
+          git add output/meta.jsonl BEGIN.txt
           git commit -m "Auto update" --allow-empty
-          git push -f origin data-branch
+          git push origin data-branch
+
+      - name: Create PR
+        run: |
+          gh pr create --base main --head data-branch --title "Auto update data" --body "Auto generated PR"
