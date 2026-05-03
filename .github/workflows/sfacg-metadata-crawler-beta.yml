@@ -26,13 +26,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: data-branch
+          ref: main
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v3
 
       - name: Install dependencies
         run: uv sync
+
+      - name: Prepare data-branch
+        run: |
+          git fetch origin
+          git checkout -B data-branch origin/main || git checkout -B data-branch
+          git reset --hard origin/main
 
       - name: Read BEGIN
         run: |
@@ -83,8 +89,8 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add output/meta.jsonl BEGIN.txt
           git commit -m "Auto update" --allow-empty
-          git push origin data-branch
+          git push -f origin data-branch
 
       - name: Create PR
         run: |
-          gh pr create --base main --head data-branch --title "Auto update data" --body "Auto generated PR"
+          gh pr create --base main --head data-branch --title "Auto update data" --body "Auto generated PR" || true
