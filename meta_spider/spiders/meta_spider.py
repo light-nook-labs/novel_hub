@@ -53,7 +53,8 @@ class MetaSpider(spiders.Spider):
             **utils.row_parser(row),
             **utils.btns_parser(btns),
 
-            "cover": utils.get_attribute(response, '.summary-pic img'),
+            # "cover": utils.get_attribute(response, '.summary-pic img'),
+            "cover": utils.get_attribute(response, '.article-list .figure .pic .block-img'),
             'banner': banner,
             # ['恋爱', '纯爱', '日常', '女性主角', '变身']
             # It will be used to create another table
