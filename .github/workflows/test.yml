@@ -1,8 +1,8 @@
-name: sfacg-metadata-crawler-beta
+name: sfacg-metadata-crawler-test
 
 on:
-  # schedule:
-  #   - cron: "*/5 * * * *"
+  schedule:
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       begin:
@@ -33,37 +33,57 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
+      - name: Prepare data-branch
+        run: |
+          git fetch origin
+          git checkout -B data-branch origin/main || git checkout -B data-branch
+
+      - name: Read BEGIN
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+          if [ -f BEGIN.txt ]; then
+            echo "BEGIN=$(cat BEGIN.txt)" >> "$GITHUB_ENV"
+          else
+            echo "BEGIN=1" >> "$GITHUB_ENV"
+          fi
+          echo "NUM=1" >> "$GITHUB_ENV"
+
       - name: Echo variables at start
         run: |
           echo "inputs.begin: ${{ inputs.begin }}"
           echo "inputs.num: ${{ inputs.num }}"
-          echo "vars.BEGIN: ${{ vars.BEGIN }}"
-          echo "vars.NUM: ${{ vars.NUM }}"
 
       - name: Run spider
         run: |
           set -o pipefail
           mkdir -p output
-          uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -a num=1 -o output/meta.jsonl
+          if [ -n "${{ inputs.begin }}" ] && [ -n "${{ inputs.num }}" ]; then
+            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -a num=${{ inputs.num }} -o output/meta.jsonl
+          elif [ -n "${{ inputs.begin }}" ]; then
+            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -o output/meta.jsonl
+          elif [ -n "${{ inputs.num }}" ]; then
+            uv run scrapy crawl meta_spider -a num=${{ inputs.num }} -o output/meta.jsonl
+          else
+            uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o output/meta.jsonl
+          fi
 
-      - name: Update BEGIN = BEGIN + 1
-        if: ${{ github.event_name == 'schedule' || inputs.begin == '1' }}
+      - name: Update BEGIN schedule
+        if: ${{ github.event_name == 'schedule' }}
         run: |
-          NEW_BEGIN=$(( ${{ vars.BEGIN }} + 1 ))
-          gh variable set BEGIN -b $NEW_BEGIN
+          NEW_BEGIN=$(( ${{ env.BEGIN }} + ${{ env.NUM }} ))
+          echo $NEW_BEGIN > BEGIN.txt
 
-      - name: Echo variables at end
+      - name: Update BEGIN manual 1
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.begin == '1' }}
         run: |
-          echo "inputs.begin: ${{ inputs.begin }}"
-          echo "inputs.num: ${{ inputs.num }}"
-          echo "vars.BEGIN: ${{ vars.BEGIN }}"
-          echo "vars.NUM: ${{ vars.NUM }}"
+          NEW_BEGIN=$(( ${{ inputs.begin }} + ${{ inputs.num }} ))
+          echo $NEW_BEGIN > BEGIN.txt
 
-      - name: Commit and push to workflow branch
+      - name: Commit and push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-          git checkout -B data-branch
           git add output/meta.jsonl
+          git add -f BEGIN.txt
           git commit -m "Auto update" --allow-empty
           git push -f origin data-branch
