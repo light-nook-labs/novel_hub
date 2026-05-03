@@ -54,7 +54,7 @@ jobs:
 
       - name: Update BEGIN
         run: |
-          NEW_BEGIN=$(( ${{ env.BEGIN }} + ${{ env.NUM }} + 5 ))
+          NEW_BEGIN=$(( ${{ env.BEGIN }} + ${{ env.NUM }} + 1 ))
           if (( NEW_BEGIN < 1 )); then
             NEW_BEGIN=1
           fi
