@@ -1,8 +1,8 @@
 name: sfacg-metadata-crawler-beta
 
 on:
-  schedule:
-    - cron: "0 19 * * *"
+  # schedule:
+  #   - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       begin:
@@ -44,20 +44,12 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p output
-          if [ -n "${{ inputs.begin }}" ] && [ -n "${{ inputs.num }}" ]; then
-            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -a num=${{ inputs.num }} -o output/meta.jsonl
-          elif [ -n "${{ inputs.begin }}" ]; then
-            uv run scrapy crawl meta_spider -a begin=${{ inputs.begin }} -o output/meta.jsonl
-          elif [ -n "${{ inputs.num }}" ]; then
-            uv run scrapy crawl meta_spider -a num=${{ inputs.num }} -o output/meta.jsonl
-          else
-            uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -a num=${{ vars.NUM }} -o output/meta.jsonl
-          fi
+          uv run scrapy crawl meta_spider -a begin=${{ vars.BEGIN }} -a num=1 -o output/meta.jsonl
 
-      - name: Update BEGIN = BEGIN + NUM
+      - name: Update BEGIN = BEGIN + 1
         if: ${{ github.event_name == 'schedule' || inputs.begin == '1' }}
         run: |
-          NEW_BEGIN=$(( ${{ vars.BEGIN }} + ${{ vars.NUM }} ))
+          NEW_BEGIN=$(( ${{ vars.BEGIN }} + 1 ))
           gh variable set BEGIN -b $NEW_BEGIN
 
       - name: Echo variables at end
