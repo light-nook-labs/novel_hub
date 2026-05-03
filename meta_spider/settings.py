@@ -30,7 +30,7 @@ DOWNLOAD_DELAY = 1
 #COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-#TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
 #DEFAULT_REQUEST_HEADERS = {
@@ -52,9 +52,13 @@ DOWNLOAD_DELAY = 1
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    "scrapy.extensions.telnet.TelnetConsole": None,
-#}
+EXTENSIONS = {
+    # "scrapy.extensions.telnet.TelnetConsole": None,
+    'scrapy.extensions.logstats.LogStats': None,
+    'scrapy.extensions.corestats.CoreStats': None,
+    'scrapy.extensions.logcount.LogCount': None,
+}
+
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html

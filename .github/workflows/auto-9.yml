@@ -1,13 +1,9 @@
-name: sfacg-metadata-crawler-beta
+name: sfacg-metadata-crawler-b
 
 on:
   schedule:
-    - cron: "0 19 * * *"
+    - cron: "14 01 * * *"
   workflow_dispatch:
-    inputs:
-      num:
-        required: false
-        default: ""
 
 jobs:
   crawl:
@@ -28,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Auto read BEGIN
+      - name: Read BEGIN
         run: |
           if [ -f BEGIN.txt ]; then
             echo "BEGIN=$(cat BEGIN.txt)" >> "$GITHUB_ENV"
@@ -38,17 +34,13 @@ jobs:
 
       - name: Set NUM
         run: |
-          if [ -n "${{ inputs.num }}" ]; then
-            echo "NUM=${{ inputs.num }}" >> "$GITHUB_ENV"
-          else
-            echo "NUM=200" >> "$GITHUB_ENV"
-          fi
+          echo "NUM=200" >> "$GITHUB_ENV"
 
       - name: Run spider
         run: |
           set -o pipefail
           mkdir -p output
-          uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o output/meta.jsonl
+          uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o output/meta_b.jsonl
 
       - name: Update BEGIN
         run: |
@@ -62,7 +54,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-          git add output/meta.jsonl
+          git add output/meta_b.jsonl
           git add -f BEGIN.txt
           git commit -m "Auto update" --allow-empty
           git push origin main
