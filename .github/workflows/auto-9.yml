@@ -2,7 +2,7 @@ name: auto9
 
 on:
   schedule:
-    - cron: "14 01 * * *"
+    - cron: "45 00 * * *"
   workflow_dispatch:
     inputs:
       num:
@@ -48,7 +48,9 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p output
-          uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o output/meta.jsonl
+          DAY=$(date +%d)
+          FILE=output/meta_${DAY}.jsonl
+          uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o ${FILE}
 
       - name: Update BEGIN
         run: |
@@ -62,7 +64,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
-          git add output/meta.jsonl
+          git add output/meta_*.jsonl
           git add -f BEGIN.txt
           git commit -m "Auto update" --allow-empty
           git push origin main
