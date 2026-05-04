@@ -41,7 +41,7 @@ jobs:
           if [ -n "${{ inputs.num }}" ]; then
             echo "NUM=${{ inputs.num }}" >> "$GITHUB_ENV"
           else
-            echo "NUM=200" >> "$GITHUB_ENV"
+            echo "NUM=300" >> "$GITHUB_ENV"
           fi
 
       - name: Run spider
