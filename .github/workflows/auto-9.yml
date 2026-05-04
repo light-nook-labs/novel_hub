@@ -1,8 +1,8 @@
 name: auto9
 
 on:
-  schedule:
-    - cron: "45 00 * * *"
+  #schedule:
+  #  - cron: "45 00 * * *"
   workflow_dispatch:
     inputs:
       num:
