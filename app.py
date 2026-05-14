@@ -1,4 +1,4 @@
-from database import SQLModel, engine
+from db import SQLModel, engine
 
 
 def create_db_and_table():
