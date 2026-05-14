@@ -1,10 +1,9 @@
+import logging
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 from sqlmodel import Session, SQLModel, select
-
-import logging
 
 from db import sqlite_engine
 from enums import Genre, PType, Status
@@ -15,7 +14,6 @@ logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
-PROCESSED_DIR = OUTPUT_DIR / "processed"
 
 PRICE_TYPE_ID_TO_LABEL = {0: "免费", 1: "签约", 2: "VIP"}
 STATUS_ID_TO_LABEL = {0: "已完结", 1: "连载中", 2: "断更"}
@@ -156,7 +154,10 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
 
 
 def run():
-    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    """遍历 output/ 下所有 JSONL 文件，清洗后逐文件入库。
+
+    入库为幂等操作（按 nid upsert），可安全重复执行。
+    """
     jsonl_files = sorted(OUTPUT_DIR.glob("*.jsonl"))
 
     if not jsonl_files:
@@ -169,9 +170,7 @@ def run():
         print(f"处理 {filepath.name} …", end=" ")
         df = load_and_clean(filepath)
         inserted, updated = import_dataframe(df)
-        # 成功后移走
-        filepath.rename(PROCESSED_DIR / filepath.name)
-        print(f"{len(df)} 行 → 新增 {inserted}, 更新 {updated} OK")
+        print(f"{len(df)} 行 -> 新增 {inserted}, 更新 {updated}")
 
     print("完成")
 

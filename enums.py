@@ -61,7 +61,7 @@ class Status(IntEnum):
 class PType(IntEnum):
     FREE = 1  # 免费
     SIGN = 2  # 签约
-    VIP = 3  # VIP付费
+    VIP = 3  # VIP
     OTHER = 99  # 其他
 
     @property
@@ -113,7 +113,7 @@ _LABEL_TO_STATUS = {v: k for k, v in _STATUS_TO_LABEL.items()}
 _PTYPE_TO_LABEL = {
     PType.FREE: "免费",
     PType.SIGN: "签约",
-    PType.VIP: "VIP付费",
+    PType.VIP: "VIP",
     PType.OTHER: "其他",
 }
 
