@@ -1,8 +1,8 @@
-from enum import Enum
+from enum import IntEnum
 
 
 # GENRES = ['魔幻', '玄幻', '古风', '科幻', '校园', '都市', '游戏', '同人', '悬疑']
-class Genre(Enum):
+class Genre(IntEnum):
     MAGIC = 1  # 魔幻
     FANTASY = 2  # 玄幻
     ANCIENT = 3  # 古风
@@ -21,7 +21,7 @@ Catalogy = Genre
 
 
 # STATUS_LIST = ['已完结', '连载中', '断更']
-class Status(Enum):
+class Status(IntEnum):
     FINISHED = 1  # 已完结
     ON_GOING = 2  # 连载中
     ACTIVE = 2  # 连载中 别名
@@ -33,7 +33,7 @@ class Status(Enum):
 
 
 # PRICE_TYPES = ['免费', '签约', 'VIP']
-class PType(Enum):
+class PType(IntEnum):
     FREE = 1  # 免费
     SIGN = 2  # 签约
     VIP = 3  # VIP付费
