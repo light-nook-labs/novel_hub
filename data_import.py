@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -8,10 +7,6 @@ from sqlmodel import Session, SQLModel, select
 from db import sqlite_engine
 from enums import Genre, PType, Status
 from models import Author, Banner, Contest, Novel, NovelTagLink, Tag
-
-# 关闭 db.py 设置的 SQL echo，避免大量日志拖慢导入
-logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
 
@@ -97,11 +92,15 @@ def _batch_upsert(session, model, names: set[str]) -> dict[str, object]:
 def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
     """将单个清洗后的 DataFrame 写入数据库。
 
-    两阶段：先批量填充 Contest/Tag/Author 等小表，再逐行写入 Novel。
-    返回 (新增数, 更新数)。
+    Phase 1: 批量填充 Author/Contest/Tag 小表
+    Phase 2: 区分新增/更新 — 新增走 bulk insert，更新走逐行 update
+    Phase 3: 批量写入 Banner 和 NovelTagLink
+    返回 (新增数, 更新数, OTHER_nid集合)。
     """
+    from sqlalchemy import insert as sa_insert
+
     with Session(sqlite_engine) as session:
-        # ── Phase 1: 批量填充关联表 ──────────────────────────────────
+        # Phase 1: 批量填充关联表
         author_names = set(df["author"].dropna().str.strip())
         author_names.discard("")
         author_cache = _batch_upsert(session, Author, author_names)
@@ -119,99 +118,141 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
 
         session.flush()
 
-        # ── Phase 2: 逐行写入 Novel ──────────────────────────────────
-        inserted, updated = 0, 0
+        # Phase 2: 区分新增/更新
+        all_nids = df["nid"].astype(int).tolist()
+        existing_nids: set[int] = set(
+            session.exec(select(Novel.id).where(Novel.id.in_(all_nids))).all()
+        )
+
+        insert_rows: list[dict] = []
+        banner_rows: list[dict] = []
+        tag_link_rows: list[tuple[int, int]] = []
+        tag_link_nids_to_clear: set[int] = set()
+        updated = 0
+        other_nids: set[int] = set()
+        now = datetime.now()
 
         for _, row in df.iterrows():
             nid = int(row["nid"])
 
-            # Author
             author = author_cache.get(row["author"])
             if author is None:
                 continue
 
-            # 枚举映射：ID → label → enum
-            ptype = PType.from_label(
-                PRICE_TYPE_ID_TO_LABEL.get(int(row["price_type_id"]), "其他")
-            )
-            status = Status.from_label(
-                STATUS_ID_TO_LABEL.get(int(row["status_id"]), "其他")
-            )
+            ptype_label = PRICE_TYPE_ID_TO_LABEL.get(int(row["price_type_id"]), "其他")
+            ptype = PType.from_label(ptype_label)
+            status_label = STATUS_ID_TO_LABEL.get(int(row["status_id"]), "其他")
+            status = Status.from_label(status_label)
             genre = Genre.from_label(row["genre"])
 
-            # Novel (upsert by nid)
-            novel = session.get(Novel, nid)
-            if novel is None:
-                novel = Novel(id=nid)
-                session.add(novel)
-                inserted += 1
-            else:
+            # 记录 OTHER 降级
+            if (ptype == PType.OTHER and ptype_label != "其他") or \
+               (status == Status.OTHER and status_label != "其他") or \
+               (genre == Genre.OTHER and row["genre"] != "其他"):
+                other_nids.add(nid)
+
+            last_update = row["last_update"].to_pydatetime()
+            cover = row["cover"] if not pd.isna(row["cover"]) else None
+            contest_id = contest_cache.get(row["contest"]).id if not pd.isna(row["contest"]) and row["contest"] in contest_cache else None
+
+            row_dict = {
+                "id": nid,
+                "title": row["novel_title"],
+                "ptype": ptype,
+                "genre": genre,
+                "status": status,
+                "click_num": int(row["click_num"]),
+                "word_num": int(row["word_num"]),
+                "praise_num": int(row["praise_num"]),
+                "like_num": int(row["like_num"]),
+                "cover": cover,
+                "last_update": last_update,
+                "db_update": now,
+                "author_id": author.id,
+                "contest_id": contest_id,
+            }
+
+            if nid in existing_nids:
+                # 更新：逐行写入（占少数）
+                novel = session.get(Novel, nid)
+                for k, v in row_dict.items():
+                    if k != "id":
+                        setattr(novel, k, v)
                 updated += 1
-
-            novel.title = row["novel_title"]
-            novel.ptype = ptype
-            novel.genre = genre
-            novel.status = status
-            novel.click_num = int(row["click_num"])
-            novel.word_num = int(row["word_num"])
-            novel.praise_num = int(row["praise_num"])
-            novel.like_num = int(row["like_num"])
-            novel.cover = row["cover"] if not pd.isna(row["cover"]) else None
-            novel.last_update = row["last_update"].to_pydatetime()
-            novel.author = author
-
-            # Contest
-            contest_name = row["contest"]
-            novel.contest = contest_cache.get(contest_name) if not pd.isna(contest_name) else None
+            else:
+                insert_rows.append(row_dict)
 
             # Banner
             banner_url = row["banner"]
             if not pd.isna(banner_url) and banner_url:
-                existing = session.exec(
-                    select(Banner).where(
-                        Banner.url == banner_url, Banner.novel_id == nid
-                    )
-                ).first()
-                if not existing:
-                    session.add(Banner(url=banner_url, novel=novel))
+                banner_rows.append({"url": banner_url, "novel_id": nid})
 
-            # Tags (M2M) — 只做关联，tag 已在 Phase 1 创建
+            # Tags
             tag_names_list = row["tags"]
             if isinstance(tag_names_list, list) and tag_names_list:
-                tag_objs = [
-                    tag_cache[name]
+                tag_ids = [
+                    tag_cache[name].id
                     for name in dict.fromkeys(tag_names_list)
                     if name in tag_cache
                 ]
-                if tag_objs:
-                    for link in session.exec(
-                        select(NovelTagLink).where(NovelTagLink.novel_id == nid)
-                    ).all():
-                        session.delete(link)
-                    session.flush()
-                    novel.tags = tag_objs
+                if tag_ids:
+                    tag_link_nids_to_clear.add(nid)
+                    for tid in tag_ids:
+                        tag_link_rows.append((tid, nid))
+
+        # Phase 3: 批量写入
+        if insert_rows:
+            session.execute(sa_insert(Novel.__table__), insert_rows)
+
+        # Banner: 跳过已存在的 (url, novel_id) 组合
+        if banner_rows:
+            existing_banners = session.exec(
+                select(Banner.url, Banner.novel_id)
+            ).all()
+            existing_banner_set = {(b[0], b[1]) for b in existing_banners}
+            new_banners = [
+                b for b in banner_rows
+                if (b["url"], b["novel_id"]) not in existing_banner_set
+            ]
+            if new_banners:
+                session.execute(sa_insert(Banner.__table__), new_banners)
+
+        # NovelTagLink: 先删旧关联再批量插入
+        if tag_link_nids_to_clear:
+            session.execute(
+                NovelTagLink.__table__.delete().where(
+                    NovelTagLink.novel_id.in_(tag_link_nids_to_clear)
+                )
+            )
+        if tag_link_rows:
+            session.execute(
+                sa_insert(NovelTagLink.__table__),
+                [{"tag_id": tid, "novel_id": nid} for tid, nid in tag_link_rows],
+            )
 
         session.commit()
 
-    return inserted, updated
+    return len(insert_rows), updated, other_nids
 
 
-def _process_one(filepath: Path):
-    """处理单个 JSONL 文件并入库。"""
+def _process_one(filepath: Path) -> set[int]:
+    """处理单个 JSONL 文件并入库，返回 OTHER 降级的 nid 集合。"""
     print(f"处理 {filepath.name} …", end=" ")
     df = load_and_clean(filepath)
-    inserted, updated = import_dataframe(df)
+    inserted, updated, other_nids = import_dataframe(df)
     print(f"{len(df)} 行 -> 新增 {inserted}, 更新 {updated}")
+    return other_nids
 
 
 if __name__ == "__main__":
     import sys
 
     SQLModel.metadata.create_all(sqlite_engine)
+    all_other_nids: set[int] = set()
 
     if len(sys.argv) > 1:
         # uv run data_import.py path/to/file.jsonl
-        _process_one(Path(sys.argv[1]))
+        all_other_nids = _process_one(Path(sys.argv[1]))
     else:
         # uv run data_import.py — 遍历 output/ 下所有 jsonl
         jsonl_files = sorted(OUTPUT_DIR.glob("*.jsonl"))
@@ -219,6 +260,13 @@ if __name__ == "__main__":
             print("无待处理的 .jsonl 文件")
         else:
             for filepath in jsonl_files:
-                _process_one(filepath)
+                all_other_nids.update(_process_one(filepath))
+
+    if all_other_nids:
+        OTHER_FILE = ROOT / "OTHER.txt"
+        with open(OTHER_FILE, "a") as f:
+            for nid in sorted(all_other_nids):
+                f.write(f"{nid}\n")
+        print(f"OTHER 降级 {len(all_other_nids)} 条，已追加到 {OTHER_FILE}")
 
     print("完成")

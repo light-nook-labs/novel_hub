@@ -2,6 +2,11 @@ from enum import IntEnum
 
 
 class Genre(IntEnum):
+    """小说分类枚举。
+
+    中文标签 -> Genre.from_label()，整数值存入数据库。
+    """
+
     MAGIC = 1  # 魔幻
     FANTASY = 2  # 玄幻
     ANCIENT = 3  # 古风
@@ -11,11 +16,12 @@ class Genre(IntEnum):
     GAME = 7  # 游戏
     DOUJIN = 8  # 同人
     MYSTERY = 9  # 悬疑
+    ADVENTURE = 98  # 冒险类
     OTHER = 99  # 其他
 
     @property
     def label(self) -> str:
-        """中文标签，如 Genre.MAGIC.label → '魔幻'"""
+        """中文标签，如 Genre.MAGIC.label -> '魔幻'"""
         return _GENRE_TO_LABEL[self]
 
     @classmethod
@@ -25,8 +31,8 @@ class Genre(IntEnum):
 
     @property
     def en_name(self) -> str:
-        """英文名称，如 Genre.MAGIC.en_name → 'magic'"""
-        return self.name.lower()
+        """英文名称，如 Genre.MAGIC.en_name -> 'Magic'"""
+        return self.name.title()
 
 
 # alias
@@ -34,6 +40,11 @@ Catalogy = Genre
 
 
 class Status(IntEnum):
+    """小说连载状态枚举。
+
+    中文标签 -> Status.from_label()，整数值存入数据库。
+    """
+
     FINISHED = 1  # 已完结
     ON_GOING = 2  # 连载中
     ACTIVE = 2  # 连载中（别名，与 ON_GOING 同值）
@@ -44,7 +55,7 @@ class Status(IntEnum):
 
     @property
     def label(self) -> str:
-        """中文标签，如 Status.FINISHED.label → '已完结'"""
+        """中文标签，如 Status.FINISHED.label -> '已完结'"""
         return _STATUS_TO_LABEL[self]
 
     @classmethod
@@ -54,11 +65,16 @@ class Status(IntEnum):
 
     @property
     def en_name(self) -> str:
-        """英文名称，如 Status.FINISHED.en_name → 'finished'"""
-        return self.name.lower()
+        """英文名称，如 Status.FINISHED.en_name -> 'Finished'"""
+        return self.name.title()
 
 
 class PType(IntEnum):
+    """小说付费类型枚举。
+
+    中文标签 -> PType.from_label()，整数值存入数据库。
+    """
+
     FREE = 1  # 免费
     SIGN = 2  # 签约
     VIP = 3  # VIP
@@ -66,7 +82,7 @@ class PType(IntEnum):
 
     @property
     def label(self) -> str:
-        """中文标签，如 PType.FREE.label → '免费'"""
+        """中文标签，如 PType.FREE.label -> '免费'"""
         return _PTYPE_TO_LABEL[self]
 
     @classmethod
@@ -76,8 +92,8 @@ class PType(IntEnum):
 
     @property
     def en_name(self) -> str:
-        """英文名称，如 PType.FREE.en_name → 'free'"""
-        return self.name.lower()
+        """英文名称，如 PType.FREE.en_name -> 'Free'"""
+        return self.name.title()
 
 
 ######################
@@ -94,6 +110,7 @@ _GENRE_TO_LABEL = {
     Genre.GAME: "游戏",
     Genre.DOUJIN: "同人",
     Genre.MYSTERY: "悬疑",
+    Genre.ADVENTURE: "冒险类",
     Genre.OTHER: "其他",
 }
 
