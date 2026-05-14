@@ -7,6 +7,7 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 ## Project-Specific Constraints
 
 - **禁止编辑 `meta_spider/` 目录下的任何文件。** 该目录为遗留代码，只读。
+- **禁止修改 `output/` 目录下的任何文件。** 该目录为 CI 产出，只读，入库脚本只能从中读取数据。
 
 ## Coding Style
 
