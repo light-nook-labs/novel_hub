@@ -13,8 +13,9 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 - **文档字符串**：遵循 Python 官方推荐写法（PEP 257）。所有公开函数/类使用 `"""` 多行 docstring，第一行为简短摘要，空一行后写详细描述。
 - **类型注解**：使用现代语法 `int | None`，不使用 `Optional[int]`。
-- **注释**：使用 `#` 行注释解释非显而易见的逻辑，docstring 仅用于函数/类的对外说明。
+- **注释**：使用 `#` 行注释解释非显而易见的逻辑，docstring 仅用于函数/类的对外说明。**禁止使用 Unicode box-drawing 字符（如 `──`、`━━`）充当分隔线**，分隔用空行或 `####` 块注释。**禁止使用非 ASCII 字符**（如 `→` 箭头），用 ASCII 替代（如 `->`）。
 - **导入分组**：标准库 → 第三方库 → 本地模块，组间空一行。
+- **Session 方法**：ORM 查询用 `session.exec()`；Core 层 `insert()` / `delete()` 等需使用 `session.execute()`。
 - **其他**：以 `models.py` 和 `enums.py` 为编码风格基准，新代码保持前后一致。
 
 ## 1. Think Before Coding

@@ -20,21 +20,21 @@ class NovelTagLink(SQLModel, table=True):
 
 class Author(SQLModel, table=True):
     id: int | None = Field(primary_key=True, default=None)
-    name: str
+    name: str = Field(unique=True)
 
     novels: list["Novel"] = Relationship(back_populates="author", passive_deletes="all")
 
 
 class Tag(SQLModel, table=True):
     id: int | None = Field(primary_key=True, default=None)
-    name: str
+    name: str = Field(unique=True)
 
     novels: list["Novel"] = Relationship(back_populates="tags", link_model=NovelTagLink)
 
 
 class Contest(SQLModel, table=True):
     id: int | None = Field(primary_key=True, default=None)
-    name: str
+    name: str = Field(unique=True)
 
     novels: list["Novel"] = Relationship(
         back_populates="contest", passive_deletes="all"
@@ -58,9 +58,9 @@ class Banner(SQLModel, table=True):
 class Novel(SQLModel, table=True):
     id: int = Field(primary_key=True)
     title: str
-    ptype: int | None = None
-    genre: int | None = None
-    status: int | None = None
+    ptype: int | None = Field(default=None, index=True)
+    genre: int | None = Field(default=None, index=True)
+    status: int | None = Field(default=None, index=True)
     click_num: int | None = None
     word_num: int | None = None
     praise_num: int | None = None
