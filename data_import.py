@@ -15,8 +15,27 @@ logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
 
+# 入库时去除 CDN 前缀以节省空间，还原时拼接即可
+COVER_BASE = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
+BANNER_BASE = "http://rs.sfacg.com/web/novel/images/images/"
+
 PRICE_TYPE_ID_TO_LABEL = {0: "免费", 1: "签约", 2: "VIP"}
 STATUS_ID_TO_LABEL = {0: "已完结", 1: "连载中", 2: "断更"}
+
+
+def _compress_banner_url(url) -> str | None:
+    """压缩 banner URL，仅保留查询参数。
+
+    beitouNew/{nid}.jpg?2026/5/2 → 2026/5/2
+    前缀和 nid 均可还原，无需存储。
+    """
+    if not isinstance(url, str):
+        return url
+    if url.startswith(BANNER_BASE):
+        url = url[len(BANNER_BASE):]
+    if "?" in url:
+        return url.split("?", 1)[1]
+    return url
 
 
 def load_and_clean(filepath: Path) -> pd.DataFrame:
@@ -38,9 +57,16 @@ def load_and_clean(filepath: Path) -> pd.DataFrame:
     df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
     df["last_update"] = df["last_update"].fillna(datetime.now())
 
-    # 字符串列：空串/NaN → None，并固定为 object 类型防止 None 被转回 NaN
+    # 字符串列：空串/NaN → None
     for col in ["cover", "banner", "contest"]:
         df[col] = df[col].replace("", None).where(df[col].notna(), None).astype(object)
+
+    # 去除 CDN 前缀节省存储空间
+    df["cover"] = df["cover"].apply(
+        lambda u: u[len(COVER_BASE):] if isinstance(u, str) and u.startswith(COVER_BASE) else u
+    )
+    # banner 仅保留查询参数（其余部分可由 nid + 固定前缀还原）
+    df["banner"] = df["banner"].apply(_compress_banner_url)
 
     # tags：非 list → []
     df["tags"] = df["tags"].apply(lambda t: t if isinstance(t, list) else [])
@@ -52,37 +78,57 @@ def load_and_clean(filepath: Path) -> pd.DataFrame:
     return df
 
 
-def _get_or_create(session, model, name: str, cache: dict):
-    """从缓存或 DB 获取记录，不存在则创建。
+def _batch_upsert(session, model, names: set[str]) -> dict[str, object]:
+    """批量查找或创建 name 型记录，返回 {name: obj} 映射。
 
-    缓存以 (model, name) 为 key，避免重复查询。
+    先查询 DB 中已存在的，再批量插入缺失的，避免逐行 SELECT。
     """
-    key = (model, name)
-    if key in cache:
-        return cache[key]
-    obj = session.exec(select(model).where(model.name == name)).first()
-    if obj is None:
+    existing = session.exec(select(model).where(model.name.in_(names))).all()
+    result = {obj.name: obj for obj in existing}
+    missing = names - set(result.keys())
+    for name in missing:
         obj = model(name=name)
         session.add(obj)
-    cache[key] = obj
-    return obj
+        result[name] = obj
+    return result
+
 
 
 def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
     """将单个清洗后的 DataFrame 写入数据库。
 
-    对 Novel 执行 upsert（按 nid），自动处理 Author/Contest/Tag/Banner 关联。
+    两阶段：先批量填充 Contest/Tag/Author 等小表，再逐行写入 Novel。
     返回 (新增数, 更新数)。
     """
-    inserted, updated = 0, 0
-    cache = {}
-
     with Session(sqlite_engine) as session:
+        # ── Phase 1: 批量填充关联表 ──────────────────────────────────
+        author_names = set(df["author"].dropna().str.strip())
+        author_names.discard("")
+        author_cache = _batch_upsert(session, Author, author_names)
+
+        contest_names = set(
+            df["contest"].dropna().apply(lambda x: x if x != "" else None).dropna()
+        )
+        contest_cache = _batch_upsert(session, Contest, contest_names)
+
+        tag_names: set[str] = set()
+        for tags in df["tags"].dropna():
+            if isinstance(tags, list):
+                tag_names.update(tags)
+        tag_cache = _batch_upsert(session, Tag, tag_names)
+
+        session.flush()
+
+        # ── Phase 2: 逐行写入 Novel ──────────────────────────────────
+        inserted, updated = 0, 0
+
         for _, row in df.iterrows():
             nid = int(row["nid"])
 
             # Author
-            author = _get_or_create(session, Author, row["author"], cache)
+            author = author_cache.get(row["author"])
+            if author is None:
+                continue
 
             # 枚举映射：ID → label → enum
             ptype = PType.from_label(
@@ -116,10 +162,7 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
 
             # Contest
             contest_name = row["contest"]
-            if not pd.isna(contest_name) and contest_name:
-                novel.contest = _get_or_create(session, Contest, contest_name, cache)
-            else:
-                novel.contest = None
+            novel.contest = contest_cache.get(contest_name) if not pd.isna(contest_name) else None
 
             # Banner
             banner_url = row["banner"]
@@ -132,48 +175,50 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
                 if not existing:
                     session.add(Banner(url=banner_url, novel=novel))
 
-            # Tags (M2M)
-            tag_names = row["tags"]
-            if isinstance(tag_names, list) and tag_names:
+            # Tags (M2M) — 只做关联，tag 已在 Phase 1 创建
+            tag_names_list = row["tags"]
+            if isinstance(tag_names_list, list) and tag_names_list:
                 tag_objs = [
-                    _get_or_create(session, Tag, name, cache)
-                    for name in dict.fromkeys(tag_names)
+                    tag_cache[name]
+                    for name in dict.fromkeys(tag_names_list)
+                    if name in tag_cache
                 ]
-                # 先清除旧关联再设置，避免 UNIQUE 冲突
-                if novel.id:
-                    for existing in session.exec(
+                if tag_objs:
+                    for link in session.exec(
                         select(NovelTagLink).where(NovelTagLink.novel_id == nid)
                     ).all():
-                        session.delete(existing)
+                        session.delete(link)
                     session.flush()
-                novel.tags = tag_objs
+                    novel.tags = tag_objs
 
         session.commit()
 
     return inserted, updated
 
 
-def run():
-    """遍历 output/ 下所有 JSONL 文件，清洗后逐文件入库。
-
-    入库为幂等操作（按 nid upsert），可安全重复执行。
-    """
-    jsonl_files = sorted(OUTPUT_DIR.glob("*.jsonl"))
-
-    if not jsonl_files:
-        print("无待处理的 .jsonl 文件")
-        return
-
-    SQLModel.metadata.create_all(sqlite_engine)
-
-    for filepath in jsonl_files:
-        print(f"处理 {filepath.name} …", end=" ")
-        df = load_and_clean(filepath)
-        inserted, updated = import_dataframe(df)
-        print(f"{len(df)} 行 -> 新增 {inserted}, 更新 {updated}")
-
-    print("完成")
+def _process_one(filepath: Path):
+    """处理单个 JSONL 文件并入库。"""
+    print(f"处理 {filepath.name} …", end=" ")
+    df = load_and_clean(filepath)
+    inserted, updated = import_dataframe(df)
+    print(f"{len(df)} 行 -> 新增 {inserted}, 更新 {updated}")
 
 
 if __name__ == "__main__":
-    run()
+    import sys
+
+    SQLModel.metadata.create_all(sqlite_engine)
+
+    if len(sys.argv) > 1:
+        # uv run data_import.py path/to/file.jsonl
+        _process_one(Path(sys.argv[1]))
+    else:
+        # uv run data_import.py — 遍历 output/ 下所有 jsonl
+        jsonl_files = sorted(OUTPUT_DIR.glob("*.jsonl"))
+        if not jsonl_files:
+            print("无待处理的 .jsonl 文件")
+        else:
+            for filepath in jsonl_files:
+                _process_one(filepath)
+
+    print("完成")
