@@ -1,7 +1,6 @@
 from enum import IntEnum
 
 
-# GENRES = ['魔幻', '玄幻', '古风', '科幻', '校园', '都市', '游戏', '同人', '悬疑']
 class Genre(IntEnum):
     MAGIC = 1  # 魔幻
     FANTASY = 2  # 玄幻
@@ -12,30 +11,110 @@ class Genre(IntEnum):
     GAME = 7  # 游戏
     DOUJIN = 8  # 同人
     MYSTERY = 9  # 悬疑
-
     OTHER = 99  # 其他
+
+    @property
+    def label(self) -> str:
+        """中文标签，如 Genre.MAGIC.label → '魔幻'"""
+        return _GENRE_TO_LABEL[self]
+
+    @classmethod
+    def from_label(cls, label: str) -> "Genre":
+        """从中文标签反查枚举，未匹配时返回 OTHER"""
+        return _LABEL_TO_GENRE.get(label, cls.OTHER)
+
+    @property
+    def en_name(self) -> str:
+        """英文名称，如 Genre.MAGIC.en_name → 'magic'"""
+        return self.name.lower()
 
 
 # alias
 Catalogy = Genre
 
 
-# STATUS_LIST = ['已完结', '连载中', '断更']
 class Status(IntEnum):
     FINISHED = 1  # 已完结
     ON_GOING = 2  # 连载中
-    ACTIVE = 2  # 连载中 别名
+    ACTIVE = 2  # 连载中（别名，与 ON_GOING 同值）
     DIED = 3  # 断更
     ACTIVE_F = 4  # 完结但读者活跃
     ACTIVE_D = 5  # 断更但读者活跃
-
     OTHER = 99  # 其他
 
+    @property
+    def label(self) -> str:
+        """中文标签，如 Status.FINISHED.label → '已完结'"""
+        return _STATUS_TO_LABEL[self]
 
-# PRICE_TYPES = ['免费', '签约', 'VIP']
+    @classmethod
+    def from_label(cls, label: str) -> "Status":
+        """从中文标签反查枚举，未匹配时返回 OTHER"""
+        return _LABEL_TO_STATUS.get(label, cls.OTHER)
+
+    @property
+    def en_name(self) -> str:
+        """英文名称，如 Status.FINISHED.en_name → 'finished'"""
+        return self.name.lower()
+
+
 class PType(IntEnum):
     FREE = 1  # 免费
     SIGN = 2  # 签约
     VIP = 3  # VIP付费
+    OTHER = 99  # 其他
 
-    OTHER = 99
+    @property
+    def label(self) -> str:
+        """中文标签，如 PType.FREE.label → '免费'"""
+        return _PTYPE_TO_LABEL[self]
+
+    @classmethod
+    def from_label(cls, label: str) -> "PType":
+        """从中文标签反查枚举，未匹配时返回 OTHER"""
+        return _LABEL_TO_PTYPE.get(label, cls.OTHER)
+
+    @property
+    def en_name(self) -> str:
+        """英文名称，如 PType.FREE.en_name → 'free'"""
+        return self.name.lower()
+
+
+######################
+# Bidirectional Maps #
+######################
+
+_GENRE_TO_LABEL = {
+    Genre.MAGIC: "魔幻",
+    Genre.FANTASY: "玄幻",
+    Genre.ANCIENT: "古风",
+    Genre.SF: "科幻",
+    Genre.SCHOOL: "校园",
+    Genre.URBAN: "都市",
+    Genre.GAME: "游戏",
+    Genre.DOUJIN: "同人",
+    Genre.MYSTERY: "悬疑",
+    Genre.OTHER: "其他",
+}
+
+_LABEL_TO_GENRE = {v: k for k, v in _GENRE_TO_LABEL.items()}
+
+_STATUS_TO_LABEL = {
+    Status.FINISHED: "已完结",
+    Status.ON_GOING: "连载中",
+    Status.DIED: "断更",
+    Status.ACTIVE_F: "完结但读者活跃",
+    Status.ACTIVE_D: "断更但读者活跃",
+    Status.OTHER: "其他",
+}
+
+_LABEL_TO_STATUS = {v: k for k, v in _STATUS_TO_LABEL.items()}
+
+_PTYPE_TO_LABEL = {
+    PType.FREE: "免费",
+    PType.SIGN: "签约",
+    PType.VIP: "VIP付费",
+    PType.OTHER: "其他",
+}
+
+_LABEL_TO_PTYPE = {v: k for k, v in _PTYPE_TO_LABEL.items()}
