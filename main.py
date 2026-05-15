@@ -46,13 +46,14 @@ if __name__ == "__main__":
         log_lines.append(
             f"{datetime.now():%Y-%m-%d %H:%M:%S} | {info['file']} | "
             f"rows={info['rows']} ins={info['inserted']} upd={info['updated']} "
-            f"other={info['other']} | {info['elapsed']:.1f}s"
+            f"other={info['other']} | "
+            f"sqlite={info['t_sqlite']:.1f}s cloud={info['t_cloud']:.1f}s total={info['total']:.1f}s"
         )
 
     total_elapsed = time.perf_counter() - t_total
     summary = (
         f"{datetime.now():%Y-%m-%d %H:%M:%S} | TOTAL | "
-        f"files={len(paths)} rows=N/A ins={total_inserted} upd={total_updated} "
+        f"files={len(paths)} ins={total_inserted} upd={total_updated} "
         f"other={len(all_other_nids)} | {total_elapsed:.1f}s"
     )
     log_lines.append(summary)
