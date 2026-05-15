@@ -15,16 +15,24 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 sqlite_engine = create_engine(sqlite_url, echo=False)
 
 
-############
-# Postgres #
-############
+########
+# Cloud #
+########
 
-PG_HOST = os.getenv("PG_HOST")
-PG_PORT = os.getenv("PG_PORT")
-PG_USER = os.getenv("PG_USER")
-PG_PASSWORD = os.getenv("PG_PASSWORD")
-PG_DATABASE = os.getenv("PG_DATABASE")
+DB_TYPE = os.getenv("DB_TYPE", "").lower()
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
 
-pg_url = f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
+_cloud_vars = [DB_HOST, DB_PORT, DB_USER, DB_NAME]
 
-postgres_engine = create_engine(pg_url, echo=False)
+if all(_cloud_vars):
+    if DB_TYPE == "mysql":
+        cloud_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    else:
+        cloud_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    cloud_engine = create_engine(cloud_url, echo=False)
+else:
+    cloud_engine = None

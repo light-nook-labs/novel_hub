@@ -6,7 +6,7 @@ from sqlmodel import Session, SQLModel, select
 
 from database import Author, Banner, Contest, Novel, NovelTagLink, Tag
 from database import Genre, PType, Status
-from database import sqlite_engine
+from database import cloud_engine, sqlite_engine
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
 
@@ -302,65 +302,103 @@ def _update_novels(session, update_df: pd.DataFrame, caches: dict, now: datetime
     return other_nids
 
 
-def commit_dataframe(df: pd.DataFrame) -> tuple[int, int]:
-    """将单个清洗后的 DataFrame 写入数据库。
+def commit_dataframe(df: pd.DataFrame, engine=sqlite_engine) -> tuple[int, int]:
+    """将单个清洗后的 DataFrame 写入数据库（事务原子性）。
 
     自动检测 nid 区分新增/更新，分别调用 _insert_novels / _update_novels。
+    单次调用内全部操作在同一事务中，失败自动回滚。
+    engine 默认为 sqlite_engine，也可传入 cloud_engine 同步到云端。
     返回 (新增数, 更新数, OTHER_nid集合)。
     """
-    from sqlalchemy import insert as sa_insert
+    with Session(engine) as session:
+        try:
+            # Phase 1: 批量填充关联表
+            author_names = set(df["author"].dropna().str.strip())
+            author_names.discard("")
+            author_cache = _batch_upsert(session, Author, author_names)
 
-    with Session(sqlite_engine) as session:
-        # Phase 1: 批量填充关联表
-        author_names = set(df["author"].dropna().str.strip())
-        author_names.discard("")
-        author_cache = _batch_upsert(session, Author, author_names)
+            contest_names = set(
+                df["contest"].dropna().apply(lambda x: x if x != "" else None).dropna()
+            )
+            contest_cache = _batch_upsert(session, Contest, contest_names)
 
-        contest_names = set(
-            df["contest"].dropna().apply(lambda x: x if x != "" else None).dropna()
-        )
-        contest_cache = _batch_upsert(session, Contest, contest_names)
+            tag_names: set[str] = set()
+            for tags in df["tags"].dropna():
+                if isinstance(tags, list):
+                    tag_names.update(tags)
+            tag_cache = _batch_upsert(session, Tag, tag_names)
 
-        tag_names: set[str] = set()
-        for tags in df["tags"].dropna():
-            if isinstance(tags, list):
-                tag_names.update(tags)
-        tag_cache = _batch_upsert(session, Tag, tag_names)
+            session.flush()
 
-        session.flush()
+            caches = {"authors": author_cache, "contests": contest_cache, "tags": tag_cache}
+            now = datetime.now()
 
-        caches = {"authors": author_cache, "contests": contest_cache, "tags": tag_cache}
-        now = datetime.now()
+            # Phase 2: 按 nid 拆分为新增/更新
+            all_nids = df["nid"].astype(int).tolist()
+            existing_nids: set[int] = set(
+                session.exec(select(Novel.id).where(Novel.id.in_(all_nids))).all()
+            )
 
-        # Phase 2: 按 nid 拆分为新增/更新
-        all_nids = df["nid"].astype(int).tolist()
-        existing_nids: set[int] = set(
-            session.exec(select(Novel.id).where(Novel.id.in_(all_nids))).all()
-        )
+            mask_existing = df["nid"].astype(int).isin(existing_nids)
+            df_new = df[~mask_existing]
+            df_old = df[mask_existing]
 
-        mask_existing = df["nid"].astype(int).isin(existing_nids)
-        df_new = df[~mask_existing]
-        df_old = df[mask_existing]
+            # Phase 3: 分别处理
+            other_new = _insert_novels(session, df_new, caches, now) if len(df_new) > 0 else set()
+            other_old = _update_novels(session, df_old, caches, now) if len(df_old) > 0 else set()
 
-        # Phase 3: 分别处理
-        other_new = _insert_novels(session, df_new, caches, now) if len(df_new) > 0 else set()
-        other_old = _update_novels(session, df_old, caches, now) if len(df_old) > 0 else set()
-
-        session.commit()
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
 
     return len(df_new), len(df_old), other_new | other_old
 
 
+def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
+    """同步数据到 PostgreSQL，含重试机制。
+
+    云端数据库未配置时跳过；连接不稳定时最多重试 3 次，指数退避。
+    返回 (新增数, 更新数)。
+    """
+    import time
+
+    if cloud_engine is None:
+        return 0, 0
+
+    retries = 3
+    for attempt in range(1, retries + 1):
+        try:
+            inserted, updated, _ = commit_dataframe(df, cloud_engine)
+            return inserted, updated
+        except Exception as e:
+            if attempt < retries:
+                delay = 2 ** attempt
+                print(f"[cloud retry {attempt}/{retries} in {delay}s]", end=" ", flush=True)
+                time.sleep(delay)
+            else:
+                print(f"[cloud FAILED after {retries} attempts: {e}]")
+                raise
+
+
 def _process_one(filepath: Path) -> dict:
-    """处理单个 JSONL 文件并入库，返回统计信息。"""
+    """处理单个 JSONL 文件并入库，返回统计信息。
+
+    先写入本地 SQLite（原子事务），成功后再同步到云端。
+    本地库永远保持数据一致性，云端为 best-effort。
+    """
     import time
 
     print(f"{filepath.name} …", end=" ", flush=True)
     t0 = time.perf_counter()
     df = load_and_clean(filepath)
+
+    # 本地库先写入，确保本地数据永远准确
     inserted, updated, other_nids = commit_dataframe(df)
+    # 本地成功后同步云端
+    pg_ins, pg_upd = _sync_to_cloud(df)
     elapsed = time.perf_counter() - t0
-    print(f"{len(df)} 行 | 新增 {inserted} | 更新 {updated} | {elapsed:.1f}s")
+    print(f"{len(df)} 行 | 新增 {inserted} | 更新 {updated} | cloud +{pg_ins} ~{pg_upd} | {elapsed:.1f}s")
     return {
         "file": filepath.name,
         "rows": len(df),
