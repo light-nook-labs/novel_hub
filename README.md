@@ -10,7 +10,7 @@ meta_spider/     Scrapy 爬虫（遗留代码，只读）
 enums.py         枚举定义（Genre / Status / PType），含 label ↔ enum 双向映射
 models.py        SQLModel ORM 模型（Novel / Author / Tag / Contest / Banner）
 db.py            数据库引擎配置（SQLite）
-data_import.py   pandas 清洗 → ORM 入库
+ingest.py   pandas 清洗 → ORM 入库
 ```
 
 ## CI 工作流
@@ -22,7 +22,7 @@ data_import.py   pandas 清洗 → ORM 入库
 scrapy runspider meta_spider/spiders/meta_spider.py -o output/meta.jsonl
 
 # 2. 入库
-uv run data_import.py output/meta.jsonl
+uv run ingest.py output/meta.jsonl
 ```
 
 入库为幂等操作（按 `nid` upsert），重复执行不会产生重复数据。
@@ -31,15 +31,15 @@ uv run data_import.py output/meta.jsonl
 
 ```bash
 # 导入指定文件
-uv run data_import.py output/meta.jsonl
+uv run ingest.py output/meta.jsonl
 
 # 导入所有待处理文件
-uv run data_import.py
+uv run ingest.py
 ```
 
 ## 数据清洗
 
-`data_import.py` 在入库前自动执行：
+`ingest.py` 在入库前自动执行：
 
 - 按 `nid` 去重，保留 `last_update` 最新记录
 - 缺失数值填 0，无效日期填当前时间
