@@ -378,10 +378,13 @@ def commit_dataframe(df: pd.DataFrame, engine=sqlite_engine, known_nids: set[int
     return len(df_new), len(df_old), other_new | other_old
 
 
-def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
-    """同步数据到 PostgreSQL，含重试机制。
+CLOUD_CHUNK_SIZE = 10000
 
-    云端数据库未配置时跳过；连接不稳定时最多重试 3 次，指数退避。
+
+def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
+    """分块同步到云端，每块独立事务，含重试机制。
+
+    云端未配置时跳过；连接不稳定时最多重试 3 次，指数退避。
     返回 (新增数, 更新数)。
     """
     import time
@@ -389,20 +392,31 @@ def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
     if cloud_engine is None:
         return 0, 0
 
-    retries = 3
-    for attempt in range(1, retries + 1):
-        try:
-            inserted, updated, _ = commit_dataframe(df, cloud_engine)
-            time.sleep(CLOUD_SLEEP)
-            return inserted, updated
-        except Exception as e:
-            if attempt < retries:
-                delay = 2 ** attempt
-                print(f"[cloud retry {attempt}/{retries} in {delay}s]", end=" ", flush=True)
-                time.sleep(delay)
-            else:
-                print(f"[cloud FAILED after {retries} attempts: {e}]")
-                raise
+    total_ins, total_upd = 0, 0
+    chunks = range(0, len(df), CLOUD_CHUNK_SIZE)
+
+    for i, start in enumerate(chunks):
+        chunk = df.iloc[start:start + CLOUD_CHUNK_SIZE]
+
+        retries = 3
+        for attempt in range(1, retries + 1):
+            try:
+                ins, upd, _ = commit_dataframe(chunk, cloud_engine)
+                total_ins += ins
+                total_upd += upd
+                break
+            except Exception as e:
+                if attempt < retries:
+                    delay = 2 ** attempt
+                    print(f"[cloud chunk {i} retry {attempt}/{retries} in {delay}s]", end=" ", flush=True)
+                    time.sleep(delay)
+                else:
+                    print(f"[cloud chunk {i} FAILED: {e}]")
+                    raise
+
+        time.sleep(CLOUD_SLEEP)
+
+    return total_ins, total_upd
 
 
 def _process_one(filepath: Path) -> dict:
