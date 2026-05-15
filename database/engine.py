@@ -1,5 +1,4 @@
 from sqlmodel import create_engine, SQLModel
-import models
 
 ##########
 # SQLite #
