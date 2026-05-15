@@ -12,16 +12,17 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from sqlmodel import SQLModel
-
+from database import cloud_engine, sqlite_engine
+from database.app import create_db_and_table
 from ingest import _process_one
-from database import sqlite_engine
 
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
 
 if __name__ == "__main__":
-    SQLModel.metadata.create_all(sqlite_engine)
+    create_db_and_table(sqlite_engine)
+    if cloud_engine is not None:
+        create_db_and_table(cloud_engine)
 
     if len(sys.argv) > 1:
         paths = [Path(a) for a in sys.argv[1:]]

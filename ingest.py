@@ -2,7 +2,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-from sqlmodel import Session, SQLModel, select
+from sqlmodel import Session, select
 
 from database import Author, Banner, Contest, Novel, NovelTagLink, Tag
 from database import Genre, PType, Status
@@ -414,7 +414,9 @@ if __name__ == "__main__":
     import sys
     import time
 
-    SQLModel.metadata.create_all(sqlite_engine)
+    from database.app import create_db_and_table
+
+    create_db_and_table(sqlite_engine)
 
     paths: list[Path] = []
     if len(sys.argv) > 1:
