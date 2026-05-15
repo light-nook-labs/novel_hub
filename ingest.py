@@ -193,7 +193,8 @@ def _insert_novels(session, insert_df: pd.DataFrame, caches: dict, now: datetime
 
     # Banner
     if banner_rows:
-        existing = session.exec(select(Banner.url, Banner.novel_id)).all()
+        urls = [b["url"] for b in banner_rows]
+        existing = session.exec(select(Banner.url, Banner.novel_id).where(Banner.url.in_(urls))).all()
         existing_set = {(b[0], b[1]) for b in existing}
         new_banners = [b for b in banner_rows if (b["url"], b["novel_id"]) not in existing_set]
         if new_banners:
@@ -288,7 +289,8 @@ def _update_novels(session, update_df: pd.DataFrame, caches: dict, now: datetime
 
     # Banner
     if banner_rows:
-        existing = session.exec(select(Banner.url, Banner.novel_id)).all()
+        urls = [b["url"] for b in banner_rows]
+        existing = session.exec(select(Banner.url, Banner.novel_id).where(Banner.url.in_(urls))).all()
         existing_set = {(b[0], b[1]) for b in existing}
         new_banners = [b for b in banner_rows if (b["url"], b["novel_id"]) not in existing_set]
         if new_banners:
