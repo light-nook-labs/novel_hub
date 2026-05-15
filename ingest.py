@@ -102,25 +102,25 @@ def _batch_upsert(session, model, names: set[str]) -> dict[str, object]:
 
 def _build_row_dict(row, author_id: int, contest_id: int | None, now: datetime) -> dict:
     """将 DataFrame 行转换为 Novel 字典。"""
-    ptype_label = PRICE_TYPE_ID_TO_LABEL.get(int(row["price_type_id"]), "其他")
+    ptype_label = PRICE_TYPE_ID_TO_LABEL.get(int(row.price_type_id), "其他")
     ptype = PType.from_label(ptype_label)
-    status_label = STATUS_ID_TO_LABEL.get(int(row["status_id"]), "其他")
+    status_label = STATUS_ID_TO_LABEL.get(int(row.status_id), "其他")
     status = Status.from_label(status_label)
-    genre = Genre.from_label(row["genre"])
+    genre = Genre.from_label(row.genre)
 
-    cover = row["cover"] if not pd.isna(row["cover"]) else None
-    last_update = row["last_update"].to_pydatetime() if not pd.isna(row["last_update"]) else None
+    cover = row.cover if not pd.isna(row.cover) else None
+    last_update = row.last_update.to_pydatetime() if not pd.isna(row.last_update) else None
 
     return {
-        "id": int(row["nid"]),
-        "title": row["novel_title"],
+        "id": int(row.nid),
+        "title": row.novel_title,
         "ptype": ptype,
         "genre": genre,
         "status": status,
-        "click_num": int(row["click_num"]),
-        "word_num": int(row["word_num"]),
-        "praise_num": int(row["praise_num"]),
-        "like_num": int(row["like_num"]),
+        "click_num": int(row.click_num),
+        "word_num": int(row.word_num),
+        "praise_num": int(row.praise_num),
+        "like_num": int(row.like_num),
         "cover": cover,
         "last_update": last_update,
         "db_update": now,
@@ -134,12 +134,12 @@ def _check_other(row, row_dict: dict) -> bool:
     ptype = row_dict["ptype"]
     status = row_dict["status"]
     genre = row_dict["genre"]
-    ptype_label = PRICE_TYPE_ID_TO_LABEL.get(int(row["price_type_id"]), "其他")
-    status_label = STATUS_ID_TO_LABEL.get(int(row["status_id"]), "其他")
+    ptype_label = PRICE_TYPE_ID_TO_LABEL.get(int(row.price_type_id), "其他")
+    status_label = STATUS_ID_TO_LABEL.get(int(row.status_id), "其他")
     return (
         (ptype == PType.OTHER and ptype_label != "其他")
         or (status == Status.OTHER and status_label != "其他")
-        or (genre == Genre.OTHER and row["genre"] != "其他")
+        or (genre == Genre.OTHER and row.genre != "其他")
     )
 
 
@@ -159,16 +159,16 @@ def _insert_novels(session, insert_df: pd.DataFrame, caches: dict, now: datetime
     tag_link_rows: list[tuple[int, int]] = []
     other_nids: set[int] = set()
 
-    for _, row in insert_df.iterrows():
-        nid = int(row["nid"])
+    for row in insert_df.itertuples():
+        nid = int(row.nid)
 
-        author = author_cache.get(row["author"])
+        author = author_cache.get(row.author)
         if author is None:
             continue
 
         contest_id = (
-            contest_cache.get(row["contest"]).id
-            if not pd.isna(row["contest"]) and row["contest"] in contest_cache
+            contest_cache.get(row.contest).id
+            if not pd.isna(row.contest) and row.contest in contest_cache
             else None
         )
 
@@ -178,11 +178,11 @@ def _insert_novels(session, insert_df: pd.DataFrame, caches: dict, now: datetime
         if _check_other(row, row_dict):
             other_nids.add(nid)
 
-        banner_url = row["banner"]
+        banner_url = row.banner
         if not pd.isna(banner_url) and banner_url:
             banner_rows.append({"url": banner_url, "novel_id": nid})
 
-        tag_names_list = row["tags"]
+        tag_names_list = row.tags
         if isinstance(tag_names_list, list) and tag_names_list:
             for name in dict.fromkeys(tag_names_list):
                 if name in tag_cache:
@@ -234,16 +234,16 @@ def _update_novels(session, update_df: pd.DataFrame, caches: dict, now: datetime
     tag_link_rows: list[tuple[int, int]] = []
     other_nids: set[int] = set()
 
-    for _, row in update_df.iterrows():
-        nid = int(row["nid"])
+    for row in update_df.itertuples():
+        nid = int(row.nid)
 
-        author = author_cache.get(row["author"])
+        author = author_cache.get(row.author)
         if author is None:
             continue
 
         contest_id = (
-            contest_cache.get(row["contest"]).id
-            if not pd.isna(row["contest"]) and row["contest"] in contest_cache
+            contest_cache.get(row.contest).id
+            if not pd.isna(row.contest) and row.contest in contest_cache
             else None
         )
 
@@ -253,11 +253,11 @@ def _update_novels(session, update_df: pd.DataFrame, caches: dict, now: datetime
         if _check_other(row, row_dict):
             other_nids.add(nid)
 
-        banner_url = row["banner"]
+        banner_url = row.banner
         if not pd.isna(banner_url) and banner_url:
             banner_rows.append({"url": banner_url, "novel_id": nid})
 
-        tag_names_list = row["tags"]
+        tag_names_list = row.tags
         if isinstance(tag_names_list, list) and tag_names_list:
             for name in dict.fromkeys(tag_names_list):
                 if name in tag_cache:
