@@ -315,12 +315,10 @@ def _update_novels(session, update_df: pd.DataFrame, caches: dict, now: datetime
     return other_nids
 
 
-def commit_dataframe(df: pd.DataFrame, engine=sqlite_engine) -> tuple[int, int]:
+def commit_dataframe(df: pd.DataFrame, engine=sqlite_engine, known_nids: set[int] | None = None) -> tuple[int, int]:
     """将单个清洗后的 DataFrame 写入数据库（事务原子性）。
 
-    自动检测 nid 区分新增/更新，分别调用 _insert_novels / _update_novels。
-    单次调用内全部操作在同一事务中，失败自动回滚。
-    engine 默认为 sqlite_engine，也可传入 cloud_engine 同步到云端。
+    自动检测 nid 区分新增/更新。known_nids 用于跨文件缓存，减少 DB 查询。
     返回 (新增数, 更新数, OTHER_nid集合)。
     """
     with Session(engine) as session:
@@ -348,9 +346,21 @@ def commit_dataframe(df: pd.DataFrame, engine=sqlite_engine) -> tuple[int, int]:
 
             # Phase 2: 按 nid 拆分为新增/更新
             all_nids = df["nid"].astype(int).tolist()
-            existing_nids: set[int] = set(
-                session.exec(select(Novel.id).where(Novel.id.in_(all_nids))).all()
-            )
+            all_nids_set = set(all_nids)
+
+            if known_nids is not None:
+                existing_nids = all_nids_set & known_nids
+                unknown = all_nids_set - known_nids
+                if unknown:
+                    db_existing = set(
+                        session.exec(select(Novel.id).where(Novel.id.in_(unknown))).all()
+                    )
+                    existing_nids |= db_existing
+                    known_nids.update(all_nids_set)
+            else:
+                existing_nids = set(
+                    session.exec(select(Novel.id).where(Novel.id.in_(all_nids))).all()
+                )
 
             mask_existing = df["nid"].astype(int).isin(existing_nids)
             df_new = df[~mask_existing]
@@ -457,12 +467,13 @@ if __name__ == "__main__":
     print(f"加载完成 | {t_load:.1f}s")
 
     # Phase 2: 顺序写入 SQLite
+    known_nids: set[int] = set()
     all_other_nids: set[int] = set()
     total_inserted, total_updated = 0, 0
 
     for filepath, df in zip(paths, dfs):
         t_write0 = time.perf_counter()
-        inserted, updated, other_nids = commit_dataframe(df)
+        inserted, updated, other_nids = commit_dataframe(df, known_nids=known_nids)
         t_write = time.perf_counter() - t_write0
 
         total_inserted += inserted
