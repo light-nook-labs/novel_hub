@@ -9,12 +9,15 @@
 
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
+
 from database import cloud_engine, sqlite_engine
 from database.app import create_db_and_table
-from ingest import _process_one
+from ingest import _sync_to_cloud, commit_dataframe, load_and_clean
 
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
@@ -34,32 +37,58 @@ if __name__ == "__main__":
         sys.exit(0)
 
     t_total = time.perf_counter()
-    all_other_nids: set[int] = set()
-    total_inserted, total_updated = 0, 0
     log_lines: list[str] = []
 
-    for filepath in paths:
-        info = _process_one(filepath)
-        total_inserted += info["inserted"]
-        total_updated += info["updated"]
-        all_other_nids.update(info["other_nids"])
+    # Phase 1: 并行加载清洗
+    print(f"并行加载 {len(paths)} 个文件 …", flush=True)
+    t_load0 = time.perf_counter()
+    with ThreadPoolExecutor() as pool:
+        dfs = list(pool.map(load_and_clean, paths))
+    t_load = time.perf_counter() - t_load0
+    print(f"加载完成 | {t_load:.1f}s")
+
+    # Phase 2: 顺序写入 SQLite
+    known_nids: set[int] = set()
+    all_other_nids: set[int] = set()
+    total_inserted, total_updated = 0, 0
+
+    for filepath, df in zip(paths, dfs):
+        t_write0 = time.perf_counter()
+        inserted, updated, other_nids = commit_dataframe(df, known_nids=known_nids)
+        t_write = time.perf_counter() - t_write0
+
+        total_inserted += inserted
+        total_updated += updated
+        all_other_nids.update(other_nids)
+        print(f"  {filepath.name}: {len(df)} 行 | +{inserted} ~{updated} | {t_write:.1f}s")
         log_lines.append(
-            f"{datetime.now():%Y-%m-%d %H:%M:%S} | {info['file']} | "
-            f"rows={info['rows']} ins={info['inserted']} upd={info['updated']} "
-            f"other={info['other']} | "
-            f"sqlite={info['t_sqlite']:.1f}s cloud={info['t_cloud']:.1f}s total={info['total']:.1f}s"
+            f"{datetime.now():%Y-%m-%d %H:%M:%S} | {filepath.name} | SQLite | "
+            f"rows={len(df)} ins={inserted} upd={updated} "
+            f"other={len(other_nids)} | {t_write:.1f}s"
         )
 
+    # Phase 3: 一次性同步云端
+    t_cloud0 = time.perf_counter()
+    if dfs:
+        cloud_df = pd.concat(dfs, ignore_index=True)
+        cloud_ins, cloud_upd = _sync_to_cloud(cloud_df)
+    else:
+        cloud_ins, cloud_upd = 0, 0
+    t_cloud = time.perf_counter() - t_cloud0
+    print(f"cloud sync: +{cloud_ins} ~{cloud_upd} | {t_cloud:.1f}s")
+
     total_elapsed = time.perf_counter() - t_total
-    summary = (
+    log_lines.append(
+        f"{datetime.now():%Y-%m-%d %H:%M:%S} | ALL | Cloud Sync | "
+        f"ins={cloud_ins} upd={cloud_upd} | {t_cloud:.1f}s"
+    )
+    log_lines.append(
         f"{datetime.now():%Y-%m-%d %H:%M:%S} | TOTAL | "
         f"files={len(paths)} ins={total_inserted} upd={total_updated} "
         f"other={len(all_other_nids)} | {total_elapsed:.1f}s"
     )
-    log_lines.append(summary)
     print(f"总计: 新增 {total_inserted} | 更新 {total_updated} | {total_elapsed:.1f}s")
 
-    # 写入 LOG.txt
     LOG_FILE = ROOT / "LOG.txt"
     with open(LOG_FILE, "a") as f:
         for line in log_lines:
