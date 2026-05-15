@@ -17,6 +17,9 @@ BANNER_BASE = "http://rs.sfacg.com/web/novel/images/images/"
 PRICE_TYPE_ID_TO_LABEL = {0: "免费", 1: "签约", 2: "VIP"}
 STATUS_ID_TO_LABEL = {0: "已完结", 1: "连载中", 2: "断更"}
 
+# 云端同步间隔（秒），防止请求过快触发限流
+CLOUD_SLEEP = 0.1
+
 
 def _compress_banner_url(url) -> str | None:
     """压缩 banner URL，仅保留查询参数。
@@ -48,9 +51,8 @@ def load_and_clean(filepath: Path) -> pd.DataFrame:
                 "price_type_id", "status_id"]:
         df[col] = df[col].fillna(0).astype(int)
 
-    # 时间列
+    # 时间列：缺失保持 NaT，入库时为 None
     df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
-    df["last_update"] = df["last_update"].fillna(datetime.now())
 
     # 字符串列：空串/NaN → None
     for col in ["cover", "banner", "contest"]:
@@ -98,7 +100,7 @@ def _build_row_dict(row, author_id: int, contest_id: int | None, now: datetime) 
     genre = Genre.from_label(row["genre"])
 
     cover = row["cover"] if not pd.isna(row["cover"]) else None
-    last_update = row["last_update"].to_pydatetime()
+    last_update = row["last_update"].to_pydatetime() if not pd.isna(row["last_update"]) else None
 
     return {
         "id": int(row["nid"]),
@@ -370,6 +372,7 @@ def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
     for attempt in range(1, retries + 1):
         try:
             inserted, updated, _ = commit_dataframe(df, cloud_engine)
+            time.sleep(CLOUD_SLEEP)
             return inserted, updated
         except Exception as e:
             if attempt < retries:
@@ -390,15 +393,22 @@ def _process_one(filepath: Path) -> dict:
     import time
 
     print(f"{filepath.name} …", end=" ", flush=True)
-    t0 = time.perf_counter()
+    t_load0 = time.perf_counter()
     df = load_and_clean(filepath)
+    t_load = time.perf_counter() - t_load0
 
-    # 本地库先写入，确保本地数据永远准确
+    # SQLite
+    t_sqlite0 = time.perf_counter()
     inserted, updated, other_nids = commit_dataframe(df)
-    # 本地成功后同步云端
+    t_sqlite = time.perf_counter() - t_sqlite0
+
+    # Cloud
+    t_cloud0 = time.perf_counter()
     pg_ins, pg_upd = _sync_to_cloud(df)
-    elapsed = time.perf_counter() - t0
-    print(f"{len(df)} 行 | 新增 {inserted} | 更新 {updated} | cloud +{pg_ins} ~{pg_upd} | {elapsed:.1f}s")
+    t_cloud = time.perf_counter() - t_cloud0
+
+    total = t_load + t_sqlite + t_cloud
+    print(f"{len(df)} 行 | SQLite +{inserted} ~{updated} {t_sqlite:.1f}s | cloud +{pg_ins} ~{pg_upd} {t_cloud:.1f}s | {total:.1f}s")
     return {
         "file": filepath.name,
         "rows": len(df),
@@ -406,7 +416,10 @@ def _process_one(filepath: Path) -> dict:
         "updated": updated,
         "other": len(other_nids),
         "other_nids": other_nids,
-        "elapsed": elapsed,
+        "t_load": t_load,
+        "t_sqlite": t_sqlite,
+        "t_cloud": t_cloud,
+        "total": total,
     }
 
 
@@ -441,13 +454,14 @@ if __name__ == "__main__":
         log_lines.append(
             f"{datetime.now():%Y-%m-%d %H:%M:%S} | {info['file']} | "
             f"rows={info['rows']} ins={info['inserted']} upd={info['updated']} "
-            f"other={info['other']} | {info['elapsed']:.1f}s"
+            f"other={info['other']} | "
+            f"sqlite={info['t_sqlite']:.1f}s cloud={info['t_cloud']:.1f}s total={info['total']:.1f}s"
         )
 
     total_elapsed = time.perf_counter() - t_total
     summary = (
         f"{datetime.now():%Y-%m-%d %H:%M:%S} | TOTAL | "
-        f"files={len(paths)} rows=N/A ins={total_inserted} upd={total_updated} "
+        f"files={len(paths)} ins={total_inserted} upd={total_updated} "
         f"other={len(all_other_nids)} | {total_elapsed:.1f}s"
     )
     log_lines.append(summary)
