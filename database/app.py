@@ -1,4 +1,4 @@
-from db import SQLModel, sqlite_engine
+from . import SQLModel, sqlite_engine
 
 
 def create_db_and_table(engine):

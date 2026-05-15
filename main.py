@@ -1,134 +1,55 @@
-# from datetime import datetime, timedelta
-# import re
-# from enums import Genre, Catalogy
+"""SFACG 元数据入库 -- CLI 入口。
 
-# if __name__ == "__main__":
-#     # date_str = '2026/4/30 16:11:48'
-#     # now = datetime.now()
-#     # d = datetime.strptime(date_str, "%Y/%m/%d %H:%M:%S")
-#     # delta = timedelta(days=30)
-#     # print(now, d, delta, sep='\n')
-#     # print(now - d < delta)
-#     # pattern = re.compile(r'(\d+)字\[(.+)\]')
-#     # s = '50000字[连载中]'
-#     # print(pattern.search(s).groups())
-#     print(Genre(1))
-#     print(Catalogy.MAGIC)
+用法:
+    uv run main.py                       遍历 output/ 全部 jsonl，insert 模式
+    uv run main.py output/meta.jsonl     单文件入库，insert 模式
+    uv run main.py --update              全量入库，update 模式
+    uv run main.py --update output/...   单文件入库，update 模式
+    uv run main.py --insert              全量入库，insert 模式（默认）
 
+insert 模式: 假设绝大多数为新数据，新增入 bulk insert，极少量更新逐行
+update 模式: 假设绝大多数为已有数据，更新走 bulk update，极少量新增逐行
+"""
 
-from datetime import datetime
-from sqlmodel import Session, select
-from models import Author, Novel, Banner, Tag, Contest, NovelTagLink
-from enums import Genre, PType, Status
-from db import engine, SQLModel  # 你已创建
+import sys
+from pathlib import Path
 
-SQLModel.metadata.create_all(engine)
+from sqlmodel import SQLModel
 
+from data_import import _process_one
+from database import sqlite_engine
 
-# ======================
-# 你的映射规则
-# ======================
-STATUS_LIST = ['已完结', '连载中', '断更']
-PRICE_TYPES = ['免费', '签约', 'VIP']
-GENRES = ['魔幻', '玄幻', '古风', '科幻', '校园', '都市', '游戏', '同人', '悬疑']
+ROOT = Path(__file__).parent
+OUTPUT_DIR = ROOT / "output"
 
-# ======================
-# 你的原始数据
-# ======================
-data = {
-    "nid": 716851,
-    "novel_title": "崩坏！但是不只一只龙！",
-    "author": "伊维尔卡纳",
-    "price_type_id": 1,
-    "contest": "",
-    "genre": "游戏",
-    "click_num": 60983,
-    "word_num": 400750,
-    "status_id": 2,
-    "last_update": "2025-10-31 08:07:23",
-    "praise_num": 256,
-    "like_num": 459,
-    "cover": "http://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/02/b9879432-65fc-4de6-8f67-d01d7b7f61c4.jpg",
-    "banner": "",
-    "tags": ["战斗", "恋爱", "无敌", "龙"]
-}
+if __name__ == "__main__":
+    SQLModel.metadata.create_all(sqlite_engine)
 
-# ======================
-# 核心：数字 → 中文 → 枚举（别名匹配）
-# ======================
+    mode = "insert"
+    if "--update" in sys.argv:
+        mode = "update"
+    if "--insert" in sys.argv:
+        mode = "insert"
 
-# 1. 状态：status_id → 中文 → 枚举
-status_text = STATUS_LIST[data["status_id"]]  # 2 → 断更
-status = Status[status_text].value  # 用别名找到枚举 → 存入数字
+    # 收集非 --flag 的参数作为文件路径
+    paths = [Path(a) for a in sys.argv[1:] if not a.startswith("--")]
 
-# 2. 价格：price_type_id → 中文 → 枚举
-price_text = PRICE_TYPES[data["price_type_id"]]  # 1 → 签约
-ptype = PType[price_text].value
+    if not paths:
+        paths = sorted(OUTPUT_DIR.glob("*.jsonl"))
 
-# 3. 分类：直接中文 → 枚举
-genre_text = data["genre"]  # 游戏
-genre = Genre[genre_text].value
+    if not paths:
+        print("无待处理的 .jsonl 文件")
+        sys.exit(0)
 
-# ======================
-# 开始插入 DB
-# ======================
-with Session(engine) as session:
-    # 1. 作者
-    author = session.exec(select(Author).where(Author.name == data["author"])).first()
-    if not author:
-        author = Author(name=data["author"])
-        session.add(author)
-        session.commit()
-        session.refresh(author)
+    all_other_nids: set[int] = set()
+    for filepath in paths:
+        all_other_nids.update(_process_one(filepath, mode))
 
-    # 2. 征文
-    contest = None
-    if data["contest"]:
-        contest = session.exec(select(Contest).where(Contest.name == data["contest"])).first()
-        if not contest:
-            contest = Contest(name=data["contest"])
-            session.add(contest)
-            session.commit()
-            session.refresh(contest)
+    if all_other_nids:
+        OTHER_FILE = ROOT / "OTHER.txt"
+        with open(OTHER_FILE, "a") as f:
+            for nid in sorted(all_other_nids):
+                f.write(f"{nid}\n")
+        print(f"OTHER 降级 {len(all_other_nids)} 条，已追加到 {OTHER_FILE}")
 
-    # 3. 小说（全部传枚举，DB 自动存 int）
-    novel = Novel(
-        id=data["nid"],
-        title=data["novel_title"],
-        ptype=ptype,        # 枚举 → DB 存数字
-        genre=genre,        # 枚举 → DB 存数字
-        status=status,      # 枚举 → DB 存数字
-        click_num=data["click_num"],
-        word_num=data["word_num"],
-        praise_num=data["praise_num"],
-        like_num=data["like_num"],
-        cover=data["cover"],
-        last_update=datetime.strptime(data["last_update"], "%Y-%m-%d %H:%M:%S"),
-        author_id=author.id,
-        contest_id=contest.id if contest else None,
-    )
-    session.add(novel)
-    session.commit()
-    session.refresh(novel)
-
-    # 4. Banner
-    if data["banner"]:
-        banner = Banner(url=data["banner"], novel_id=novel.id)
-        session.add(banner)
-        session.commit()
-
-    # 5. 标签
-    for tag_name in data["tags"]:
-        tag = session.exec(select(Tag).where(Tag.name == tag_name)).first()
-        if not tag:
-            tag = Tag(name=tag_name)
-            session.add(tag)
-            session.commit()
-            session.refresh(tag)
-        
-        link = NovelTagLink(novel_id=novel.id, tag_id=tag.id)
-        session.add(link)
-
-    session.commit()
-
-print("✅ 插入成功！数据库存储的是【枚举数字】，使用了【中文别名】匹配")
+    print("完成")

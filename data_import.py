@@ -4,9 +4,9 @@ from pathlib import Path
 import pandas as pd
 from sqlmodel import Session, SQLModel, select
 
-from db import sqlite_engine
-from enums import Genre, PType, Status
-from models import Author, Banner, Contest, Novel, NovelTagLink, Tag
+from database import Author, Banner, Contest, Novel, NovelTagLink, Tag
+from database import Genre, PType, Status
+from database import sqlite_engine
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
 
@@ -89,15 +89,16 @@ def _batch_upsert(session, model, names: set[str]) -> dict[str, object]:
 
 
 
-def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
+def import_dataframe(df: pd.DataFrame, mode: str = "insert") -> tuple[int, int]:
     """将单个清洗后的 DataFrame 写入数据库。
 
-    Phase 1: 批量填充 Author/Contest/Tag 小表
-    Phase 2: 区分新增/更新 — 新增走 bulk insert，更新走逐行 update
-    Phase 3: 批量写入 Banner 和 NovelTagLink
+    mode='insert': 假设绝大多数为新数据，新增 bulk insert，少量更新逐行
+    mode='update': 假设绝大多数为已有数据，更新 bulk update，少量新增逐行
     返回 (新增数, 更新数, OTHER_nid集合)。
     """
     from sqlalchemy import insert as sa_insert
+    from sqlalchemy import update as sa_update
+    from sqlalchemy import bindparam
 
     with Session(sqlite_engine) as session:
         # Phase 1: 批量填充关联表
@@ -118,17 +119,17 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
 
         session.flush()
 
-        # Phase 2: 区分新增/更新
+        # Phase 2: 检测已有 nid，区分新增/更新
         all_nids = df["nid"].astype(int).tolist()
         existing_nids: set[int] = set(
             session.exec(select(Novel.id).where(Novel.id.in_(all_nids))).all()
         )
 
+        update_rows: list[dict] = []
         insert_rows: list[dict] = []
         banner_rows: list[dict] = []
         tag_link_rows: list[tuple[int, int]] = []
         tag_link_nids_to_clear: set[int] = set()
-        updated = 0
         other_nids: set[int] = set()
         now = datetime.now()
 
@@ -145,7 +146,6 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
             status = Status.from_label(status_label)
             genre = Genre.from_label(row["genre"])
 
-            # 记录 OTHER 降级
             if (ptype == PType.OTHER and ptype_label != "其他") or \
                (status == Status.OTHER and status_label != "其他") or \
                (genre == Genre.OTHER and row["genre"] != "其他"):
@@ -173,12 +173,7 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
             }
 
             if nid in existing_nids:
-                # 更新：逐行写入（占少数）
-                novel = session.get(Novel, nid)
-                for k, v in row_dict.items():
-                    if k != "id":
-                        setattr(novel, k, v)
-                updated += 1
+                update_rows.append(row_dict)
             else:
                 insert_rows.append(row_dict)
 
@@ -204,7 +199,43 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
         if insert_rows:
             session.execute(sa_insert(Novel.__table__), insert_rows)
 
-        # Banner: 跳过已存在的 (url, novel_id) 组合
+        if update_rows:
+            if mode == "update":
+                # 更新为主：bulk update
+                stmt = (
+                    sa_update(Novel)
+                    .where(Novel.id == bindparam("_id"))
+                    .values(
+                        title=bindparam("title"),
+                        ptype=bindparam("ptype"),
+                        genre=bindparam("genre"),
+                        status=bindparam("status"),
+                        click_num=bindparam("click_num"),
+                        word_num=bindparam("word_num"),
+                        praise_num=bindparam("praise_num"),
+                        like_num=bindparam("like_num"),
+                        cover=bindparam("cover"),
+                        last_update=bindparam("last_update"),
+                        db_update=bindparam("db_update"),
+                        author_id=bindparam("author_id"),
+                        contest_id=bindparam("contest_id"),
+                    )
+                )
+                for r in update_rows:
+                    r["_id"] = r.pop("id")
+                with session.bind.connect() as conn:
+                    conn.execute(stmt, update_rows)
+                    conn.commit()
+            else:
+                # 插入为主：少数更新逐行
+                for row_dict in update_rows:
+                    novel = session.get(Novel, row_dict["id"])
+                    if novel:
+                        for k, v in row_dict.items():
+                            if k != "id":
+                                setattr(novel, k, v)
+
+        # Banner
         if banner_rows:
             existing_banners = session.exec(
                 select(Banner.url, Banner.novel_id)
@@ -217,7 +248,7 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
             if new_banners:
                 session.execute(sa_insert(Banner.__table__), new_banners)
 
-        # NovelTagLink: 先删旧关联再批量插入
+        # NovelTagLink
         if tag_link_nids_to_clear:
             session.execute(
                 NovelTagLink.__table__.delete().where(
@@ -232,14 +263,14 @@ def import_dataframe(df: pd.DataFrame) -> tuple[int, int]:
 
         session.commit()
 
-    return len(insert_rows), updated, other_nids
+    return len(insert_rows), len(update_rows), other_nids
 
 
-def _process_one(filepath: Path) -> set[int]:
+def _process_one(filepath: Path, mode: str = "insert") -> set[int]:
     """处理单个 JSONL 文件并入库，返回 OTHER 降级的 nid 集合。"""
-    print(f"处理 {filepath.name} …", end=" ")
+    print(f"处理 {filepath.name} [{mode}] …", end=" ")
     df = load_and_clean(filepath)
-    inserted, updated, other_nids = import_dataframe(df)
+    inserted, updated, other_nids = import_dataframe(df, mode)
     print(f"{len(df)} 行 -> 新增 {inserted}, 更新 {updated}")
     return other_nids
 
@@ -248,19 +279,28 @@ if __name__ == "__main__":
     import sys
 
     SQLModel.metadata.create_all(sqlite_engine)
-    all_other_nids: set[int] = set()
 
-    if len(sys.argv) > 1:
-        # uv run data_import.py path/to/file.jsonl
-        all_other_nids = _process_one(Path(sys.argv[1]))
+    mode = "insert"
+    paths: list[Path] = []
+
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    if "--update" in sys.argv:
+        mode = "update"
+    if "--insert" in sys.argv:
+        mode = "insert"
+
+    if args:
+        paths = [Path(a) for a in args]
     else:
-        # uv run data_import.py — 遍历 output/ 下所有 jsonl
-        jsonl_files = sorted(OUTPUT_DIR.glob("*.jsonl"))
-        if not jsonl_files:
-            print("无待处理的 .jsonl 文件")
-        else:
-            for filepath in jsonl_files:
-                all_other_nids.update(_process_one(filepath))
+        paths = sorted(OUTPUT_DIR.glob("*.jsonl"))
+
+    if not paths:
+        print("无待处理的 .jsonl 文件")
+        sys.exit(0)
+
+    all_other_nids: set[int] = set()
+    for filepath in paths:
+        all_other_nids.update(_process_one(filepath, mode))
 
     if all_other_nids:
         OTHER_FILE = ROOT / "OTHER.txt"
