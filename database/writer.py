@@ -11,18 +11,25 @@ from database.enums import Genre, PType, Status
 from database.models import Author, Banner, Contest, Novel, NovelTagLink, Tag
 
 
+_BATCH_UPSERT_CHUNK = 200
+
+
 def _batch_upsert(session, model, names: set[str]) -> dict[str, object]:
     """批量查找或创建 name 型记录，返回 {name: obj} 映射。
 
-    1 次 SELECT + 1 次 bulk INSERT + 1 次 SELECT 替代逐行 add()。
+    1 次 SELECT + N 次小批量 bulk INSERT + 1 次 SELECT 替代逐行 add()。
+    云端 PostgreSQL 有 statement_timeout，单次 INSERT 不宜过大。
     """
     existing = session.exec(select(model).where(model.name.in_(names))).all()
     result = {obj.name: obj for obj in existing}
-    missing = names - set(result.keys())
+    missing = list(names - set(result.keys()))
+
+    for i in range(0, len(missing), _BATCH_UPSERT_CHUNK):
+        chunk_names = missing[i : i + _BATCH_UPSERT_CHUNK]
+        rows = [{"name": n} for n in chunk_names]
+        session.execute(sa_insert(model.__table__), rows)
 
     if missing:
-        rows = [{"name": n} for n in missing]
-        session.execute(sa_insert(model.__table__), rows)
         new_objs = session.exec(
             select(model).where(model.name.in_(missing))
         ).all()
