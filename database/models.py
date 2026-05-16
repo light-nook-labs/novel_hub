@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import UniqueConstraint
+from sqlmodel import Field, Relationship, SQLModel
 
 ####################
 # Conjuction Table #
@@ -50,6 +51,8 @@ class Contest(SQLModel, table=True):
 
 
 class Banner(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("url", "novel_id"),)
+
     id: int | None = Field(primary_key=True, default=None)
     url: str
 
