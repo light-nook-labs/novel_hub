@@ -1,3 +1,8 @@
+"""
+Enums and mappers
+"""
+
+
 from enum import IntEnum
 
 
@@ -36,7 +41,12 @@ class Genre(LabeledIntEnum):
     GAME = 7
     DOUJIN = 8
     MYSTERY = 9
+
+    # Abnormal genre, maybe bugs of the website we crawled
+    LOVE = 97
     ADVENTURE = 98
+
+    # Fallback
     OTHER = 99
 
 
@@ -50,13 +60,11 @@ Genre._mapping = {
     Genre.GAME: "游戏",
     Genre.DOUJIN: "同人",
     Genre.MYSTERY: "悬疑",
+    Genre.LOVE: "爱情类",
     Genre.ADVENTURE: "冒险类",
     Genre.OTHER: "其他",
 }
 
-
-# alias
-Catalogy = Genre
 
 
 class Status(LabeledIntEnum):
@@ -64,7 +72,6 @@ class Status(LabeledIntEnum):
 
     FINISHED = 1
     ON_GOING = 2
-    ACTIVE = 2  # 连载中（别名，与 ON_GOING 同值）
     DIED = 3
     ACTIVE_F = 4
     ACTIVE_D = 5
