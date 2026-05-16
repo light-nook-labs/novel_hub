@@ -15,9 +15,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from database import cloud_engine, sqlite_engine
+from database.cleaner import load_and_clean
+from database.cloud import _sync_to_cloud
+from database.engine import cloud_engine, sqlite_engine
 from database.app import create_db_and_table
-from ingest import _sync_to_cloud, commit_dataframe, load_and_clean
+from database.writer import commit_dataframe
 
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
@@ -54,13 +56,17 @@ if __name__ == "__main__":
 
     for filepath, df in zip(paths, dfs):
         t_write0 = time.perf_counter()
-        inserted, updated, other_nids = commit_dataframe(df, known_nids=known_nids)
+        inserted, updated, other_nids = commit_dataframe(
+            df, known_nids=known_nids
+        )
         t_write = time.perf_counter() - t_write0
 
         total_inserted += inserted
         total_updated += updated
         all_other_nids.update(other_nids)
-        print(f"  {filepath.name}: {len(df)} 行 | +{inserted} ~{updated} | {t_write:.1f}s")
+        print(
+            f"  {filepath.name}: {len(df)} 行 | +{inserted} ~{updated} | {t_write:.1f}s"
+        )
         log_lines.append(
             f"{datetime.now():%Y-%m-%d %H:%M:%S} | {filepath.name} | SQLite | "
             f"rows={len(df)} ins={inserted} upd={updated} "
@@ -87,9 +93,11 @@ if __name__ == "__main__":
         f"files={len(paths)} ins={total_inserted} upd={total_updated} "
         f"other={len(all_other_nids)} | {total_elapsed:.1f}s"
     )
-    print(f"总计: 新增 {total_inserted} | 更新 {total_updated} | {total_elapsed:.1f}s")
+    print(
+        f"总计: 新增 {total_inserted} | 更新 {total_updated} | {total_elapsed:.1f}s"
+    )
 
-    LOG_FILE = ROOT / "LOG.txt"
+    LOG_FILE = ROOT / f"LOG_{datetime.now():%Y-%m-%d}.txt"
     with open(LOG_FILE, "a") as f:
         for line in log_lines:
             f.write(line + "\n")
