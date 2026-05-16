@@ -64,6 +64,7 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions@github.com"
+          git pull
           git add output/meta_*.jsonl
           git add -f BEGIN.txt
           git commit -m "Auto update" --allow-empty
