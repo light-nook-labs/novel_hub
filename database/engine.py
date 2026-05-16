@@ -16,14 +16,15 @@ sqlite_engine = create_engine(sqlite_url, echo=False)
 
 # WAL 模式提升并发写入性能
 from sqlmodel import text as sql_text
+
 with sqlite_engine.connect() as conn:
     conn.execute(sql_text("PRAGMA journal_mode=WAL"))
     conn.commit()
 
 
-########
+#########
 # Cloud #
-########
+#########
 
 DB_TYPE = os.getenv("DB_TYPE", "").lower()
 DB_HOST = os.getenv("DB_HOST")
