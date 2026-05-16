@@ -57,12 +57,29 @@ def ingest(
     log_lines: list[str] = []
 
     # Phase 1: 并行加载清洗
+    def _safe_load(filepath):
+        try:
+            return load_and_clean(filepath)
+        except Exception as e:
+            print(f"  [ERROR] {filepath.name}: {e}", flush=True)
+            return None
+
     print(f"并行加载 {len(paths)} 个文件 ...", flush=True)
     t_load0 = time.perf_counter()
     with ThreadPoolExecutor() as pool:
-        dfs = list(pool.map(load_and_clean, paths))
+        dfs = list(pool.map(_safe_load, paths))
     t_load = time.perf_counter() - t_load0
     print(f"加载完成 | {t_load:.1f}s")
+
+    # 过滤加载失败的文件
+    valid_paths = []
+    valid_dfs = []
+    for filepath, df in zip(paths, dfs):
+        if df is not None:
+            valid_paths.append(filepath)
+            valid_dfs.append(df)
+    paths = valid_paths
+    dfs = valid_dfs
 
     # Phase 2: 顺序写入 SQLite
     known_nids: set[int] = set()
