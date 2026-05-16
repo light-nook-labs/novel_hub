@@ -4,6 +4,8 @@ import pandas as pd
 
 COVER_BASE = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
 BANNER_BASE = "http://rs.sfacg.com/web/novel/images/images/"
+DEFAULT_COVER = "defaultNew"
+COVER_SUFFIX = ".jpg"
 
 PRICE_TYPE_ID_TO_LABEL = {0: "免费", 1: "签约", 2: "VIP"}
 STATUS_ID_TO_LABEL = {0: "已完结", 1: "连载中", 2: "断更"}
@@ -59,11 +61,21 @@ def load_and_clean(filepath: Path) -> pd.DataFrame:
             .astype(object)
         )
 
-    # 去除 CDN 前缀节省存储空间
+    # 去除 CDN 前缀节省存储空间，默认封面直接置空
     df["cover"] = df["cover"].apply(
         lambda u: (
             u[len(COVER_BASE) :]
             if isinstance(u, str) and u.startswith(COVER_BASE)
+            else u
+        )
+    )
+    # 默认封面置空，去除冗余后缀
+    df["cover"] = df["cover"].apply(
+        lambda u: (
+            None
+            if u == DEFAULT_COVER + COVER_SUFFIX
+            else u.removesuffix(COVER_SUFFIX)
+            if isinstance(u, str)
             else u
         )
     )

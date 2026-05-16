@@ -108,7 +108,7 @@ Author、Contest、Tag 采用统一的批量 upsert 策略：1 次 SELECT 查出
 | `contest` | Contest.name | 非空时查找或创建 |
 | `tags` | Tag (M2M) | 批量查找或创建，通过 NovelTagLink 关联 |
 | `banner` | Banner.url | 压缩存储（仅保留查询参数） |
-| `cover` | Novel.cover | 去除 CDN 前缀 |
+| `cover` | Novel.cover | 去除 CDN 前缀，默认封面（defaultNew.jpg）存为 NULL |
 
 ### 枚举值（DB 中存储整数值）
 
