@@ -10,6 +10,8 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 - **禁止修改 `output/` 目录下的任何文件。** 该目录为 CI 产出，只读，入库脚本只能从中读取数据。
 - **使用 `uv` 管理项目依赖**：所有包管理操作通过 `uv` 执行（`uv add`、`uv sync`、`uv run`），禁止使用 `pip install`。所有库只能安装到虚拟环境（`.venv/`）中。
 - **重大更改后更新 README**：每次提交前如有重大更改（新增功能、架构变更、工作流调整），必须同步更新 `README.md` 反映当前状态。
+- **Push 前必须审阅代码**：每次 push 之前必须调用 `format-and-comment-reviewer` agent 审阅代码变更，确保格式合规、注释准确。
+- **OTHER.txt 是微量数据**：OTHER.txt 记录枚举降级为 OTHER 的异常 nid，总量不超过 20 条。对此文件的任何操作无需考虑性能或内存膨胀问题。
 
 ## Coding Style
 
