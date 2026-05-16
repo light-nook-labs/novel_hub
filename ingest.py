@@ -123,7 +123,13 @@ def ingest(
 
     if all_other_nids:
         OTHER_FILE = ROOT / "OTHER.txt"
-        with open(OTHER_FILE, "a") as f:
+        if OTHER_FILE.exists():
+            with open(OTHER_FILE) as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        all_other_nids.add(int(line))
+        with open(OTHER_FILE, "w") as f:
             for nid in sorted(all_other_nids):
                 f.write(f"{nid}\n")
         print(f"OTHER 降级 {len(all_other_nids)} 条 -> {OTHER_FILE}")
