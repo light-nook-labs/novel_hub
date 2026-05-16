@@ -140,12 +140,18 @@ def _write_banners_and_tags(
 ) -> None:
     """写入 Banner（去重插入）和 NovelTagLink（删旧插新）。"""
     if banner_rows:
-        session.execute(
-            sa_insert(Banner.__table__).on_conflict_do_nothing(
-                index_elements=["url", "novel_id"]
-            ),
-            banner_rows,
-        )
+        urls = [b["url"] for b in banner_rows]
+        existing = session.exec(
+            select(Banner.url, Banner.novel_id).where(Banner.url.in_(urls))
+        ).all()
+        existing_set = {(b[0], b[1]) for b in existing}
+        new_banners = [
+            b
+            for b in banner_rows
+            if (b["url"], b["novel_id"]) not in existing_set
+        ]
+        if new_banners:
+            session.execute(sa_insert(Banner.__table__), new_banners)
 
     if tag_link_rows:
         nids_to_clear = {nid for _, nid in tag_link_rows}
