@@ -3,11 +3,11 @@
 三阶段流水线：并行加载清洗 -> 顺序写入 SQLite -> 同步云端。
 """
 
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -17,21 +17,41 @@ from database.cloud import _sync_to_cloud
 from database.engine import cloud_engine, sqlite_engine
 from database.writer import commit_dataframe
 
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
 ROOT = Path(__file__).parent
 OUTPUT_DIR = ROOT / "output"
+LOG_DIR = ROOT / "logs"
 
-if __name__ == "__main__":
-    create_db_and_table(sqlite_engine)
 
-    paths: list[Path] = []
-    if len(sys.argv) > 1:
-        paths = [Path(a) for a in sys.argv[1:]]
-    else:
+def ingest(
+    paths: "Sequence[Path] | None" = None,
+    *,
+    init_cloud: bool = True,
+) -> tuple[int, int, int]:
+    """执行元数据入库流程。
+
+    Args:
+        paths: 待处理的 jsonl 文件路径列表，None 则遍历 output/ 目录
+        init_cloud: 是否在开始时初始化云端数据库表（main 风格），
+                    False 则延迟到 Phase 3 前初始化（旧 ingest 风格）
+
+    Returns:
+        (total_inserted, total_updated, other_nids_count)
+    """
+    if paths is None:
         paths = sorted(OUTPUT_DIR.glob("*.jsonl"))
+    else:
+        paths = list(paths)
 
     if not paths:
         print("无待处理的 .jsonl 文件")
-        sys.exit(0)
+        return 0, 0, 0
+
+    create_db_and_table(sqlite_engine)
+    if init_cloud and cloud_engine is not None:
+        create_db_and_table(cloud_engine)
 
     t_total = time.perf_counter()
     log_lines: list[str] = []
@@ -69,7 +89,7 @@ if __name__ == "__main__":
         )
 
     # Phase 3: 一次性同步云端
-    if cloud_engine is not None:
+    if not init_cloud and cloud_engine is not None:
         create_db_and_table(cloud_engine)
     t_cloud0 = time.perf_counter()
     if dfs:
@@ -95,7 +115,8 @@ if __name__ == "__main__":
     )
 
     # 写入 LOG.txt
-    LOG_FILE = ROOT / f"LOG_{datetime.now():%Y-%m-%d}.txt"
+    LOG_DIR.mkdir(exist_ok=True)
+    LOG_FILE = LOG_DIR / f"LOG_{datetime.now():%Y-%m-%d}.txt"
     with open(LOG_FILE, "a") as f:
         for line in log_lines:
             f.write(line + "\n")
@@ -109,3 +130,15 @@ if __name__ == "__main__":
 
     print(f"日志 -> {LOG_FILE}")
     print("完成")
+
+    return total_inserted, total_updated, len(all_other_nids)
+
+
+if __name__ == "__main__":
+    import sys
+
+    paths: list[Path] = []
+    if len(sys.argv) > 1:
+        paths = [Path(a) for a in sys.argv[1:]]
+
+    ingest(paths if paths else None, init_cloud=False)

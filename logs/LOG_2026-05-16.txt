@@ -1,0 +1,5 @@
+
+2026-05-16 13:04:14 | meta_03.jsonl | SQLite | rows=4079 ins=4079 upd=0 other=0 | 0.2s
+2026-05-16 13:04:14 | meta_15.jsonl | SQLite | rows=6016 ins=6016 upd=0 other=0 | 0.2s
+2026-05-16 13:04:52 | ALL | Cloud Sync | ins=10095 upd=0 | 37.0s
+2026-05-16 13:04:52 | TOTAL | files=2 ins=10095 upd=0 other=0 | 37.6s

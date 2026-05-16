@@ -218,4 +218,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 
+# SQLite WAL mode files
+*.db-shm
+*.db-wal
+
 o.jsonl
