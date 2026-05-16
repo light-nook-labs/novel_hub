@@ -19,6 +19,7 @@ def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
         return 0, 0
 
     total_ins, total_upd = 0, 0
+    known_nids: set[int] = set()
     chunks = range(0, len(df), CLOUD_CHUNK_SIZE)
 
     for i, start in enumerate(chunks):
@@ -27,7 +28,9 @@ def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
         retries = 3
         for attempt in range(1, retries + 1):
             try:
-                ins, upd, _ = commit_dataframe(chunk, cloud_engine)
+                ins, upd, _ = commit_dataframe(
+                    chunk, cloud_engine, known_nids=known_nids
+                )
                 total_ins += ins
                 total_upd += upd
                 break
