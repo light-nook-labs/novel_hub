@@ -1,5 +1,32 @@
-
-2026-05-16 13:04:14 | meta_03.jsonl | SQLite | rows=4079 ins=4079 upd=0 other=0 | 0.2s
-2026-05-16 13:04:14 | meta_15.jsonl | SQLite | rows=6016 ins=6016 upd=0 other=0 | 0.2s
-2026-05-16 13:04:52 | ALL | Cloud Sync | ins=10095 upd=0 | 37.0s
-2026-05-16 13:04:52 | TOTAL | files=2 ins=10095 upd=0 other=0 | 37.6s
+2026-05-16 15:08:28 | meta.jsonl | SQLite | rows=9119 ins=9119 upd=0 other=0 | 0.6s
+2026-05-16 15:08:28 | meta_03.jsonl | SQLite | rows=4079 ins=4079 upd=0 other=0 | 0.3s
+2026-05-16 15:08:29 | meta_04.jsonl | SQLite | rows=12312 ins=12295 upd=17 other=0 | 0.8s
+2026-05-16 15:08:30 | meta_05.jsonl | SQLite | rows=12002 ins=11980 upd=22 other=0 | 0.7s
+2026-05-16 15:08:31 | meta_06.jsonl | SQLite | rows=12020 ins=11995 upd=25 other=0 | 0.7s
+2026-05-16 15:08:31 | meta_07.jsonl | SQLite | rows=12023 ins=11991 upd=32 other=0 | 0.9s
+2026-05-16 15:08:32 | meta_08.jsonl | SQLite | rows=12006 ins=11978 upd=28 other=0 | 0.7s
+2026-05-16 15:08:33 | meta_09.jsonl | SQLite | rows=12013 ins=11980 upd=33 other=0 | 0.8s
+2026-05-16 15:08:34 | meta_10.jsonl | SQLite | rows=11995 ins=11992 upd=3 other=0 | 0.8s
+2026-05-16 15:08:34 | meta_11.jsonl | SQLite | rows=12022 ins=11979 upd=43 other=0 | 0.8s
+2026-05-16 15:08:35 | meta_12.jsonl | SQLite | rows=12023 ins=11995 upd=28 other=0 | 0.9s
+2026-05-16 15:08:36 | meta_13.jsonl | SQLite | rows=12019 ins=11959 upd=60 other=0 | 0.8s
+2026-05-16 15:08:37 | meta_14.jsonl | SQLite | rows=12016 ins=11975 upd=41 other=0 | 0.8s
+2026-05-16 15:08:38 | meta_15.jsonl | SQLite | rows=12018 ins=11976 upd=42 other=0 | 0.8s
+2026-05-16 15:13:18 | ALL | Cloud Sync | ins=157293 upd=374 | 280.4s
+2026-05-16 15:13:18 | TOTAL | files=14 ins=157293 upd=374 other=0 | 292.9s
+2026-05-16 15:17:04 | meta.jsonl | SQLite | rows=9119 ins=9119 upd=0 other=0 | 0.5s
+2026-05-16 15:17:04 | meta_03.jsonl | SQLite | rows=4079 ins=4079 upd=0 other=0 | 0.3s
+2026-05-16 15:17:05 | meta_04.jsonl | SQLite | rows=12312 ins=12295 upd=17 other=0 | 0.7s
+2026-05-16 15:17:06 | meta_05.jsonl | SQLite | rows=12002 ins=11980 upd=22 other=0 | 0.7s
+2026-05-16 15:17:06 | meta_06.jsonl | SQLite | rows=12020 ins=11995 upd=25 other=0 | 0.7s
+2026-05-16 15:17:07 | meta_07.jsonl | SQLite | rows=12023 ins=11991 upd=32 other=0 | 0.9s
+2026-05-16 15:17:08 | meta_08.jsonl | SQLite | rows=12006 ins=11978 upd=28 other=0 | 0.7s
+2026-05-16 15:17:09 | meta_09.jsonl | SQLite | rows=12013 ins=11980 upd=33 other=0 | 0.7s
+2026-05-16 15:17:09 | meta_10.jsonl | SQLite | rows=11995 ins=11992 upd=3 other=0 | 0.7s
+2026-05-16 15:17:10 | meta_11.jsonl | SQLite | rows=12022 ins=11979 upd=43 other=0 | 0.8s
+2026-05-16 15:17:11 | meta_12.jsonl | SQLite | rows=12023 ins=11995 upd=28 other=0 | 0.9s
+2026-05-16 15:17:12 | meta_13.jsonl | SQLite | rows=12019 ins=11959 upd=60 other=0 | 0.7s
+2026-05-16 15:17:13 | meta_14.jsonl | SQLite | rows=12016 ins=11975 upd=41 other=0 | 0.8s
+2026-05-16 15:17:13 | meta_15.jsonl | SQLite | rows=12018 ins=11976 upd=42 other=0 | 0.8s
+2026-05-16 15:17:38 | ALL | Cloud Sync | ins=157293 upd=374 | 24.4s
+2026-05-16 15:17:38 | TOTAL | files=14 ins=157293 upd=374 other=0 | 36.2s
