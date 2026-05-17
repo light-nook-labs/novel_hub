@@ -1,3 +1,8 @@
+"""
+Create database and tables
+"""
+
+
 from . import SQLModel
 
 

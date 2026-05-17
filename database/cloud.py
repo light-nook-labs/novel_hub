@@ -20,6 +20,8 @@ def _sync_to_cloud(df: pd.DataFrame) -> tuple[int, int]:
 
     total_ins, total_upd = 0, 0
     known_nids: set[int] = set()
+
+    # Divide df into several chunks to improve I/O
     chunks = range(0, len(df), CLOUD_CHUNK_SIZE)
 
     for i, start in enumerate(chunks):
