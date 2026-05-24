@@ -55,19 +55,6 @@ class Contest(SQLModel, table=True):
     )
 
 
-class Banner(SQLModel, table=True):
-    __table_args__ = (UniqueConstraint("url", "novel_id"),)
-
-    id: int | None = Field(primary_key=True, default=None)
-    url: str
-
-    # Foreign Key
-    novel_id: int | None = Field(
-        default=None, foreign_key="novel.id", ondelete="SET NULL"
-    )
-    novel: Optional["Novel"] | None = Relationship(back_populates="banners")
-
-
 ##############
 # Main Table #
 ##############
@@ -104,11 +91,6 @@ class Novel(SQLModel, table=True):
         default=None, foreign_key="contest.id", ondelete="SET NULL"
     )
     contest: Contest | None = Relationship(back_populates="novels")
-
-    # One to many: Novel(1) Banner(n)
-    banners: list[Banner] = Relationship(
-        back_populates="novel", passive_deletes="all"
-    )
 
     # Many to many: Novel(m) Tag(n)
     tags: list[Tag] = Relationship(
