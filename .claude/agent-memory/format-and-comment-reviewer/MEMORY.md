@@ -1,3 +1,0 @@
-- [Comment separator style](project_comment_separators.md) — #-block separators must match enclosed text width, as in models.py
-- [Clean up orphans from own changes](feedback_surgical_orphans.md) — remove imports/vars/funcs your changes made unused, leave pre-existing dead code alone
-- [Style baselines](style_baselines_observed.md) — import order, comment-block, and type-annotation patterns from models.py/enums.py

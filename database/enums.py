@@ -2,23 +2,29 @@
 
 from abc import ABC
 from enum import IntEnum, unique
+from typing import Literal
+from string import ascii_letters
+import re
 
+
+CHARACTERS = ascii_letters + "-_"
+pattern = re.compile(rf"^[{CHARACTERS}]+$")
 
 class MappingBase(ABC):
-    """Maps English attribute names to Chinese labels."""
+    """Maps English attribute names to Chinese(another language) labels."""
 
-    def __init__(self):
-        mapping = {}
-        for cls in reversed(self.__class__.mro()):
-            mapping.update(
-                {
-                    k: v
-                    for k, v in vars(cls).items()
-                    if isinstance(v, str) and not k.startswith("_")
-                }
-            )
-        self._en_zh = mapping
-        self._zh_en = {v: k for k, v in mapping.items()}
+    def __init__(self, en_zh_mapping_dict: dict[str, str]):
+        self._validate_mapping_dict(en_zh_mapping_dict)
+        self._mapping: dict[str, str] = en_zh_mapping_dict
+        # Fallback key-value
+        self._mapping["other"] = "其他"
+        self._en_zh: dict[str, str] = self._mapping
+        self._zh_en: dict[str, str] = {v: k for k, v in self._mapping.items()}
+
+    def _validate_mapping_dict(self, en_zh_mapping_dict):
+        invalid_keys = [k for k in en_zh_mapping_dict if not pattern.fullmatch(k)]
+        if invalid_keys:
+            raise ValueError(f"Invalid keys: {invalid_keys}. Keys must consist of ascii letters, '_' or '-'.")
 
     @property
     def en_zh_mapping(self) -> dict[str, str]:
@@ -30,12 +36,16 @@ class MappingBase(ABC):
         """Chinese -> English mapping dict."""
         return self._zh_en
 
-    def get_en_label(self, chinese_label: str, format: str = "lower") -> str:
+    def get_en_label(
+        self,
+        chinese_label: str,
+        fmt: Literal["lower", "upper", "title"] = "lower",
+    ) -> str:
         """Get English label in specified format.
 
         Args:
             chinese_label: Chinese label to look up.
-            format: Output case: lower, upper, or title. Default is lower.
+            fmt: Output case: lower, upper, or title. Default is lower.
         """
         en = self.zh_en_mapping.get(chinese_label, "other")
         match format.lower():
@@ -53,7 +63,8 @@ class MappingBase(ABC):
         return self.en_zh_mapping.get(english_label.lower(), "其他")
 
     def __str__(self):
-        return f"<Class {self.__class__.__name__}>"
+        kwargs = ", ".join(f"{k}={v}" for k, v in self._mapping.items())
+        return f"<Class {self.__class__.__name__}({kwargs})>"
 
 
 class GenreMapping(MappingBase):
@@ -149,7 +160,7 @@ class Genre(LabeledIntEnum):
     OTHER = 99
 
 
-Genre._mapping = GenreMapping()
+# Genre._mapping = GenreMapping()
 
 
 class Status(LabeledIntEnum):
@@ -161,7 +172,7 @@ class Status(LabeledIntEnum):
     OTHER = 99
 
 
-Status._mapping = StatusMapping()
+# Status._mapping = StatusMapping()
 
 
 class PType(LabeledIntEnum):
@@ -171,4 +182,8 @@ class PType(LabeledIntEnum):
     OTHER = 99
 
 
-PType._mapping = PTypeMapping()
+# PType._mapping = PTypeMapping()
+
+
+if __name__ == '__main__':
+    print(pattern.search('GOOD_+'))

@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 from database.cleaner import PRICE_TYPE_ID_TO_LABEL, STATUS_ID_TO_LABEL
 from database.enums import Genre, PType, Status
-from database.models import Author, Banner, Contest, Novel, NovelTagLink, Tag
+from database.models import Author, Contest, Novel, NovelTagLink, Tag
 
 _BATCH_UPSERT_CHUNK = 200
 

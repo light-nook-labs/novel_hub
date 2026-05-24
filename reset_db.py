@@ -7,7 +7,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
 from database.engine import cloud_engine, sqlite_engine
-from database.models import Author, Banner, Contest, Novel, NovelTagLink, Tag
+from database.models import Author, Contest, Novel, NovelTagLink, Tag
 from sqlmodel import Session
 
 
@@ -43,7 +43,7 @@ def reset():
                 s.exec(text("PRAGMA foreign_keys = OFF;"))
 
             # 按顺序删除表
-            for t in [NovelTagLink, Banner, Novel, Contest, Author, Tag]:
+            for t in [NovelTagLink, Novel, Contest, Author, Tag]:
                 s.exec(t.__table__.delete())
 
         finally:
