@@ -1,8 +1,8 @@
 name: auto14
 
 on:
-  schedule:
-    - cron: "44 04 * * *"
+  # schedule:
+  #   - cron: "44 04 * * *"
   workflow_dispatch:
     inputs:
       num:
