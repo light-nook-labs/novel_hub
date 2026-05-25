@@ -4,9 +4,7 @@ ORM
 
 
 from datetime import datetime
-from typing import Optional
 
-from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 ####################
@@ -70,6 +68,7 @@ class Novel(SQLModel, table=True):
     word_num: int | None = None
     praise_num: int | None = None
     like_num: int | None = None
+    has_banner: bool = Field(default=False, index=True)
     cover: str | None = None
 
     last_update: datetime | None = None
