@@ -96,4 +96,4 @@ class Novel(SQLModel, table=True):
     )
 
 
-__all__ = [Author, Contest, Novel, NovelTagLink, Tag]
+__all__ = ["Author", "Contest", "Novel", "NovelTagLink", "Tag"]

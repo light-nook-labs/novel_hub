@@ -42,7 +42,7 @@ else:
     cloud_engine = None
 
 
-__all__ = [SQLModel, sqlite_engine, cloud_engine]
+__all__ = ["SQLModel", "sqlite_engine", "cloud_engine"]
 
 
 if __name__ == '__main__':

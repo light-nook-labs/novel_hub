@@ -12,10 +12,10 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from database.app import create_db_and_table
-from database.cleaner import load_and_clean
-from database.cloud import _sync_to_cloud
+from old.cleaner import load_and_clean
+from old.cloud import _sync_to_cloud
 from database.engine import cloud_engine, sqlite_engine
-from database.writer import commit_dataframe
+from old.writer import commit_dataframe
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

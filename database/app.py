@@ -14,4 +14,4 @@ def create_db_and_table(engine):
             conn.commit()
 
 
-__all__ = [create_db_and_table]
+__all__ = ["create_db_and_table"]
