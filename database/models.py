@@ -2,7 +2,6 @@
 ORM
 """
 
-
 from datetime import datetime
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -95,3 +94,6 @@ class Novel(SQLModel, table=True):
     tags: list[Tag] = Relationship(
         back_populates="novels", link_model=NovelTagLink
     )
+
+
+__all__ = [Author, Contest, Novel, NovelTagLink, Tag]

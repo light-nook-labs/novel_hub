@@ -2,7 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from sqlmodel import create_engine, SQLModel
-from sqlmodel import text as sql_text
+
 
 load_dotenv()
 
@@ -15,11 +15,6 @@ sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 sqlite_engine = create_engine(sqlite_url, echo=False)
 
-# WAL 模式提升并发写入性能
-
-with sqlite_engine.connect() as conn:
-    conn.execute(sql_text("PRAGMA journal_mode=WAL"))
-    conn.commit()
 
 
 #########
@@ -41,7 +36,15 @@ if all(_cloud_vars):
     else:
         cloud_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     cloud_engine = create_engine(
-        cloud_url, echo=False, pool_size=5, max_overflow=5
+        cloud_url, pool_size=5, max_overflow=5
     )
 else:
     cloud_engine = None
+
+
+__all__ = [SQLModel, sqlite_engine, cloud_engine]
+
+
+if __name__ == '__main__':
+    print('sqlite' in str(sqlite_engine))
+    print(cloud_engine)
