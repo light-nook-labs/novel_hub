@@ -1,30 +1,88 @@
 """Enums and mappers for SFACG novel metadata."""
 
-from abc import ABC
 from enum import IntEnum, unique
 from typing import Literal
-from string import ascii_letters
 import re
 
+pattern = re.compile(r"^[-\w]+$", re.I)
 
-CHARACTERS = ascii_letters + "-_"
-pattern = re.compile(rf"^[{CHARACTERS}]+$")
 
-class MappingBase(ABC):
-    """Maps English attribute names to Chinese(another language) labels."""
+# @unique
+# class LabeledIntEnum(IntEnum):
+#     """Base enum with bilingual label support."""
 
-    def __init__(self, en_zh_mapping_dict: dict[str, str]):
-        self._validate_mapping_dict(en_zh_mapping_dict)
-        self._mapping: dict[str, str] = en_zh_mapping_dict
-        # Fallback key-value
-        self._mapping["other"] = "其他"
-        self._en_zh: dict[str, str] = self._mapping
-        self._zh_en: dict[str, str] = {v: k for k, v in self._mapping.items()}
+#     # _mapping: Mapping
 
-    def _validate_mapping_dict(self, en_zh_mapping_dict):
-        invalid_keys = [k for k in en_zh_mapping_dict if not pattern.fullmatch(k)]
+#     @classmethod
+#     def get_mapping(cls) -> Mapping:
+#         return cls._mapping
+    
+#     @property
+#     def m(self) -> Mapping:
+#         return self._mapping
+
+#     def get_label(self, lang: Literal["en", "zh"] ="en") -> str:
+#         match lang.lower():
+#             case "en":
+#                 return self.name.lower()
+#             case "zh":
+#                 return self.m.get_zh_label(self.name.lower())
+#             case _:
+#                 return self.name.lower()
+
+#     @property
+#     def en_label(self) -> str:
+#         return self.get_label(lang="en")
+
+#     @property
+#     def zh_label(self) -> str:
+#         return self.get_label(lang="zh")
+
+#     @classmethod
+#     def from_label(cls, label: str) -> "LabeledIntEnum":
+#         mapping = cls.get_mapping()
+#         if label in mapping.zh_en_mapping:
+#             enum_name = mapping.zh_en_mapping[label].upper()
+#             return cls[enum_name]
+#         if label.upper() in cls.__members__:
+#             return cls[label.upper()]
+#         return cls.OTHER
+
+
+class Mapping:
+    """Maps English attribute names to Chinese labels.
+    Case insensitive.
+    'other' mapped to '其他' is reserved.
+    """
+
+    def __init__(self, **en_zh_mapping_dict):
+        self._en_zh, self._zh_en = self._validate_and_create_mapping_dict(
+            en_zh_mapping_dict
+        )
+        self.enum = IntEnum(f'{self.__class__.__name__}Enum', list(self._en_zh.keys()))
+
+    def _validate_and_create_mapping_dict(
+        self, en_zh_mapping_dict: dict
+    ) -> tuple[dict[str, str], dict[str, str]]:
+        en_zh: dict[str, str] = {}
+        zh_en: dict[str, str] = {}
+        invalid_keys = [
+            k for k in en_zh_mapping_dict if not pattern.fullmatch(k)
+        ]
         if invalid_keys:
-            raise ValueError(f"Invalid keys: {invalid_keys}. Keys must consist of ascii letters, '_' or '-'.")
+            raise ValueError(
+                f"Invalid keys: {invalid_keys}. Keys must consist of ascii letters, digits, '_' or '-'."
+            )
+        zh_set: set[str] = set(en_zh_mapping_dict.values())
+        if len(zh_set) != len(en_zh_mapping_dict):
+            raise ValueError(
+                "Keys and Values must be unique in en_zh_mapping_dict."
+            )
+        en_zh_mapping_dict["other"] = "其他"
+        for en, zh in en_zh_mapping_dict.items():
+            en_zh[en] = zh
+            zh_en[zh] = en
+        return en_zh, zh_en
 
     @property
     def en_zh_mapping(self) -> dict[str, str]:
@@ -48,7 +106,7 @@ class MappingBase(ABC):
             fmt: Output case: lower, upper, or title. Default is lower.
         """
         en = self.zh_en_mapping.get(chinese_label, "other")
-        match format.lower():
+        match fmt.lower():
             case "lower":
                 return en.lower()
             case "upper":
@@ -59,131 +117,113 @@ class MappingBase(ABC):
                 return en.lower()
 
     def get_zh_label(self, english_label: str) -> str:
-        """Get Chinese label from English label."""
+        """Get Chinese label from English label.
+        
+        Args:
+            english_label: English label to look up.
+        """
         return self.en_zh_mapping.get(english_label.lower(), "其他")
 
     def __str__(self):
-        kwargs = ", ".join(f"{k}={v}" for k, v in self._mapping.items())
+        kwargs = ", ".join(f"{k}={v}" for k, v in self.en_zh_mapping.items())
         return f"<Class {self.__class__.__name__}({kwargs})>"
 
 
-class GenreMapping(MappingBase):
-    magic = "魔幻"
-    fantasy = "玄幻"
-    ancient = "古风"
-    sf = "科幻"
-    school = "校园"
-    urban = "都市"
-    game = "游戏"
-    doujin = "同人"
-    mystery = "悬疑"
 
 
-class StatusMapping(MappingBase):
-    finished = "已完结"
-    on_going = "连载中"
 
-    # Fake labels for implicit statuses
-    died = "断更"
-    active_f = "活跃F"  # finished but active
-    active_d = "活跃D"  # died but active
+# class GenreMapping(LabeledIntEnum):
+#     MAGIC = 1
+#     FANTASY = 2
+#     ANCIENT = 3
+#     SF = 4
+#     SCHOOL = 5
+#     URBAN = 6
+#     GAME = 7
+#     DOUJIN = 8
+#     MYSTERY = 9
+#     OTHER = 99
 
-    def get_zh_label(self, english_label, is_true_label=False):
-        """Get Chinese label, optionally collapsing fake labels to real ones.
-
-        When is_true_label is False, active_f and finished both map to
-        '已完结'; on_going, died, and active_d all map to '连载中'.
-        """
-        if is_true_label:
-            return super().get_zh_label(english_label)
-        if english_label in ("active_f", "finished"):
-            return super().get_zh_label("finished")
-        if english_label in ("on_going", "died", "active_d"):
-            return super().get_zh_label("on_going")
-        return super().get_zh_label(english_label)
+# GenreMapping._mapping = Mapping(**GenreMapping)
 
 
-class PTypeMapping(MappingBase):
-    free = "免费"
-    sign = "签约"
-    vip = "VIP"
+# class StatusMapping(MappingBase):
+#     finished = "已完结"
+#     on_going = "连载中"
+
+#     # Fake labels for implicit statuses
+#     died = "断更"
+#     active_f = "活跃F"  # finished but active
+#     active_d = "活跃D"  # died but active
+
+#     def get_zh_label(self, english_label, is_true_label=False):
+#         """Get Chinese label, optionally collapsing fake labels to real ones.
+
+#         When is_true_label is False, active_f and finished both map to
+#         '已完结'; on_going, died, and active_d all map to '连载中'.
+#         """
+#         if is_true_label:
+#             return super().get_zh_label(english_label)
+#         if english_label in ("active_f", "finished"):
+#             return super().get_zh_label("finished")
+#         if english_label in ("on_going", "died", "active_d"):
+#             return super().get_zh_label("on_going")
+#         return super().get_zh_label(english_label)
 
 
-@unique
-class LabeledIntEnum(IntEnum):
-    """Base enum with bilingual label support."""
-
-    _mapping: MappingBase
-
-    @classmethod
-    def get_mapping(cls) -> MappingBase:
-        return cls._mapping
-
-    def get_label(self, lang="en") -> str:
-        match lang.lower():
-            case "en":
-                return self.name.lower()
-            case "zh":
-                return self.get_mapping().get_zh_label(self.name.lower())
-            case _:
-                return self.name.lower()
-
-    @property
-    def en_label(self) -> str:
-        return self.get_label(lang="en")
-
-    @property
-    def zh_label(self) -> str:
-        return self.get_label(lang="zh")
-
-    @classmethod
-    def from_label(cls, label: str) -> "LabeledIntEnum":
-        mapping = cls.get_mapping()
-        if label in mapping.zh_en_mapping:
-            enum_name = mapping.zh_en_mapping[label].upper()
-            return cls[enum_name]
-        if label.upper() in cls.__members__:
-            return cls[label.upper()]
-        return cls.OTHER
+# class PTypeMapping(MappingBase):
+#     free = "免费"
+#     sign = "签约"
+#     vip = "VIP"
 
 
-class Genre(LabeledIntEnum):
-    MAGIC = 1
-    FANTASY = 2
-    ANCIENT = 3
-    SF = 4
-    SCHOOL = 5
-    URBAN = 6
-    GAME = 7
-    DOUJIN = 8
-    MYSTERY = 9
-    OTHER = 99
 
 
-# Genre._mapping = GenreMapping()
+# class Genre(LabeledIntEnum):
+#     MAGIC = 1
+#     FANTASY = 2
+#     ANCIENT = 3
+#     SF = 4
+#     SCHOOL = 5
+#     URBAN = 6
+#     GAME = 7
+#     DOUJIN = 8
+#     MYSTERY = 9
+#     OTHER = 99
 
 
-class Status(LabeledIntEnum):
-    FINISHED = 1
-    ON_GOING = 2
-    DIED = 3
-    ACTIVE_F = 4
-    ACTIVE_D = 5
-    OTHER = 99
+# # Genre._mapping = GenreMapping()
 
 
-# Status._mapping = StatusMapping()
+# class Status(LabeledIntEnum):
+#     FINISHED = 1
+#     ON_GOING = 2
+#     DIED = 3
+#     ACTIVE_F = 4
+#     ACTIVE_D = 5
+#     OTHER = 99
 
 
-class PType(LabeledIntEnum):
-    FREE = 1
-    SIGN = 2
-    VIP = 3
-    OTHER = 99
+# # Status._mapping = StatusMapping()
 
 
-# PType._mapping = PTypeMapping()
+# class PType(LabeledIntEnum):
+#     FREE = 1
+#     SIGN = 2
+#     VIP = 3
+#     OTHER = 99
 
 
-if __name__ == '__main__':
-    print(pattern.search('GOOD_+'))
+# # PType._mapping = PTypeMapping()
+
+
+if __name__ == "__main__":
+    # print(pattern.search('GOOD_+'))
+
+    # print(pattern.search('GOOD_'))
+    m = Mapping(good="好的")
+    print(m.enum)
+    print(list(m.enum))
+
+    # Color = IntEnum("Color", ("RED", "GREEN", "BLUE"))
+    # print(list(Color))
