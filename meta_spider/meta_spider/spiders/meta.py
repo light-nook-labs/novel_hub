@@ -6,6 +6,7 @@ from urllib.parse import urlencode, urljoin
 from scrapy import Spider, Request
 from scrapy.exceptions import CloseSpider
 from scrapy.http import HtmlResponse, JsonResponse
+import requests
 
 from ..models import Meta
 
@@ -16,6 +17,10 @@ class MetaSpider(Spider):
     allowed_domains = ["book.sfacg.com"]
     _base_url = "https://book.sfacg.com/List/default.aspx"
     _common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
+
+    def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.session = requests.Session()
 
     async def start(self):
         """CLI Args
@@ -32,7 +37,7 @@ class MetaSpider(Spider):
         self.begin_num = int(getattr(self, "begin", 1))
         self.curr_page = self.begin_num
         self.total_num = int(getattr(self, "num", 2))
-        self.end_page = self.begin_num + self.total_num
+        self.end_page = self.begin_num + self.total_num - 1
 
         yield Request(self._join_url(), callback=self.parse)
 
@@ -55,25 +60,31 @@ class MetaSpider(Spider):
             # nid, cover, title, author, score, genre
             **meta_info,
         )
-        # yield data
-        yield Request(
-            self._get_comment_url(data["nid"]),
-            callback=self.parse_comment,
-            cb_kwargs={"data": data},
-        )
+        comment_data = self.get_comment(data["nid"])
+        yield Meta(**data, **comment_data)
+        # yield Request(
+        #     self._get_comment_url(data["nid"]),
+        #     callback=self.parse_comment,
+        #     cb_kwargs={"data": data},
+        # )
 
-    def _get_comment_url(self, nid: int) -> str:
+    # def _get_comment_url(self, nid: int) -> str:
+    #     return urljoin(self._common_url, f"?{urlencode(params)}")
+
+    def get_comment(self, nid: int) -> dict[str, int]:
+        ua = self.settings.get("USER_AGENT", "")
+        headers = {"User-Agent": ua}
         params = {"op": "getcomment", "nid": nid, "_": int(time() * 1000)}
-        return urljoin(self._common_url, f"?{urlencode(params)}")
-
-    def parse_comment(self, response: JsonResponse, data: dict[str, Any]):
-        d: dict[str, Any] = response.json()
-        comment_data = dict(
-            **data,
-            comment_num=d.get("ShortCommentNum"),
-            review_num=d.get("LongCommentNum"),
+        try:
+            res = self.session.get(self._common_url, params=params, headers=headers, timeout=10)
+            res.raise_for_status()
+            data = res.json()
+        except requests.HTTPError:
+            data = {}
+        return dict(
+            comment_num=data.get("ShortCommentNum"),
+            review_num=data.get("LongCommentNum"),
         )
-        yield Meta(**comment_data).model_dump()
 
     def _join_url(self):
         params = {"PageIndex": self.curr_page}
@@ -111,8 +122,6 @@ class MetaSpider(Spider):
         self.curr_page += 1
         if self.curr_page <= self.end_page:
             yield response.follow(self._join_url(), callback=self.parse)
-        else:
-            raise CloseSpider()
 
     def _row(self, row: list[str]) -> dict[str, int | str | datetime]:
         # ['类型：魔幻', '字数：3240533字[连载中]', '点击：4757.4万', '更新：2026/5/25 20:26:36']

@@ -223,4 +223,5 @@ __marimo__/
 *.db-wal
 
 o.jsonl
+data.jsonl
 database.db
