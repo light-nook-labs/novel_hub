@@ -62,5 +62,5 @@ def reset():
     print("Cloud tables truncated")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     reset()

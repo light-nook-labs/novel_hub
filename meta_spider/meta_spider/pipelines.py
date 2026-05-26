@@ -11,14 +11,14 @@ from itemadapter import ItemAdapter
 
 class MetaSpiderPipeline:
     def process_item(self, item):
-        field = ['nid', 'tags']
+        field = ["nid", "tags"]
         line = {key: item[key] for key in field}
-        line = json.dumps(line, ensure_ascii=False) + '\n'
+        line = json.dumps(line, ensure_ascii=False) + "\n"
         self.file.write(line)
         return item
-    
+
     def open_spider(self):
-        self.file = open('tag.jsonl', 'a', encoding='utf-8')
+        self.file = open("tag.jsonl", "a", encoding="utf-8")
 
     def close_spider(self):
         self.file.close()

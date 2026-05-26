@@ -2,7 +2,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 COVER_BASE = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
 BANNER_BASE = "http://rs.sfacg.com/web/novel/images/images/"
 DEFAULT_COVER = "defaultNew"
@@ -75,9 +74,7 @@ def load_and_clean(filepath: Path) -> pd.DataFrame:
         lambda u: (
             None
             if u == DEFAULT_COVER + COVER_SUFFIX
-            else u.removesuffix(COVER_SUFFIX)
-            if isinstance(u, str)
-            else u
+            else u.removesuffix(COVER_SUFFIX) if isinstance(u, str) else u
         )
     )
     # banner 仅保留查询参数（其余部分可由 nid + 固定前缀还原）

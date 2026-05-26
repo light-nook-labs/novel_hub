@@ -1,28 +1,83 @@
-from urllib.parse import urlencode, urljoin
-from typing import Any
-import re
 from datetime import datetime
+from time import time
+from typing import Any
+from urllib.parse import urlencode, urljoin
 
 from scrapy import Spider, Request
 from scrapy.exceptions import CloseSpider
-from scrapy.http import HtmlResponse
+from scrapy.http import HtmlResponse, JsonResponse
+
+from ..models import Meta
 
 
 class MetaSpider(Spider):
     # scrapy shell "https://book.sfacg.com/List/default.aspx?PageIndex=1"
     name = "meta"
     allowed_domains = ["book.sfacg.com"]
-    # start_urls = ["https://book.sfacg.com"]
     _base_url = "https://book.sfacg.com/List/default.aspx"
-    _params = {
-        "PageIndex": 0,
-    }
+    _common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 
     async def start(self):
-        urls = [self._join_url()]
-        print(urls)
-        for url in urls:
-            yield Request(url, callback=self.parse)
+        """CLI Args
+
+        Args:
+            begin: start page
+            num: total num
+
+        Examples:
+            - scrapy crawl meta -o o.jsonl -a num=3
+            - scrapy crawl meta -o o.jsonl -a num=3 -a begin=22
+            - scrapy crawl meta -o o.jsonl -a begin=12465
+        """
+        self.begin_num = int(getattr(self, "begin", 1))
+        self.curr_page = self.begin_num
+        self.total_num = int(getattr(self, "num", 2))
+        self.end_page = self.begin_num + self.total_num
+
+        yield Request(self._join_url(), callback=self.parse)
+
+    def parse_detail(self, response: HtmlResponse, meta_info: dict[str, Any]):
+        # print(meta_info)
+        row = response.css(".count-detail .text-row .text::text").getall()
+        btns = response.css("#BasicOperation .btn::text").getall()
+        ptype_contest = response.css(".title .tag::text").getall()
+        banner = response.css(".d-banner")
+        stags = response.css(".tag-list .tag .highlight .text::text").getall()
+        data = dict(
+            has_banner=bool(banner),
+            # word_num, status, click_num, last_update
+            **self._row(row),
+            # praise_num, like_num
+            **self._btns(btns),
+            # ptype, contest
+            **self._ptype_contest(ptype_contest),
+            tags=stags,
+            # nid, cover, title, author, score, genre
+            **meta_info,
+        )
+        # yield data
+        yield Request(
+            self._get_comment_url(data["nid"]),
+            callback=self.parse_comment,
+            cb_kwargs={"data": data},
+        )
+
+    def _get_comment_url(self, nid: int) -> str:
+        params = {"op": "getcomment", "nid": nid, "_": int(time() * 1000)}
+        return urljoin(self._common_url, f"?{urlencode(params)}")
+
+    def parse_comment(self, response: JsonResponse, data: dict[str, Any]):
+        d: dict[str, Any] = response.json()
+        comment_data = dict(
+            **data,
+            comment_num=d.get("ShortCommentNum"),
+            review_num=d.get("LongCommentNum"),
+        )
+        yield Meta(**comment_data).model_dump()
+
+    def _join_url(self):
+        params = {"PageIndex": self.curr_page}
+        return urljoin(self._base_url, f"?{urlencode(params)}")
 
     def parse(self, response: HtmlResponse):
         items = response.css(".Comic_Pic_List")
@@ -41,11 +96,11 @@ class MetaSpider(Spider):
                 nid=int(
                     novel_url.strip("/").split("/")[-1] if novel_url else 0
                 ),
-                cover=cover,
                 title=(title.strip() if title else ""),
                 author=(author.strip() if author else ""),
                 score=float(score.strip().replace("分", "") if score else 5),
                 genre=(genre.strip() if genre else ""),
+                cover=cover,
             )
             if novel_url:
                 yield response.follow(
@@ -53,7 +108,11 @@ class MetaSpider(Spider):
                     callback=self.parse_detail,
                     cb_kwargs={"meta_info": meta_info},
                 )
-        yield response.follow(self._join_url(), callback=self.parse)
+        self.curr_page += 1
+        if self.curr_page <= self.end_page:
+            yield response.follow(self._join_url(), callback=self.parse)
+        else:
+            raise CloseSpider()
 
     def _row(self, row: list[str]) -> dict[str, int | str | datetime]:
         # ['类型：魔幻', '字数：3240533字[连载中]', '点击：4757.4万', '更新：2026/5/25 20:26:36']
@@ -67,7 +126,7 @@ class MetaSpider(Spider):
             click_num=int(
                 click_num
                 if "万" not in click_num
-                else int(click_num.replace("万")) * 10_000
+                else float(click_num.replace("万", "")) * 10_000
             ),
             last_update=datetime.strptime(last_update, "%Y/%m/%d %H:%M:%S"),
         )
@@ -76,11 +135,10 @@ class MetaSpider(Spider):
         # ['点击阅读', '赞 27872', '收藏 278629']
         # ['赞 294', '收藏 3066']
         praise_num, like_num = [int(btn.split(" ")[-1]) for btn in btns[-2:]]
-        data = dict(
+        return dict(
             praise_num=praise_num,
             like_num=like_num,
         )
-        return data
 
     def _ptype_contest(self, ptype_contest: list[str]) -> dict[str, str]:
         # ['VIP', '第九届冬季征文']
@@ -93,35 +151,6 @@ class MetaSpider(Spider):
         ptype = ptypes & ptype_contest
         contest = ptype_contest - ptypes
         return dict(
-            price_type=("免费" if not ptype else ptype.pop()),
+            ptype=("免费" if not ptype else ptype.pop()),
             contest=("" if not contest else contest.pop()),
         )
-
-    def parse_detail(self, response: HtmlResponse, meta_info: dict[str, Any]):
-        row = response.css(".count-detail .text-row .text::text").getall()
-
-        btns = response.css("#BasicOperation .btn::text").getall()
-        # ['点击阅读', '赞 27872', '收藏 278629']
-
-        ptype_contest = response.css(".title .tag::text").getall()
-        # ['VIP', '十一征长篇']
-
-        banner = response.css(".d-banner")
-
-        stags = response.css(".tag-list .tag .highlight .text::text").getall()
-        yield dict(
-            # nid, cover, title, author, score, genre
-            **meta_info,
-            has_banner=bool(banner),
-            **self._row(row),
-            **self._btns(btns),
-            **self._ptype_contest(ptype_contest),
-            tags=stags,
-        )
-
-    def _join_url(self):
-        self._params["PageIndex"] += 1
-        if self._params["PageIndex"] > 3:
-            raise CloseSpider()
-        params = urlencode(self._params)
-        return urljoin(self._base_url, f"?{params}")
