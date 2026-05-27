@@ -16,8 +16,7 @@ BATCH_SIZE = 1000
 
 class MySQLSyncDataset:
     def __init__(
-        self,
-        run_mode: Literal["full", "incremental"] = "incremental"
+        self, run_mode: Literal["full", "incremental"] = "incremental"
     ):
         """Initialize SQLite to MySQL synchronizer.
 
@@ -45,7 +44,7 @@ class MySQLSyncDataset:
             "TRUNCATE TABLE tag;",
             "TRUNCATE TABLE contest;",
             "TRUNCATE TABLE author;",
-            "SET FOREIGN_KEY_CHECKS = 1;"
+            "SET FOREIGN_KEY_CHECKS = 1;",
         ]
         with Session(cloud_engine) as session:
             for sql in clear_sqls:
@@ -79,25 +78,31 @@ class MySQLSyncDataset:
             cursor = conn.cursor()
             try:
                 for idx in range(0, len(data_tuples), BATCH_SIZE):
-                    batch = data_tuples[idx: idx + BATCH_SIZE]
+                    batch = data_tuples[idx : idx + BATCH_SIZE]
                     cursor.executemany(insert_sql, batch)
                 conn.commit()
                 logger.info("Write table [%s] completed", table_name)
             except Exception as e:
                 conn.rollback()
-                logger.error("Write table [%s] failed, rollback: %s", table_name, str(e))
+                logger.error(
+                    "Write table [%s] failed, rollback: %s", table_name, str(e)
+                )
             finally:
                 cursor.close()
 
     @log_elapsed
     def load_author(self) -> None:
         """Load author data from local SQLite."""
-        self.author_df = pd.read_sql(text("SELECT * FROM author"), con=sqlite_engine)
+        self.author_df = pd.read_sql(
+            text("SELECT * FROM author"), con=sqlite_engine
+        )
 
     @log_elapsed
     def load_contest(self) -> None:
         """Load contest data from local SQLite."""
-        self.contest_df = pd.read_sql(text("SELECT * FROM contest"), con=sqlite_engine)
+        self.contest_df = pd.read_sql(
+            text("SELECT * FROM contest"), con=sqlite_engine
+        )
 
     @log_elapsed
     def load_tag(self) -> None:
@@ -107,12 +112,16 @@ class MySQLSyncDataset:
     @log_elapsed
     def load_novel(self) -> None:
         """Load main novel business data from local SQLite."""
-        self.novel_df = pd.read_sql(text("SELECT * FROM novel"), con=sqlite_engine)
+        self.novel_df = pd.read_sql(
+            text("SELECT * FROM novel"), con=sqlite_engine
+        )
 
     @log_elapsed
     def load_tag_link(self) -> None:
         """Load novel-tag many-to-many relation data from local SQLite."""
-        self.tag_link_df = pd.read_sql(text("SELECT * FROM noveltaglink"), con=sqlite_engine)
+        self.tag_link_df = pd.read_sql(
+            text("SELECT * FROM noveltaglink"), con=sqlite_engine
+        )
 
     @log_elapsed
     def export_dim_tables(self) -> None:
@@ -140,14 +149,18 @@ class MySQLSyncDataset:
             novel_ids = self.tag_link_df["novel_id"].unique().tolist()
             if novel_ids:
                 # 修复：SQLModel Session.exec 使用命名参数 params
-                placeholders = ", ".join([":n" + str(i) for i in range(len(novel_ids))])
+                placeholders = ", ".join(
+                    [":n" + str(i) for i in range(len(novel_ids))]
+                )
                 del_sql = f"DELETE FROM noveltaglink WHERE novel_id IN ({placeholders})"
                 params = {f"n{i}": val for i, val in enumerate(novel_ids)}
 
                 with Session(cloud_engine) as session:
                     session.exec(text(del_sql), params=params)
                     session.commit()
-                logger.info("Old relation records deleted for incremental sync")
+                logger.info(
+                    "Old relation records deleted for incremental sync"
+                )
 
         self._batch_write_table(self.tag_link_df, "noveltaglink")
 
@@ -181,9 +194,10 @@ class MySQLSyncDataset:
 if __name__ == "__main__":
     # Temporary log config for local debugging only
     import logging
+
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # Parse command line argument for running mode

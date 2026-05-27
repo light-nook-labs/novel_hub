@@ -15,7 +15,7 @@ class SQLiteDataset:
     def __init__(
         self,
         raw_df: pd.DataFrame,
-        run_mode: Literal["full", "incremental"] = "incremental"
+        run_mode: Literal["full", "incremental"] = "incremental",
     ):
         """Initialize SQLite ETL handler.
 
@@ -56,7 +56,7 @@ class SQLiteDataset:
                 con=sqlite_engine,
                 if_exists="append",
                 index=False,
-                chunksize=1000
+                chunksize=1000,
             )
         else:
             # Insert and ignore duplicate unique keys for incremental mode
@@ -74,7 +74,7 @@ class SQLiteDataset:
             "DELETE FROM noveltaglink;",
             "DELETE FROM tag;",
             "DELETE FROM contest;",
-            "DELETE FROM author;"
+            "DELETE FROM author;",
         ]
         with sqlite_engine.connect() as conn:
             for sql in clear_sqls:
@@ -86,7 +86,11 @@ class SQLiteDataset:
         """Extract distinct author data from source DataFrame."""
         if self.author_col not in self.raw_df.columns:
             return
-        df = self.raw_df[[self.author_col]].dropna().drop_duplicates(keep="first")
+        df = (
+            self.raw_df[[self.author_col]]
+            .dropna()
+            .drop_duplicates(keep="first")
+        )
         df.rename(columns={self.author_col: "name"}, inplace=True)
         self.author_df = df
 
@@ -95,7 +99,11 @@ class SQLiteDataset:
         """Extract distinct contest data from source DataFrame."""
         if self.contest_col not in self.raw_df.columns:
             return
-        df = self.raw_df[[self.contest_col]].dropna().drop_duplicates(keep="first")
+        df = (
+            self.raw_df[[self.contest_col]]
+            .dropna()
+            .drop_duplicates(keep="first")
+        )
         df.rename(columns={self.contest_col: "name"}, inplace=True)
         self.contest_df = df
 
@@ -109,7 +117,9 @@ class SQLiteDataset:
         if not all(c in self.raw_df.columns for c in cols):
             return
         df_tag_raw = self.raw_df[cols].copy()
-        df_exploded = df_tag_raw.explode(self.tag_col).dropna(subset=[self.tag_col])
+        df_exploded = df_tag_raw.explode(self.tag_col).dropna(
+            subset=[self.tag_col]
+        )
         df_exploded.rename(columns={self.tag_col: "name"}, inplace=True)
         self.tag_exploded_df = df_exploded
         tag_distinct = df_exploded[["name"]].drop_duplicates(keep="first")
@@ -119,10 +129,22 @@ class SQLiteDataset:
     def split_novel(self) -> None:
         """Extract main novel business data from source DataFrame."""
         novel_cols = [
-            "nid", "title", "ptype", "genre", "status",
-            "click_num", "word_num", "praise_num", "like_num",
-            "has_banner", "review_num", "comment_num", "cover",
-            "last_update", self.author_col, self.contest_col
+            "nid",
+            "title",
+            "ptype",
+            "genre",
+            "status",
+            "click_num",
+            "word_num",
+            "praise_num",
+            "like_num",
+            "has_banner",
+            "review_num",
+            "comment_num",
+            "cover",
+            "last_update",
+            self.author_col,
+            self.contest_col,
         ]
         valid_cols = [c for c in novel_cols if c in self.raw_df.columns]
         df = self.raw_df[valid_cols].copy()
@@ -133,20 +155,38 @@ class SQLiteDataset:
     @log_elapsed
     def build_foreign_key(self) -> None:
         """Map dimension table primary key to novel table foreign key."""
-        if not self.author_df.empty and self.author_col in self.novel_df.columns:
+        if (
+            not self.author_df.empty
+            and self.author_col in self.novel_df.columns
+        ):
             self._write_table(self.author_df, "author")
-            author_db_df = pd.read_sql("SELECT id, name FROM author", con=sqlite_engine)
+            author_db_df = pd.read_sql(
+                "SELECT id, name FROM author", con=sqlite_engine
+            )
             author_map = author_db_df.set_index("name")["id"]
-            self.novel_df["author_id"] = self.novel_df[self.author_col].map(author_map)
-            self.novel_df["author_id"] = self.novel_df["author_id"].astype("Int64")
+            self.novel_df["author_id"] = self.novel_df[self.author_col].map(
+                author_map
+            )
+            self.novel_df["author_id"] = self.novel_df["author_id"].astype(
+                "Int64"
+            )
             self.novel_df.drop(columns=[self.author_col], inplace=True)
 
-        if not self.contest_df.empty and self.contest_col in self.novel_df.columns:
+        if (
+            not self.contest_df.empty
+            and self.contest_col in self.novel_df.columns
+        ):
             self._write_table(self.contest_df, "contest")
-            contest_db_df = pd.read_sql("SELECT id, name FROM contest", con=sqlite_engine)
+            contest_db_df = pd.read_sql(
+                "SELECT id, name FROM contest", con=sqlite_engine
+            )
             contest_map = contest_db_df.set_index("name")["id"]
-            self.novel_df["contest_id"] = self.novel_df[self.contest_col].map(contest_map)
-            self.novel_df["contest_id"] = self.novel_df["contest_id"].astype("Int64")
+            self.novel_df["contest_id"] = self.novel_df[self.contest_col].map(
+                contest_map
+            )
+            self.novel_df["contest_id"] = self.novel_df["contest_id"].astype(
+                "Int64"
+            )
             self.novel_df.drop(columns=[self.contest_col], inplace=True)
 
     @log_elapsed
@@ -176,7 +216,7 @@ class SQLiteDataset:
             con=sqlite_engine,
             if_exists="replace",
             index=False,
-            chunksize=1000
+            chunksize=1000,
         )
 
         if self.run_mode == "full":
@@ -214,9 +254,10 @@ class SQLiteDataset:
 
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(
         level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # Parse command line argument for running mode
@@ -235,5 +276,5 @@ if __name__ == "__main__":
     logger.info(f"Load source data | Total rows: {len(df_full)}")
 
     # Execute ETL task
-    dataset = SQLiteDataset(df_full, run_mode='full')
+    dataset = SQLiteDataset(df_full, run_mode="full")
     dataset.process()

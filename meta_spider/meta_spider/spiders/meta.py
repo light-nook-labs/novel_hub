@@ -19,8 +19,8 @@ class MetaSpider(Spider):
     _common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 
     def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.session = requests.Session()
+        super().__init__(*args, **kwargs)
+        self.session = requests.Session()
 
     async def start(self):
         """CLI Args
@@ -76,7 +76,9 @@ class MetaSpider(Spider):
         headers = {"User-Agent": ua}
         params = {"op": "getcomment", "nid": nid, "_": int(time() * 1000)}
         try:
-            res = self.session.get(self._common_url, params=params, headers=headers, timeout=10)
+            res = self.session.get(
+                self._common_url, params=params, headers=headers, timeout=10
+            )
             res.raise_for_status()
             data = res.json()
         except requests.HTTPError:
