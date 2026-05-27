@@ -68,6 +68,8 @@ class Novel(SQLModel, table=True):
     praise_num: int | None = None
     like_num: int | None = None
     has_banner: bool = Field(default=False, index=True)
+    review_num: int | None = None
+    comment_num: int | None = None
     cover: str | None = None
 
     last_update: datetime | None = None

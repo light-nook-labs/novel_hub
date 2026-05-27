@@ -222,4 +222,8 @@ __marimo__/
 *.db-shm
 *.db-wal
 
-o.jsonldatabase.db
+o.jsonl
+data.jsonl
+database.db
+test.db
+*.csv

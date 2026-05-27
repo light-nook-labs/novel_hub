@@ -3,7 +3,6 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import create_engine, SQLModel
 
-
 load_dotenv()
 
 ##########
@@ -14,7 +13,6 @@ sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
 sqlite_engine = create_engine(sqlite_url, echo=False)
-
 
 
 #########
@@ -35,9 +33,7 @@ if all(_cloud_vars):
         cloud_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     else:
         cloud_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    cloud_engine = create_engine(
-        cloud_url, pool_size=5, max_overflow=5
-    )
+    cloud_engine = create_engine(cloud_url, pool_size=5, max_overflow=5)
 else:
     cloud_engine = None
 
@@ -45,6 +41,6 @@ else:
 __all__ = ["SQLModel", "sqlite_engine", "cloud_engine"]
 
 
-if __name__ == '__main__':
-    print('sqlite' in str(sqlite_engine))
+if __name__ == "__main__":
+    print("sqlite" in str(sqlite_engine))
     print(cloud_engine)
