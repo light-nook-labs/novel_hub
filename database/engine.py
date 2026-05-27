@@ -1,50 +1,84 @@
 import os
-
+from pathlib import Path
 from dotenv import load_dotenv
 from sqlmodel import create_engine, SQLModel
 
 load_dotenv()
 
+# Global constants
+PROD_SQLITE_FILE = "database.db"
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 ##########
 # SQLite #
 ##########
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+sqlite_db_path = BASE_DIR / PROD_SQLITE_FILE
+sqlite_url = f"sqlite:///{sqlite_db_path}"
 
 sqlite_engine = create_engine(sqlite_url, echo=False)
+
+
+def create_sqlite_engine(filename: str, echo: bool = True):
+    """Create a SQLite database engine for development usage.
+
+    Production database file is prohibited to avoid accidental data overwrite.
+
+    Args:
+        filename: Name of the target SQLite database file.
+        echo: If True, enable SQL statement logging. Defaults to True.
+
+    Returns:
+        sqlalchemy.engine.Engine: Configured SQLite engine instance.
+
+    Raises:
+        ValueError: When input filename equals production database filename.
+    """
+    if filename == PROD_SQLITE_FILE:
+        raise ValueError(
+            f"{PROD_SQLITE_FILE} is reserved for production, cannot use for development."
+        )
+    db_path = BASE_DIR / filename
+    db_url = f"sqlite:///{db_path}"
+    return create_engine(db_url, echo=echo)
 
 
 #########
 # Cloud #
 #########
 
-DB_TYPE = os.getenv("DB_TYPE", "").lower()
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
+DB_TYPE = os.getenv("DB_TYPE", "").strip().lower()
+DB_HOST = os.getenv("DB_HOST", "").strip()
+DB_PORT = os.getenv("DB_PORT", "").strip()
+DB_USER = os.getenv("DB_USER", "").strip()
+DB_PASSWORD = os.getenv("DB_PASSWORD", "").strip()
+DB_NAME = os.getenv("DB_NAME", "").strip()
 
-_cloud_vars = [DB_HOST, DB_PORT, DB_USER, DB_NAME]
+cloud_engine = None
+required_cloud_vars = [DB_TYPE, DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME]
 
-if all(_cloud_vars):
-    if DB_TYPE == "mysql":
-        cloud_url = (
-            f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+if all(required_cloud_vars):
+    try:
+        port = int(DB_PORT)
+        if DB_TYPE == "mysql":
+            driver = "mysql+pymysql"
+        elif DB_TYPE == "postgresql":
+            driver = "postgresql"
+        else:
+            raise ValueError(
+                f"Unsupported database type: {DB_TYPE}. Use mysql or postgresql."
+            )
+
+        # Fix: Embed username & password into connection URL (standard usage)
+        cloud_url = f"{driver}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{port}/{DB_NAME}"
+        cloud_engine = create_engine(
+            cloud_url, pool_size=5, max_overflow=5, pool_pre_ping=True
         )
-    else:
-        cloud_url = (
-            f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-        )
-    cloud_engine = create_engine(cloud_url, pool_size=5, max_overflow=5)
-else:
-    cloud_engine = None
+    except (ValueError, Exception) as e:
+        print(f"[Warning] Failed to initialize cloud database engine: {str(e)}")
 
-
-__all__ = ["SQLModel", "sqlite_engine", "cloud_engine"]
-
+__all__ = ["SQLModel", "sqlite_engine", "cloud_engine", "create_sqlite_engine"]
 
 if __name__ == "__main__":
-    print("sqlite" in str(sqlite_engine))
+    print(sqlite_engine)
     print(cloud_engine)

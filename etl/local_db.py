@@ -231,6 +231,9 @@ __all__ = ["SQLiteWriter"]
 
 if __name__ == "__main__":
     import logging
+    from database.engine import create_sqlite_engine
+
+    dev_engine = create_sqlite_engine("dev.db")
 
     logging.basicConfig(
         level=logging.INFO,
@@ -238,7 +241,7 @@ if __name__ == "__main__":
     )
 
     # Initialize database tables
-    create_db_and_table(sqlite_engine)
+    create_db_and_table(dev_engine)
 
     # Load source data
     workplace = Path(__file__).parent.parent

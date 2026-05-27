@@ -226,4 +226,5 @@ o.jsonl
 data.jsonl
 database.db
 test.db
+dev.db
 *.csv
