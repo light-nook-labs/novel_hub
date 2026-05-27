@@ -1,7 +1,3 @@
-from pathlib import Path
-
-import pandas as pd
-
 from database import COVER_BASE, DEFAULT_COVER
 
 

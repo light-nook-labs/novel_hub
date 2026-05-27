@@ -225,3 +225,5 @@ __marimo__/
 o.jsonl
 data.jsonl
 database.db
+test.db
+*.csv
