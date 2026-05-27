@@ -19,12 +19,13 @@ TABLE_BOOL_COLS = {
     "contest": [],
     "author": [],
     "novel": ["has_banner"],
-    "noveltaglink": []
+    "noveltaglink": [],
 }
 
 
 class BaseSyncDataset(ABC):
     """数据同步抽象基类，抽取所有公共逻辑"""
+
     def __init__(self, run_mode: Literal["full", "incremental"] = "incremental"):
         self.run_mode = run_mode
         self.incremental = self.run_mode == "incremental"
@@ -42,7 +43,9 @@ class BaseSyncDataset(ABC):
         pass
 
     @abstractmethod
-    def _build_insert_sql(self, table_name: str, cols: list, batch: list) -> tuple[str, list]:
+    def _build_insert_sql(
+        self, table_name: str, cols: list, batch: list
+    ) -> tuple[str, list]:
         """
         构造 INSERT SQL + 参数列表
         由 MySQL / Postgres 子类分别实现占位符、冲突处理、类型转换
@@ -68,7 +71,9 @@ class BaseSyncDataset(ABC):
                     sql, params = self._build_insert_sql(table_name, cols, data_list)
                     cursor.execute(sql, params)
                     conn.commit()
-                    logger.info(f"[{table_name}] Small table done, inserted: {total_rows}")
+                    logger.info(
+                        f"[{table_name}] Small table done, inserted: {total_rows}"
+                    )
                 else:
                     batch_idx = 0
                     total_batch = (total_rows + BIG_TABLE_BATCH - 1) // BIG_TABLE_BATCH
@@ -77,13 +82,15 @@ class BaseSyncDataset(ABC):
                         total=total_batch,
                         desc=f"{self._db_prefix} {table_name}",
                         unit="batch",
-                        leave=True
+                        leave=True,
                     ) as pbar:
                         for idx in range(0, total_rows, BIG_TABLE_BATCH):
-                            batch = data_list[idx: idx + BIG_TABLE_BATCH]
+                            batch = data_list[idx : idx + BIG_TABLE_BATCH]
                             batch_idx += 1
 
-                            sql, params = self._build_insert_sql(table_name, cols, batch)
+                            sql, params = self._build_insert_sql(
+                                table_name, cols, batch
+                            )
                             cursor.execute(sql, params)
 
                             # 批量更新进度 + 事务提交
@@ -97,7 +104,9 @@ class BaseSyncDataset(ABC):
                             pbar.update(remain)
 
                     conn.commit()
-                    logger.info(f"[{table_name}] Big table done, total inserted: {total_rows}")
+                    logger.info(
+                        f"[{table_name}] Big table done, total inserted: {total_rows}"
+                    )
 
             except Exception as e:
                 conn.rollback()
@@ -131,7 +140,9 @@ class BaseSyncDataset(ABC):
 
     @log_elapsed
     def load_tag_link(self) -> None:
-        self.tag_link_df = pd.read_sql(text("SELECT * FROM noveltaglink"), con=sqlite_engine)
+        self.tag_link_df = pd.read_sql(
+            text("SELECT * FROM noveltaglink"), con=sqlite_engine
+        )
 
     # 导出逻辑
     @log_elapsed
@@ -187,6 +198,7 @@ class BaseSyncDataset(ABC):
 
 class MySQLSyncDataset(BaseSyncDataset):
     """MySQL 同步子类，仅实现数据库差异化逻辑"""
+
     @property
     def _db_prefix(self) -> str:
         return "[MySQL]"
@@ -211,7 +223,9 @@ class MySQLSyncDataset(BaseSyncDataset):
             session.commit()
         logger.info("All remote tables truncated for full refresh")
 
-    def _build_insert_sql(self, table_name: str, cols: list, batch: list) -> tuple[str, list]:
+    def _build_insert_sql(
+        self, table_name: str, cols: list, batch: list
+    ) -> tuple[str, list]:
         col_str = ", ".join(cols)
         row_fmt = ", ".join(["%s"] * len(cols))
         row_vals = [f"({row_fmt})" for _ in batch]
@@ -224,6 +238,7 @@ class MySQLSyncDataset(BaseSyncDataset):
 
 class PostgresSyncDataset(BaseSyncDataset):
     """PostgreSQL 同步子类，仅实现数据库差异化逻辑"""
+
     @property
     def _db_prefix(self) -> str:
         return "[PG]"
@@ -239,7 +254,9 @@ class PostgresSyncDataset(BaseSyncDataset):
             session.commit()
         logger.info("All remote Postgres tables truncated for full refresh")
 
-    def _build_insert_sql(self, table_name: str, cols: list, batch: list) -> tuple[str, list]:
+    def _build_insert_sql(
+        self, table_name: str, cols: list, batch: list
+    ) -> tuple[str, list]:
         col_str = ", ".join(cols)
         bool_fields = TABLE_BOOL_COLS.get(table_name, [])
 
@@ -265,6 +282,7 @@ class PostgresSyncDataset(BaseSyncDataset):
 
 if __name__ == "__main__":
     import logging
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

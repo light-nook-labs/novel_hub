@@ -17,13 +17,17 @@ dependencies = [
     "tqdm>=4.67.3",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ["py313"]
-
 [dependency-groups]
 dev = [
     "black>=26.3.1",
     "flake8>=7.3.0",
     "pre-commit>=4.6.0",
 ]
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503", "F401", "F403", "E741", "E501", "W291"]

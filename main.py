@@ -1,6 +1,7 @@
 from sqlmodel import text
 from database import cloud_engine
 
+
 def list_tables_and_data(engine):
     if not engine:
         print("数据库引擎未配置")
@@ -38,6 +39,7 @@ def list_tables_and_data(engine):
 
     except Exception as e:
         print(f"执行出错：{e}")
+
 
 if __name__ == "__main__":
     list_tables_and_data(cloud_engine)

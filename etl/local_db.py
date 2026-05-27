@@ -227,7 +227,7 @@ class SQLiteWriter:
         logger.info("ETL completed")
 
 
-__all__ = ['SQLiteWriter']
+__all__ = ["SQLiteWriter"]
 
 if __name__ == "__main__":
     import logging
