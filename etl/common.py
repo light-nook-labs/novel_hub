@@ -17,6 +17,14 @@ def compress_cover_url(url: str) -> str | None:
 
 __all__ = ["compress_cover_url"]
 
-if __name__ == '__main__':
-    print(compress_cover_url("http://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/05/c5a77c0d-a493-43f6-8ba6-e11a8b3494b3.jpg"))
-    print(compress_cover_url("http://rs.sfacg.com/web/novel/images/NovelCover/Big/defaultNew.jpg"))
+if __name__ == "__main__":
+    print(
+        compress_cover_url(
+            "http://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/05/c5a77c0d-a493-43f6-8ba6-e11a8b3494b3.jpg"
+        )
+    )
+    print(
+        compress_cover_url(
+            "http://rs.sfacg.com/web/novel/images/NovelCover/Big/defaultNew.jpg"
+        )
+    )

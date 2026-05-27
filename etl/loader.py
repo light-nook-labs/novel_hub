@@ -7,9 +7,13 @@ from database.app import create_db_and_table
 from database.engine import sqlite_engine
 
 
-def batch_write_df_to_db(df: pd.DataFrame, table_name: str, if_exists: str = "append") -> None:
+def batch_write_df_to_db(
+    df: pd.DataFrame, table_name: str, if_exists: str = "append"
+) -> None:
     if df.empty:
-        print(f"Warning: DataFrame for table '{table_name}' is empty, skipping write.")
+        print(
+            f"Warning: DataFrame for table '{table_name}' is empty, skipping write."
+        )
         return
     print(f"Writing {len(df)} rows to table '{table_name}'...")
     df.to_sql(
@@ -17,7 +21,7 @@ def batch_write_df_to_db(df: pd.DataFrame, table_name: str, if_exists: str = "ap
         con=sqlite_engine,
         if_exists=if_exists,
         index=False,
-        chunksize=1000
+        chunksize=1000,
     )
 
 
@@ -68,10 +72,22 @@ if __name__ == "__main__":
     df_full = prep_jsonl(jsonl_path)
     all_df_cols = set(df_full.columns)
     novel_need_cols = [
-        "nid", "title", "ptype", "genre", "status",
-        "click_num", "word_num", "praise_num", "like_num",
-        "has_banner", "review_num", "comment_num", "cover",
-        "last_update", "author_id", "contest_id"
+        "nid",
+        "title",
+        "ptype",
+        "genre",
+        "status",
+        "click_num",
+        "word_num",
+        "praise_num",
+        "like_num",
+        "has_banner",
+        "review_num",
+        "comment_num",
+        "cover",
+        "last_update",
+        "author_id",
+        "contest_id",
     ]
     valid_novel_cols = [c for c in novel_need_cols if c in all_df_cols]
     df_novel = df_full[valid_novel_cols].copy()
@@ -82,11 +98,15 @@ if __name__ == "__main__":
     # 5. 多对多中间表：使用 SQLite rowid 作为标签ID
     if tag_explode is not None and not tag_explode.empty:
         # SQLite 自增主键用 rowid
-        df_tag_db = pd.read_sql("SELECT rowid AS id, name FROM tag", con=sqlite_engine)
+        df_tag_db = pd.read_sql(
+            "SELECT rowid AS id, name FROM tag", con=sqlite_engine
+        )
         tag_map = dict(zip(df_tag_db["name"], df_tag_db["id"]))
 
         tag_explode["tag_id"] = tag_explode["name"].map(tag_map)
-        df_link = tag_explode.rename(columns={NOVEL_ID_COL: "novel_id"})[["novel_id", "tag_id"]].dropna()
+        df_link = tag_explode.rename(columns={NOVEL_ID_COL: "novel_id"})[
+            ["novel_id", "tag_id"]
+        ].dropna()
         batch_write_df_to_db(df_link, "noveltaglink", if_exists="replace")
 
     print("\nAll tables write finished successfully.")

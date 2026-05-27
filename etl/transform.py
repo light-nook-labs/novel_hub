@@ -24,7 +24,9 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
     df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
 
     # Deduplicate by nid, keep the latest record
-    df = df.loc[df.groupby("nid")["last_update"].idxmax()].reset_index(drop=True)
+    df = df.loc[df.groupby("nid")["last_update"].idxmax()].reset_index(
+        drop=True
+    )
 
     # Backup original text if not inplace mode
     if not inplace:
@@ -33,9 +35,15 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
         df["ptype_raw"] = df["ptype"]
 
     # Map text label to enum value
-    df["genre"] = df["genre"].apply(lambda x: GENRE.get_enum_from_label(x, lang="zh").value)
-    df["status"] = df["status"].apply(lambda x: STATUS.get_enum_from_label(x, lang="zh").value)
-    df["ptype"] = df["ptype"].apply(lambda x: PTYPE.get_enum_from_label(x, lang="zh").value)
+    df["genre"] = df["genre"].apply(
+        lambda x: GENRE.get_enum_from_label(x, lang="zh").value
+    )
+    df["status"] = df["status"].apply(
+        lambda x: STATUS.get_enum_from_label(x, lang="zh").value
+    )
+    df["ptype"] = df["ptype"].apply(
+        lambda x: PTYPE.get_enum_from_label(x, lang="zh").value
+    )
 
     # Convert columns to nullable integer type
     int_cols = [
@@ -58,7 +66,7 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
 __all__ = ["prep_jsonl"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     workplace = Path(__file__).parent.parent
     jsonl_file = workplace / "o.jsonl"
     csv_with_raw = workplace / "data_with_raw.csv"
@@ -73,11 +81,15 @@ if __name__ == '__main__':
     df = prep_jsonl(jsonl_file, inplace=False)
     compare_cols = [
         "nid",
-        "ptype_raw", "ptype",
-        "genre_raw", "genre",
-        "status_raw", "status",
+        "ptype_raw",
+        "ptype",
+        "genre_raw",
+        "genre",
+        "status_raw",
+        "status",
         "title",
-        "author", "contest"
+        "author",
+        "contest",
     ]
     print("=== Non-inplace mode (raw data with _raw suffix) ===")
     print(df[compare_cols].head(10))
@@ -92,7 +104,8 @@ if __name__ == '__main__':
         "genre",
         "status",
         "title",
-        "author", "contest"
+        "author",
+        "contest",
     ]
     print("=== Inplace mode ===")
     print(df[compare_cols].head(10))
