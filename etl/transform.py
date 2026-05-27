@@ -46,9 +46,7 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
     df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
 
     # Deduplicate records, keep the latest one per nid
-    df = df.loc[df.groupby("nid")["last_update"].idxmax()].reset_index(
-        drop=True
-    )
+    df = df.loc[df.groupby("nid")["last_update"].idxmax()].reset_index(drop=True)
 
     # Preserve original label columns if not inplace mode
     if not inplace:
@@ -60,9 +58,7 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
     df["genre"] = df["genre"].map(GENRE_ZH2VAL).fillna(GENRE_FALLBACK)
     df["status"] = df["status"].map(STATUS_ZH2VAL).fillna(STATUS_FALLBACK)
     df["ptype"] = df["ptype"].map(PTYPE_ZH2VAL).fillna(PTYPE_FALLBACK)
-    df[["genre", "status", "ptype"]] = df[["genre", "status", "ptype"]].astype(
-        "Int64"
-    )
+    df[["genre", "status", "ptype"]] = df[["genre", "status", "ptype"]].astype("Int64")
 
     # Process numeric columns in batch
     int_cols = [
@@ -76,17 +72,13 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
     miss_cols = [col for col in int_cols if col not in df.columns]
     if miss_cols:
         df[miss_cols] = pd.NA
-    df[int_cols] = (
-        df[int_cols].apply(pd.to_numeric, errors="coerce").astype("Int64")
-    )
+    df[int_cols] = df[int_cols].apply(pd.to_numeric, errors="coerce").astype("Int64")
 
     # Vectorized cover url compression, align with original function logic
     if "cover" in df.columns:
         base_len = len(COVER_BASE)
         s = df["cover"]
-        suffix = s.str[base_len:].where(
-            s.str.startswith(COVER_BASE, na=False), pd.NA
-        )
+        suffix = s.str[base_len:].where(s.str.startswith(COVER_BASE, na=False), pd.NA)
         df["cover"] = suffix.where(suffix != DEFAULT_COVER, pd.NA)
 
     return df

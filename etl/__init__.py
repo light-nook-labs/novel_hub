@@ -14,9 +14,7 @@ def log_elapsed(func):
         start = time.perf_counter()
         result = func(*args, **kwargs)
         elapsed = time.perf_counter() - start
-        logger.info(
-            "Function [%s] executed in %.4f seconds", func.__name__, elapsed
-        )
+        logger.info("Function [%s] executed in %.4f seconds", func.__name__, elapsed)
         return result
 
     return wrapper

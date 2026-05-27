@@ -30,9 +30,13 @@ _cloud_vars = [DB_HOST, DB_PORT, DB_USER, DB_NAME]
 
 if all(_cloud_vars):
     if DB_TYPE == "mysql":
-        cloud_url = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        cloud_url = (
+            f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )
     else:
-        cloud_url = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        cloud_url = (
+            f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        )
     cloud_engine = create_engine(cloud_url, pool_size=5, max_overflow=5)
 else:
     cloud_engine = None

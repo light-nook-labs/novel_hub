@@ -28,9 +28,7 @@ class Mapping:
         en_zh: dict[str, str] = {}
         zh_en: dict[str, str] = {}
         invalid_keys = [
-            k
-            for k in en_zh_mapping_dict
-            if not pattern.fullmatch(k) or k == "other"
+            k for k in en_zh_mapping_dict if not pattern.fullmatch(k) or k == "other"
         ]
         if invalid_keys:
             if "other" in invalid_keys:
@@ -40,9 +38,7 @@ class Mapping:
             )
         zh_set: set[str] = set(en_zh_mapping_dict.values())
         if len(zh_set) != len(en_zh_mapping_dict):
-            raise ValueError(
-                "Keys and Values must be unique in en_zh_mapping_dict."
-            )
+            raise ValueError("Keys and Values must be unique in en_zh_mapping_dict.")
         if "其他" in zh_set:
             raise ValueError("'其他' is reversed for fallback value.")
         mapping = dict(other="其他")

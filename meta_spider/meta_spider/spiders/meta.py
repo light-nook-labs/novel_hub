@@ -97,18 +97,14 @@ class MetaSpider(Spider):
         if not items:
             raise CloseSpider("No items.")
         for item in items:
-            novel_url: str | None = item.css(
-                ".Conjunction a::attr(href)"
-            ).get()
+            novel_url: str | None = item.css(".Conjunction a::attr(href)").get()
             cover: str | None = item.css(".Conjunction a img::attr(src)").get()
             title: str | None = item.css(".Conjunction a img::attr(alt)").get()
             author: str | None = item.css('a[id*="AuthorLink"]::text').get()
             score: str | None = item.css(".font_red::text").get()
             genre: str | None = item.css(".font_red ~a::text").get()
             meta_info = dict(
-                nid=int(
-                    novel_url.strip("/").split("/")[-1] if novel_url else 0
-                ),
+                nid=int(novel_url.strip("/").split("/")[-1] if novel_url else 0),
                 title=(title.strip() if title else ""),
                 author=(author.strip() if author else ""),
                 score=float(score.strip().replace("分", "") if score else 5),

@@ -15,9 +15,7 @@ BATCH_SIZE = 1000
 
 
 class MySQLSyncDataset:
-    def __init__(
-        self, run_mode: Literal["full", "incremental"] = "incremental"
-    ):
+    def __init__(self, run_mode: Literal["full", "incremental"] = "incremental"):
         """Initialize SQLite to MySQL synchronizer.
 
         Args:
@@ -71,7 +69,9 @@ class MySQLSyncDataset:
         cols = df.columns.tolist()
         col_str = ", ".join(cols)
         placeholders = ", ".join(["%s"] * len(cols))
-        insert_sql = f"INSERT IGNORE INTO {table_name} ({col_str}) VALUES ({placeholders})"
+        insert_sql = (
+            f"INSERT IGNORE INTO {table_name} ({col_str}) VALUES ({placeholders})"
+        )
         data_tuples = df.to_numpy().tolist()
 
         with cloud_engine.raw_connection() as conn:
@@ -93,16 +93,12 @@ class MySQLSyncDataset:
     @log_elapsed
     def load_author(self) -> None:
         """Load author data from local SQLite."""
-        self.author_df = pd.read_sql(
-            text("SELECT * FROM author"), con=sqlite_engine
-        )
+        self.author_df = pd.read_sql(text("SELECT * FROM author"), con=sqlite_engine)
 
     @log_elapsed
     def load_contest(self) -> None:
         """Load contest data from local SQLite."""
-        self.contest_df = pd.read_sql(
-            text("SELECT * FROM contest"), con=sqlite_engine
-        )
+        self.contest_df = pd.read_sql(text("SELECT * FROM contest"), con=sqlite_engine)
 
     @log_elapsed
     def load_tag(self) -> None:
@@ -112,9 +108,7 @@ class MySQLSyncDataset:
     @log_elapsed
     def load_novel(self) -> None:
         """Load main novel business data from local SQLite."""
-        self.novel_df = pd.read_sql(
-            text("SELECT * FROM novel"), con=sqlite_engine
-        )
+        self.novel_df = pd.read_sql(text("SELECT * FROM novel"), con=sqlite_engine)
 
     @log_elapsed
     def load_tag_link(self) -> None:
@@ -149,18 +143,14 @@ class MySQLSyncDataset:
             novel_ids = self.tag_link_df["novel_id"].unique().tolist()
             if novel_ids:
                 # 修复：SQLModel Session.exec 使用命名参数 params
-                placeholders = ", ".join(
-                    [":n" + str(i) for i in range(len(novel_ids))]
-                )
+                placeholders = ", ".join([":n" + str(i) for i in range(len(novel_ids))])
                 del_sql = f"DELETE FROM noveltaglink WHERE novel_id IN ({placeholders})"
                 params = {f"n{i}": val for i, val in enumerate(novel_ids)}
 
                 with Session(cloud_engine) as session:
                     session.exec(text(del_sql), params=params)
                     session.commit()
-                logger.info(
-                    "Old relation records deleted for incremental sync"
-                )
+                logger.info("Old relation records deleted for incremental sync")
 
         self._batch_write_table(self.tag_link_df, "noveltaglink")
 

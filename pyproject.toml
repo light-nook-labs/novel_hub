@@ -17,11 +17,12 @@ dependencies = [
 ]
 
 [tool.black]
-line-length = 79
+line-length = 88
 target-version = ["py313"]
 
 [dependency-groups]
 dev = [
     "black>=26.3.1",
     "flake8>=7.3.0",
+    "pre-commit>=4.6.0",
 ]

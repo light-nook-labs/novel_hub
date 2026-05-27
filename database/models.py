@@ -12,12 +12,8 @@ from sqlmodel import Field, Relationship, SQLModel
 
 
 class NovelTagLink(SQLModel, table=True):
-    tag_id: int | None = Field(
-        default=None, foreign_key="tag.id", primary_key=True
-    )
-    novel_id: int | None = Field(
-        default=None, foreign_key="novel.id", primary_key=True
-    )
+    tag_id: int | None = Field(default=None, foreign_key="tag.id", primary_key=True)
+    novel_id: int | None = Field(default=None, foreign_key="novel.id", primary_key=True)
 
 
 #########
@@ -29,18 +25,14 @@ class Author(SQLModel, table=True):
     id: int | None = Field(primary_key=True, default=None)
     name: str = Field(unique=True)
 
-    novels: list["Novel"] = Relationship(
-        back_populates="author", passive_deletes="all"
-    )
+    novels: list["Novel"] = Relationship(back_populates="author", passive_deletes="all")
 
 
 class Tag(SQLModel, table=True):
     id: int | None = Field(primary_key=True, default=None)
     name: str = Field(unique=True)
 
-    novels: list["Novel"] = Relationship(
-        back_populates="tags", link_model=NovelTagLink
-    )
+    novels: list["Novel"] = Relationship(back_populates="tags", link_model=NovelTagLink)
 
 
 class Contest(SQLModel, table=True):
@@ -93,9 +85,7 @@ class Novel(SQLModel, table=True):
     contest: Contest | None = Relationship(back_populates="novels")
 
     # Many to many: Novel(m) Tag(n)
-    tags: list[Tag] = Relationship(
-        back_populates="novels", link_model=NovelTagLink
-    )
+    tags: list[Tag] = Relationship(back_populates="novels", link_model=NovelTagLink)
 
 
 __all__ = ["Author", "Contest", "Novel", "NovelTagLink", "Tag"]
