@@ -10,7 +10,7 @@ from .transform import prep_jsonl
 from . import logger, log_elapsed
 
 
-class SQLiteDataset:
+class SQLiteWriter:
     def __init__(
         self,
         raw_df: pd.DataFrame,
@@ -227,6 +227,8 @@ class SQLiteDataset:
         logger.info("ETL completed")
 
 
+__all__ = ['SQLiteWriter']
+
 if __name__ == "__main__":
     import logging
 
@@ -245,5 +247,5 @@ if __name__ == "__main__":
     logger.info(f"Load source data | Total rows: {len(df_full)}")
 
     # Execute ETL task
-    dataset = SQLiteDataset(df_full, run_mode="full")
+    dataset = SQLiteWriter(df_full, run_mode="full")
     dataset.process()

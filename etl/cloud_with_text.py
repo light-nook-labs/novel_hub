@@ -6,7 +6,6 @@ from typing import Literal
 from tqdm import tqdm
 
 from database.engine import sqlite_engine, cloud_engine
-from database.models import Author, Contest, Tag, Novel, NovelTagLink
 from . import logger, log_elapsed
 
 # 全局配置

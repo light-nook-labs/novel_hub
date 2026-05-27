@@ -21,5 +21,6 @@ def log_elapsed(func):
 
 
 from .transform import *
+from .local_db import *
 
 __all__ = ["logger", "log_elapsed"]
