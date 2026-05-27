@@ -14,6 +14,7 @@ dependencies = [
     "requests>=2.33.1",
     "scrapy>=2.15.2",
     "sqlmodel>=0.0.38",
+    "tqdm>=4.67.3",
 ]
 
 [tool.black]

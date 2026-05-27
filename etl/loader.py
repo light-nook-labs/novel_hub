@@ -1,5 +1,4 @@
 from pathlib import Path
-import sys
 import pandas as pd
 from datetime import datetime
 from sqlalchemy import text
@@ -235,12 +234,6 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-
-    # Parse command line argument for running mode
-    if len(sys.argv) > 1:
-        arg = sys.argv[1]
-        if arg in ("full", "incremental"):
-            run_mode = arg  # type: ignore
 
     # Initialize database tables
     create_db_and_table(sqlite_engine)
