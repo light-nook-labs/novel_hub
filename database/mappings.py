@@ -158,9 +158,9 @@ class Mapping:
 
 GENRE: Mapping = Mapping(
     magic="魔幻",
-    fantasy="玄幻",
+    eastern="玄幻",
     ancient="古风",
-    sf="科幻",
+    sci_fi="科幻",
     school="校园",
     urban="都市",
     game="游戏",
