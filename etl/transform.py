@@ -42,6 +42,9 @@ def prep_jsonl(filepath: Path, inplace: bool = True) -> pd.DataFrame:
     if exist_text:
         df[exist_text] = df[exist_text].astype("string").replace("", pd.NA)
 
+    if "author" in df.columns:
+        df["author"] = df["author"].str.replace(r"\s+", " ", regex=True)
+
     # Parse datetime, set unparsable entries to NaT
     df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
 
@@ -89,12 +92,6 @@ __all__ = ["prep_jsonl"]
 
 if __name__ == "__main__":
     # Temporary log config for local debugging only
-    import logging
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
 
     workplace = Path(__file__).parent.parent
     jsonl_file = workplace / "data.jsonl"
