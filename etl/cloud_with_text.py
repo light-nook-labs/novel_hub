@@ -5,7 +5,7 @@ from sqlmodel import Session, text
 from typing import Literal
 from tqdm import tqdm
 
-from database.engine import sqlite_engine, cloud_engine
+from database.database import sqlite_engine, cloud_engine
 from . import logger, log_elapsed
 
 # 全局配置

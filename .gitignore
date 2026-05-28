@@ -228,3 +228,4 @@ database.db
 test.db
 dev.db
 *.csv
+*.db

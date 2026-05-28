@@ -1,7 +1,13 @@
+"""
+Engine
+Create DB and Tabel
+"""
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 from sqlmodel import create_engine, SQLModel
+from sqlmodel import text as sql_text
 
 load_dotenv()
 
@@ -77,7 +83,33 @@ if all(required_cloud_vars):
     except (ValueError, Exception) as e:
         print(f"[Warning] Failed to initialize cloud database engine: {str(e)}")
 
-__all__ = ["SQLModel", "sqlite_engine", "cloud_engine", "create_sqlite_engine"]
+
+#####################
+# Init DB and Table #
+#####################
+
+
+def create_db_and_tables(engine):
+    """Create database and all defined tables.
+
+    Enable WAL (Write-Ahead Logging) mode for SQLite to improve concurrency performance.
+
+    Args:
+        engine: SQLAlchemy database engine instance.
+    """
+    SQLModel.metadata.create_all(engine)
+    if engine.dialect.name == "sqlite":
+        with engine.connect() as conn:
+            conn.execute(sql_text("PRAGMA journal_mode=WAL"))
+            conn.commit()
+
+
+__all__ = [
+    "sqlite_engine",
+    "cloud_engine",
+    "create_sqlite_engine",
+    "create_db_and_tables",
+]
 
 if __name__ == "__main__":
     print(sqlite_engine)

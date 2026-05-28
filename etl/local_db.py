@@ -4,8 +4,7 @@ from datetime import datetime
 from sqlalchemy import text
 from typing import Literal
 
-from database.app import create_db_and_table
-from database.engine import sqlite_engine
+from database.database import sqlite_engine, create_db_and_tables
 from .transform import prep_jsonl
 from . import logger, log_elapsed
 
@@ -231,7 +230,7 @@ __all__ = ["SQLiteWriter"]
 
 if __name__ == "__main__":
     import logging
-    from database.engine import create_sqlite_engine
+    from database.database import create_sqlite_engine
 
     dev_engine = create_sqlite_engine("dev.db")
 
@@ -241,7 +240,7 @@ if __name__ == "__main__":
     )
 
     # Initialize database tables
-    create_db_and_table(dev_engine)
+    create_db_and_tables(dev_engine)
 
     # Load source data
     workplace = Path(__file__).parent.parent
