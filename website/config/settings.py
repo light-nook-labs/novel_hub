@@ -45,7 +45,18 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third party
+    "tailwind",
+    # Theme
+    "theme",
 ]
+
+# Tailwind
+TAILWIND_APP_NAME = "theme"
+
+# Npm
+NODE_BIN_PATH = r"D:\node22\node.exe"
+NPM_BIN_PATH = r"D:\node22\npm.cmd"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -70,6 +81,14 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
             ],
+        },
+    },
+    {
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "environment": "config.jinja2.environment",
         },
     },
 ]
