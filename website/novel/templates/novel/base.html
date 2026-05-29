@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {% block title %}
+    <title>Novel Hub</title>
+    {% endblock %}
+
+    {% load tailwind_tags %}
+    {% tailwind_css %}
+
+    {% block style %}{% endblock style %}
+    <style>
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+    <header class="sticky top-0 z-10 shadow-md">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold">Novel Hub</h1>
+            <button id="themeToggle" class="p-2 rounded-lg">
+                <span class="light-icon">🌙 暗色模式</span>
+                <span class="dark-icon hidden">☀️ 亮色模式</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="shadow-inner mt-auto">
+        <div class="max-w-6xl mx-auto px-4 py-6 text-center">
+            Novel Hub &copy; 2026 All Rights Reserved
+        </div>
+    </footer>
+
+    {% block extra_js %}
+    <script>
+        const html = document.documentElement;
+        const lightIcon = document.querySelector('.light-icon');
+        const darkIcon = document.querySelector('.dark-icon');
+        const toggleBtn = document.getElementById('themeToggle');
+
+        let theme = localStorage.getItem('theme') || 'light';
+
+        function setTheme(thm) {
+            html.setAttribute('data-theme', thm);
+            if (thm === 'dark') {
+                lightIcon.classList.add('hidden');
+                darkIcon.classList.remove('hidden');
+            } else {
+                darkIcon.classList.add('hidden');
+                lightIcon.classList.remove('hidden');
+            }
+            localStorage.setItem('theme', thm);
+        }
+
+        setTheme(theme);
+
+        toggleBtn.addEventListener('click', () => {
+            const curr = html.getAttribute('data-theme');
+            setTheme(curr === 'dark' ? 'light' : 'dark');
+        });
+    </script>
+    {% endblock %}
+</body>
+</html>
