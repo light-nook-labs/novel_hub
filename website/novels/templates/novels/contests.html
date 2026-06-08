@@ -1,22 +1,31 @@
 {% extends "novels/base.html" %}
+{% load novel_tags %}
 
 {% block title %}征文 - Novel Hub{% endblock %}
 
 {% block content %}
+<style>
+.pill { background: var(--pb); color: var(--pt); }
+.dark .pill { background: var(--pbd); color: var(--ptd); }
+</style>
+
 <div class="mb-6">
   <h1 class="text-2xl font-bold">征文</h1>
-  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 个征文活动</p>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ contests|length }} 个征文活动</p>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="flex flex-wrap gap-3">
   {% for contest in contests %}
   <a href="{% url 'novels:contest_detail' contest.id %}"
-     class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow">
-    <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ contest.name }}</p>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ contest.novel_count }} 本</p>
+     class="pill rounded-full shadow px-4 py-2 hover:shadow-md transition-shadow"
+     style="--pb:{{ contest|pill_bg:'contest' }}; --pt:{{ contest|pill_text:'contest' }}; --pbd:{{ contest|pill_bg_dark:'contest' }}; --ptd:{{ contest|pill_text_dark:'contest' }}">
+    <span class="font-medium">{{ contest.name }}</span>
+    <span class="text-xs opacity-70 ml-1">{{ contest.novel_count }}</span>
   </a>
   {% empty %}
-  <div class="col-span-full text-center py-12 text-gray-400">暂无数据</div>
+  <div class="text-center py-12 text-gray-400">暂无数据</div>
   {% endfor %}
 </div>
 {% endblock %}
+
+{% block pagination %}{% endblock %}

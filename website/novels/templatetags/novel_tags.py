@@ -29,3 +29,31 @@ def humanize_num(value):
         return str(n)
     except (ValueError, TypeError):
         return "-"
+
+
+@register.filter
+def pill_bg(obj, model_name):
+    """Generate deterministic background color from object ID + model name."""
+    h = hash(f"{model_name}_{obj.id}") % 360
+    return f"hsl({h}, 70%, 92%)"
+
+
+@register.filter
+def pill_bg_dark(obj, model_name):
+    """Generate deterministic dark-mode background color."""
+    h = hash(f"{model_name}_{obj.id}") % 360
+    return f"hsl({h}, 60%, 20%)"
+
+
+@register.filter
+def pill_text(obj, model_name):
+    """Generate deterministic text color from object ID + model name."""
+    h = hash(f"{model_name}_{obj.id}") % 360
+    return f"hsl({h}, 70%, 35%)"
+
+
+@register.filter
+def pill_text_dark(obj, model_name):
+    """Generate deterministic dark-mode text color."""
+    h = hash(f"{model_name}_{obj.id}") % 360
+    return f"hsl({h}, 70%, 70%)"

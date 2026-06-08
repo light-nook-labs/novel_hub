@@ -1,22 +1,31 @@
 {% extends "novels/base.html" %}
+{% load novel_tags %}
 
 {% block title %}标签 - Novel Hub{% endblock %}
 
 {% block content %}
+<style>
+.pill { background: var(--pb); color: var(--pt); }
+.dark .pill { background: var(--pbd); color: var(--ptd); }
+</style>
+
 <div class="mb-6">
   <h1 class="text-2xl font-bold">标签</h1>
-  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 个标签</p>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ tags|length }} 个标签</p>
 </div>
 
 <div class="flex flex-wrap gap-3">
   {% for tag in tags %}
   <a href="{% url 'novels:tag_detail' tag.id %}"
-     class="bg-white dark:bg-gray-800 rounded-full shadow px-4 py-2 hover:shadow-md transition-shadow">
-    <span class="font-medium text-gray-900 dark:text-gray-100">{{ tag.name }}</span>
-    <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">{{ tag.novel_count }}</span>
+     class="pill rounded-full shadow px-4 py-2 hover:shadow-md transition-shadow"
+     style="--pb:{{ tag|pill_bg:'tag' }}; --pt:{{ tag|pill_text:'tag' }}; --pbd:{{ tag|pill_bg_dark:'tag' }}; --ptd:{{ tag|pill_text_dark:'tag' }}">
+    <span class="font-medium">{{ tag.name }}</span>
+    <span class="text-xs opacity-70 ml-1">{{ tag.novel_count }}</span>
   </a>
   {% empty %}
   <div class="text-center py-12 text-gray-400">暂无数据</div>
   {% endfor %}
 </div>
 {% endblock %}
+
+{% block pagination %}{% endblock %}
