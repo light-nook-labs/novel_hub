@@ -14,12 +14,10 @@
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden cursor-pointer group"
        onclick="openLightbox(this)" data-src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg">
     <div class="relative overflow-hidden h-32">
-      <div class="w-[182%] h-full ml-auto">
-        <img src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg"
-             alt="{{ novel.title }}"
-             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-             onerror="this.parentElement.innerHTML='<div class=\'h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center\'><span class=\'text-white text-lg font-bold\'>{{ novel.title }}</span></div>'">
-      </div>
+      <img src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg"
+           alt="{{ novel.title }}"
+           class="absolute right-0 top-0 h-full w-[182%] max-w-none object-cover group-hover:scale-105 transition-transform duration-300"
+           onerror="this.parentElement.innerHTML='<div class=\'h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center\'><span class=\'text-white text-lg font-bold\'>{{ novel.title }}</span></div>'">
       <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
         <a href="{% url 'novels:detail' novel.id %}" class="text-white font-medium hover:text-amber-400 transition-colors" onclick="event.stopPropagation()">
           {{ novel.title }}
