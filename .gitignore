@@ -231,4 +231,7 @@ dev.db
 *.db
 
 # Dataset (>100MB, downloaded from GitHub release)
-dataset/node_modules/
+dataset/
+
+# Node modules
+node_modules/
