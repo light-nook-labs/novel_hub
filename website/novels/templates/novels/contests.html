@@ -19,22 +19,4 @@
   <div class="col-span-full text-center py-12 text-gray-400">暂无数据</div>
   {% endfor %}
 </div>
-
-{% if contests.has_other_pages %}
-<div class="mt-8 flex justify-center gap-2">
-  {% if contests.has_previous %}
-  <a href="?page={{ contests.previous_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">上一页</a>
-  {% endif %}
-  {% for num in contests.paginator.page_range %}
-    {% if contests.number == num %}
-      <span class="px-4 py-2 bg-green-700 text-white rounded-lg">{{ num }}</span>
-    {% elif num > contests.number|add:'-3' and num < contests.number|add:'3' %}
-      <a href="?page={{ num }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{{ num }}</a>
-    {% endif %}
-  {% endfor %}
-  {% if contests.has_next %}
-  <a href="?page={{ contests.next_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">下一页</a>
-  {% endif %}
-</div>
-{% endif %}
 {% endblock %}

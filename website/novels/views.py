@@ -72,6 +72,10 @@ class NovelListView(ListView):
         ctx["current_genre"] = self.request.GET.get("genre", "")
         ctx["current_status"] = self.request.GET.get("status", "")
         ctx["current_ptype"] = self.request.GET.get("ptype", "")
+
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
         return ctx
 
 
@@ -136,6 +140,13 @@ class AuthorListView(ListView):
             qs = qs.filter(name__icontains=q)
         return qs.annotate_novel_count()
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
+        return ctx
+
 
 class AuthorDetailView(DetailView):
     model = Author
@@ -167,6 +178,13 @@ class TagListView(ListView):
             qs = qs.filter(name__icontains=q)
         return qs.annotate_novel_count()
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
+        return ctx
+
 
 class TagDetailView(DetailView):
     model = Tag
@@ -197,6 +215,13 @@ class ContestListView(ListView):
         if q:
             qs = qs.filter(name__icontains=q)
         return qs.annotate_novel_count()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
+        return ctx
 
 
 class ContestDetailView(DetailView):
@@ -241,6 +266,9 @@ class EnumListView(ListView):
         ctx = super().get_context_data(**kwargs)
         ctx["enum_type"] = self.enum_type
         ctx["enum_label"] = {"genre": "分类", "status": "状态", "ptype": "类型"}.get(self.enum_type, "")
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
         return ctx
 
 
@@ -272,4 +300,7 @@ class EnumDetailView(ListView):
         ctx["enum_type"] = self.enum_type
         ctx["enum_value"] = self.enum_value
         ctx["enum_label"] = self.enum_label
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
         return ctx

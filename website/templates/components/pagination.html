@@ -1,0 +1,66 @@
+{% if is_paginated %}
+<div class="flex flex-wrap justify-center items-center mt-8 gap-3">
+  <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
+    {% if page_obj.has_previous %}
+    <a href="?page=1{% if querystring %}&{{ querystring }}{% endif %}"
+       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 transition-colors">First</a>
+    {% else %}
+    <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">First</span>
+    {% endif %}
+
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}"
+       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 transition-colors">Prev</a>
+    {% else %}
+    <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Prev</span>
+    {% endif %}
+
+    {% for n in paginator.page_range %}
+      {% if n == page_obj.number %}
+      <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 bg-green-700 text-white select-none">{{ n }}</span>
+      {% elif n > page_obj.number|add:'-2' and n < page_obj.number|add:'2' %}
+      <a href="?page={{ n }}{% if querystring %}&{{ querystring }}{% endif %}"
+         class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 transition-colors">{{ n }}</a>
+      {% elif n == page_obj.number|add:'-3' or n == page_obj.number|add:'3' %}
+      <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 select-none">&hellip;</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}"
+       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 transition-colors">Next</a>
+    {% else %}
+    <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Next</span>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ paginator.num_pages }}{% if querystring %}&{{ querystring }}{% endif %}"
+       class="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-green-900 hover:text-green-600 dark:hover:text-green-400 transition-colors">Last</a>
+    {% else %}
+    <span class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Last</span>
+    {% endif %}
+  </div>
+
+  <div class="flex items-center gap-2">
+    <span class="text-sm text-gray-600 dark:text-gray-400">跳至</span>
+    <input type="number"
+           class="w-16 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-colors"
+           min="1" max="{{ paginator.num_pages }}"
+           value="{{ page_obj.number }}"
+           onkeydown="if(event.key==='Enter')jumpPage(this.value)">
+    <span class="text-sm text-gray-600 dark:text-gray-400">/ {{ paginator.num_pages }} 页</span>
+  </div>
+</div>
+
+<script>
+function jumpPage(page) {
+  const total = {{ paginator.num_pages }};
+  const target = parseInt(page, 10);
+  if (!isNaN(target) && target >= 1 && target <= total) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('page', target);
+    window.location.href = url.href;
+  }
+}
+</script>
+{% endif %}

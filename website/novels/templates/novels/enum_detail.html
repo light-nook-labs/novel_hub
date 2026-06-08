@@ -41,22 +41,4 @@
   <div class="col-span-full text-center py-12 text-gray-400">暂无数据</div>
   {% endfor %}
 </div>
-
-{% if novels.has_other_pages %}
-<div class="mt-8 flex justify-center gap-2">
-  {% if novels.has_previous %}
-  <a href="?page={{ novels.previous_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">上一页</a>
-  {% endif %}
-  {% for num in novels.paginator.page_range %}
-    {% if novels.number == num %}
-      <span class="px-4 py-2 bg-green-700 text-white rounded-lg">{{ num }}</span>
-    {% elif num > novels.number|add:'-3' and num < novels.number|add:'3' %}
-      <a href="?page={{ num }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{{ num }}</a>
-    {% endif %}
-  {% endfor %}
-  {% if novels.has_next %}
-  <a href="?page={{ novels.next_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">下一页</a>
-  {% endif %}
-</div>
-{% endif %}
 {% endblock %}
