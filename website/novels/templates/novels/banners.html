@@ -16,7 +16,7 @@
     <div class="relative overflow-hidden h-32">
       <img src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg"
            alt="{{ novel.title }}"
-           class="h-full w-[182%] max-w-none object-cover object-right group-hover:scale-105 transition-transform duration-300"
+           class="w-full h-full object-cover ml-[45%] group-hover:scale-105 transition-transform duration-300"
            onerror="this.parentElement.innerHTML='<div class=\'h-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center\'><span class=\'text-white text-lg font-bold\'>{{ novel.title }}</span></div>'">
       <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
         <a href="{% url 'novels:detail' novel.id %}" class="text-white font-medium hover:text-amber-400 transition-colors" onclick="event.stopPropagation()">
