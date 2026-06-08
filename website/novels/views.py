@@ -39,6 +39,16 @@ class NovelListView(ListView):
     context_object_name = "novels"
     paginate_by = 24
 
+    SORT_OPTIONS = {
+        "": "综合排序",
+        "click_num": "点击排序",
+        "word_num": "字数排序",
+        "like_num": "收藏排序",
+        "praise_num": "点赞排序",
+        "last_update": "最近更新",
+        "id": "最近收录",
+    }
+
     def get_queryset(self):
         qs = super().get_queryset().select_related(*NOVEL_LIST_SELECT).prefetch_related(*NOVEL_LIST_PREFETCH)
         query = self.request.GET.get("q", "").strip()
@@ -54,6 +64,13 @@ class NovelListView(ListView):
             qs = qs.filter(status=int(status))
         if ptype:
             qs = qs.filter(ptype=int(ptype))
+
+        sort = self.request.GET.get("sort", "")
+        if sort in self.SORT_OPTIONS and sort:
+            qs = qs.order_by(f"-{sort}")
+        else:
+            qs = qs.order_by("-click_num")
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -72,6 +89,11 @@ class NovelListView(ListView):
         ctx["current_genre"] = self.request.GET.get("genre", "")
         ctx["current_status"] = self.request.GET.get("status", "")
         ctx["current_ptype"] = self.request.GET.get("ptype", "")
+        ctx["current_sort"] = self.request.GET.get("sort", "")
+        ctx["sort_options"] = self.SORT_OPTIONS
+
+        latest_banner = Novel.objects.filter(has_banner=True).order_by("-last_update").first()
+        ctx["latest_banner"] = latest_banner
 
         params = self.request.GET.copy()
         params.pop("page", None)

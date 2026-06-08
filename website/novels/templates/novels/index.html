@@ -1,79 +1,103 @@
 {% extends "novels/base.html" %}
+{% load novel_tags %}
 
 {% block title %}Novel Hub{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">
-      {% if query %}搜索: {{ query }}{% else %}全部小说{% endif %}
-    </h1>
-    <span class="text-sm text-gray-500 dark:text-gray-400">{{ paginator.count }} 本</span>
+<!-- Hero Banner -->
+{% if latest_banner %}
+<div id="hero-banner" class="relative rounded-xl overflow-hidden mb-8 h-48 md:h-64">
+  <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+       style="background-image: url('https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ latest_banner.id }}.jpg')">
   </div>
+  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+  <div class="relative h-full flex flex-col justify-end p-6">
+    <a href="{% url 'novels:detail' latest_banner.id %}" class="text-2xl md:text-3xl font-bold text-white hover:text-amber-400 transition-colors">
+      {{ latest_banner.title }}
+    </a>
+    <p class="text-white/80 text-sm mt-1">{{ latest_banner.author|default:"未知" }}</p>
+    <div class="flex items-center gap-2 mt-2">
+      <span class="px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white">{{ latest_banner.get_genre_display }}</span>
+      <span class="px-2 py-0.5 text-xs rounded-full bg-green-500 text-white">{{ latest_banner.get_status_display }}</span>
+      <span class="text-white/60 text-xs">{{ latest_banner.click_num|humanize_num }} 点击</span>
+    </div>
+  </div>
+</div>
+{% endif %}
 
-  {% if genres or statuses or ptypes %}
-  <div class="flex flex-wrap gap-2">
+<!-- Filter Bar -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
+  <div class="flex flex-wrap items-center gap-2 text-sm">
+    <span class="text-gray-500 dark:text-gray-400 font-medium">分类：</span>
+    <a href="?{% if current_sort %}sort={{ current_sort }}{% endif %}"
+       class="px-2 py-1 rounded {% if not current_genre %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">全部</a>
     {% for g in genres %}
-    <a href="?{% if query %}q={{ query }}&{% endif %}genre={{ g.value }}"
-       class="px-3 py-1 text-sm rounded-full border transition-colors
-              {% if current_genre == g.value|stringformat:'d' %}bg-amber-500 text-white border-amber-500{% else %}bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-amber-400{% endif %}">
-      {{ g.label }}
-    </a>
-    {% endfor %}
-    <span class="text-gray-300 dark:text-gray-600">|</span>
-    {% for s in statuses %}
-    <a href="?{% if query %}q={{ query }}&{% endif %}status={{ s.value }}"
-       class="px-3 py-1 text-sm rounded-full border transition-colors
-              {% if current_status == s.value|stringformat:'d' %}bg-amber-500 text-white border-amber-500{% else %}bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-amber-400{% endif %}">
-      {{ s.label }}
-    </a>
-    {% endfor %}
-    <span class="text-gray-300 dark:text-gray-600">|</span>
-    {% for p in ptypes %}
-    <a href="?{% if query %}q={{ query }}&{% endif %}ptype={{ p.value }}"
-       class="px-3 py-1 text-sm rounded-full border transition-colors
-              {% if current_ptype == p.value|stringformat:'d' %}bg-amber-500 text-white border-amber-500{% else %}bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-amber-400{% endif %}">
-      {{ p.label }}
-    </a>
+    <a href="?genre={{ g.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+       class="px-2 py-1 rounded {% if current_genre == g.value|stringformat:'d' %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ g.label }}</a>
     {% endfor %}
   </div>
-  {% endif %}
+  <div class="flex flex-wrap items-center gap-2 text-sm mt-3">
+    <span class="text-gray-500 dark:text-gray-400 font-medium">状态：</span>
+    <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
+       class="px-2 py-1 rounded {% if not current_status %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">全部</a>
+    {% for s in statuses %}
+    <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}status={{ s.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+       class="px-2 py-1 rounded {% if current_status == s.value|stringformat:'d' %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ s.label }}</a>
+    {% endfor %}
+    <span class="text-gray-300 dark:text-gray-600 mx-1">|</span>
+    <span class="text-gray-500 dark:text-gray-400 font-medium">类型：</span>
+    <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
+       class="px-2 py-1 rounded {% if not current_ptype %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">全部</a>
+    {% for p in ptypes %}
+    <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}ptype={{ p.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+       class="px-2 py-1 rounded {% if current_ptype == p.value|stringformat:'d' %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ p.label }}</a>
+    {% endfor %}
+  </div>
+  <div class="flex flex-wrap items-center gap-2 text-sm mt-3">
+    <span class="text-gray-500 dark:text-gray-400 font-medium">排序：</span>
+    {% for key, label in sort_options.items %}
+    <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}sort={{ key }}"
+       class="px-2 py-1 rounded {% if current_sort == key %}bg-green-700 text-white{% else %}text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ label }}</a>
+    {% endfor %}
+  </div>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<!-- Novel Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
   {% for novel in novels %}
-  <a href="{% url 'novels:detail' novel.id %}"
-     class="bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden group">
-    <div class="bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
-      {% if novel.cover %}
-      <img src="{{ novel.cover }}" alt="{{ novel.title }}" class="w-full h-auto rounded-t-lg group-hover:scale-105 transition-transform duration-300">
-      {% else %}
-      <div class="aspect-[3/4] flex items-center justify-center">
-        <span class="text-white text-5xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden group">
+    <a href="{% url 'novels:detail' novel.id %}" class="block">
+      <div class="relative bg-gradient-to-br from-green-600 to-green-800">
+        {% if novel.cover %}
+        <img src="{{ novel.cover }}" alt="{{ novel.title }}" class="w-full h-auto group-hover:scale-105 transition-transform duration-300">
+        {% else %}
+        <div class="aspect-[3/4] flex items-center justify-center">
+          <span class="text-white text-4xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
+        </div>
+        {% endif %}
+        <div class="absolute top-1 right-1 px-1.5 py-0.5 text-xs rounded bg-black/60 text-amber-400 font-bold">
+          {{ novel.click_num|humanize_num }}
+        </div>
       </div>
-      {% endif %}
-    </div>
-    <div class="p-4">
-      <h3 class="font-semibold text-lg truncate group-hover:text-green-700 dark:group-hover:text-green-400 transition-colors">{{ novel.title }}</h3>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ novel.author|default:"未知" }}</p>
-      <div class="flex items-center gap-2 mt-3">
-        <span class="px-2 py-0.5 text-xs rounded-full
+    </a>
+    <div class="p-2">
+      <a href="{% url 'novels:detail' novel.id %}" class="block">
+        <h3 class="text-sm font-medium truncate group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">{{ novel.title }}</h3>
+      </a>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>
+      <div class="flex items-center gap-1 mt-1">
+        <span class="px-1 py-0.5 text-xs rounded
           {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
-          {% elif novel.status == 1 %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
           {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
-          {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+          {% else %}bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400{% endif %}">
           {{ novel.get_status_display }}
         </span>
-        <span class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+        <span class="px-1 py-0.5 text-xs rounded bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
           {{ novel.get_genre_display }}
         </span>
       </div>
-      <div class="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">
-        <span>{{ novel.click_num|floatformat:0 }} 点击</span>
-        <span>{{ novel.word_num|floatformat:0 }} 字</span>
-      </div>
     </div>
-  </a>
+  </div>
   {% empty %}
   <div class="col-span-full text-center py-16 text-gray-400 dark:text-gray-500">
     <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,4 +107,28 @@
   </div>
   {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const banner = document.getElementById('hero-banner');
+  const bg = document.getElementById('hero-bg');
+  if (!banner || !bg) return;
+
+  const key = 'novel_hub_banner_bg';
+  const cached = localStorage.getItem(key);
+
+  if (cached) {
+    bg.style.backgroundImage = 'url(' + cached + ')';
+  }
+
+  const bgUrl = bg.style.backgroundImage.slice(5, -2);
+  const img = new Image();
+  img.onload = function() {
+    localStorage.setItem(key, bgUrl);
+  };
+  img.src = bgUrl;
+});
+</script>
 {% endblock %}
