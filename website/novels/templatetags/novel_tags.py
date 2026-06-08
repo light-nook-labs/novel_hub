@@ -25,7 +25,7 @@ def humanize_num(value):
         n = int(value)
         if n >= 10000:
             w = n / 10000
-            return f"{w:.2f}w+"
+            return f"{int(w)}w+"
         return str(n)
     except (ValueError, TypeError):
         return "-"
