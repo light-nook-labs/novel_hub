@@ -4,8 +4,8 @@
 {% block title %}Novel Hub{% endblock %}
 
 {% block hero %}
-<!-- Header 1: Navigation (solid bg, no hero) -->
-<header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
+<!-- Header 1: Navigation (transparent, hero shows through) -->
+<header class="text-white relative z-20">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
       <div class="flex items-center gap-8">
@@ -61,7 +61,7 @@
   <!-- Header 2: Filters (hero as bg) -->
   <div class="absolute bottom-0 left-0 right-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-      <div class="bg-white/10 backdrop-blur-md rounded-lg p-4 text-white">
+      <div class="backdrop-blur-md rounded-lg p-4 text-white">
         <div class="flex flex-wrap items-center gap-2 text-sm">
           <span class="text-white/70 font-medium">分类：</span>
           <a href="?{% if current_sort %}sort={{ current_sort }}{% endif %}"
