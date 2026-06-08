@@ -216,7 +216,6 @@ class TagListView(ListView):
     model = Tag
     template_name = "novels/tags.html"
     context_object_name = "tags"
-    paginate_by = _paginate_by
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -224,13 +223,6 @@ class TagListView(ListView):
         if q:
             qs = qs.filter(name__icontains=q)
         return qs.annotate_novel_count()
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        params = self.request.GET.copy()
-        params.pop("page", None)
-        ctx["querystring"] = params.urlencode()
-        return ctx
 
 
 class TagDetailView(DetailView):
@@ -257,7 +249,6 @@ class ContestListView(ListView):
     model = Contest
     template_name = "novels/contests.html"
     context_object_name = "contests"
-    paginate_by = _paginate_by
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -265,13 +256,6 @@ class ContestListView(ListView):
         if q:
             qs = qs.filter(name__icontains=q)
         return qs.annotate_novel_count()
-
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        params = self.request.GET.copy()
-        params.pop("page", None)
-        ctx["querystring"] = params.urlencode()
-        return ctx
 
 
 class ContestDetailView(DetailView):
@@ -372,7 +356,7 @@ class BannerListView(ListView):
     model = Novel
     template_name = "novels/banners.html"
     context_object_name = "novels"
-    paginate_by = _paginate_by
+    paginate_by = 12
 
     def get_queryset(self):
         return (
