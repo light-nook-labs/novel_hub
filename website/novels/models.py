@@ -1,0 +1,82 @@
+from django.db import models
+
+from .mappings import GENRE, STATUS, PTYPE
+
+
+class Author(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Contest(models.Model):
+    name = models.CharField(max_length=300, unique=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Novel(models.Model):
+    id = models.BigIntegerField(primary_key=True)
+    title = models.CharField(max_length=500)
+    ptype = models.SmallIntegerField(default=1, db_index=True)
+    genre = models.SmallIntegerField(default=1, db_index=True)
+    status = models.SmallIntegerField(default=1, db_index=True)
+    click_num = models.IntegerField(null=True, blank=True)
+    word_num = models.IntegerField(null=True, blank=True)
+    praise_num = models.IntegerField(null=True, blank=True)
+    like_num = models.IntegerField(null=True, blank=True)
+    has_banner = models.BooleanField(default=False, db_index=True)
+    review_num = models.IntegerField(null=True, blank=True)
+    comment_num = models.IntegerField(null=True, blank=True)
+    cover = models.URLField(max_length=500, blank=True, null=True)
+    last_update = models.DateTimeField(null=True, blank=True)
+    db_update = models.DateTimeField(auto_now=True)
+
+    author = models.ForeignKey(
+        Author,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="novels",
+    )
+    contest = models.ForeignKey(
+        Contest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="novels",
+    )
+    tags = models.ManyToManyField(Tag, blank=True, related_name="novels")
+
+    class Meta:
+        ordering = ["-last_update"]
+
+    def __str__(self):
+        return self.title
+
+    def get_genre_display(self):
+        return GENRE.get_zh(self.genre)
+
+    def get_status_display(self):
+        return STATUS.get_zh(self.status)
+
+    def get_ptype_display(self):
+        return PTYPE.get_zh(self.ptype)

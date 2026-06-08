@@ -1,0 +1,13 @@
+{
+  "name": "novel-hub",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npx @tailwindcss/cli -i ./website/static/css/input.css -o ./website/static/css/output.css --watch",
+    "build": "npx @tailwindcss/cli -i ./website/static/css/input.css -o ./website/static/css/output.css --minify"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "htmx.org": "^2.0.10",
+    "tailwindcss": "^4.3.0"
+  }
+}

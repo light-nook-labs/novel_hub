@@ -1,0 +1,164 @@
+{% extends "novels/base.html" %}
+{% load novel_tags %}
+
+{% block title %}排行榜 - Novel Hub{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">排行榜</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">点击数字/时间列标题排序，共 {{ paginator.count }} 本</p>
+</div>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+          <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">#</th>
+          {% for col in columns %}
+          <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider {% if col.sortable %}cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none transition-colors{% endif %}"
+              {% if col.sortable %}onclick="sortTable('{{ col.sort_key|default:col.key }}')"{% endif %}>
+            <div class="flex items-center gap-1">
+              {{ col.label }}
+              {% if col.sortable %}
+                {% if current_sort == col.sort_key|default:col.key %}
+                <span class="text-green-600 dark:text-green-400">
+                  {% if current_dir == "asc" %}
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                  {% else %}
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"/></svg>
+                  {% endif %}
+                </span>
+                {% else %}
+                <span class="text-gray-300 dark:text-gray-600">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                </span>
+                {% endif %}
+              {% endif %}
+            </div>
+          </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+        {% for novel in novels %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+          <td class="px-3 py-2 text-center text-gray-400 dark:text-gray-500 tabular-nums">
+            {{ forloop.counter0|add:page_start }}
+          </td>
+          {% for col in columns %}
+          <td class="px-3 py-2">
+            {% if col.key == "info" %}
+            <div class="flex items-start gap-3">
+              <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" class="flex-shrink-0">
+                {% if novel.cover %}
+                <img src="{{ novel.cover }}" alt="" class="h-14 w-auto rounded object-cover">
+                {% else %}
+                <div class="h-14 w-10 rounded bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
+                  <span class="text-white text-xs font-bold">{{ novel.title|truncatechars:1 }}</span>
+                </div>
+                {% endif %}
+              </a>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank"
+                     class="font-medium text-gray-900 dark:text-gray-100 hover:text-green-600 dark:hover:text-green-400 transition-colors truncate">
+                    {{ novel.title }}
+                  </a>
+                  <span class="text-xs text-gray-400 dark:text-gray-500 tabular-nums flex-shrink-0">#{{ novel.id }}</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{{ novel.author|default:"未知" }}</p>
+                <div class="flex items-center gap-1.5 mt-1">
+                  <span class="px-1.5 py-0.5 text-xs rounded-full
+                    {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
+                    {% elif novel.status == 1 %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
+                    {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
+                    {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+                    {{ novel.get_status_display }}
+                  </span>
+                  <span class="px-1.5 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                    {{ novel.get_genre_display }}
+                  </span>
+                  <span class="px-1.5 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                    {{ novel.get_ptype_display }}
+                  </span>
+                </div>
+                {% if novel.tags.all %}
+                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                  {% for tag in novel.tags.all %}
+                  <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ tag.name }}</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% elif col.key == "contest" %}
+            <span class="text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">{{ novel.contest|default:"-" }}</span>
+            {% elif col.key == "has_banner" %}
+            {% if novel.has_banner %}
+            <span class="text-green-600 dark:text-green-400 text-xs">Y</span>
+            {% else %}
+            <span class="text-gray-400 dark:text-gray-500 text-xs">N</span>
+            {% endif %}
+            {% elif col.key == "last_update" %}
+            <span class="text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">{{ novel.last_update|date:"Y-m-d"|default:"-" }}</span>
+            {% else %}
+            <span class="text-gray-700 dark:text-gray-300 tabular-nums whitespace-nowrap">{{ novel|get_attr:col.key|default:"-" }}</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="{{ columns|length|add:1 }}" class="px-3 py-12 text-center text-gray-400 dark:text-gray-500">
+            暂无数据
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if novels.has_other_pages %}
+<div class="mt-6 flex justify-center gap-2">
+  {% if novels.has_previous %}
+  <a href="?page={{ novels.previous_page_number }}&{{ querystring }}"
+     class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">上一页</a>
+  {% endif %}
+
+  {% for num in novels.paginator.page_range %}
+    {% if novels.number == num %}
+      <span class="px-4 py-2 bg-green-700 text-white rounded-lg">{{ num }}</span>
+    {% elif num > novels.number|add:'-3' and num < novels.number|add:'3' %}
+      <a href="?page={{ num }}&{{ querystring }}"
+         class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if novels.has_next %}
+  <a href="?page={{ novels.next_page_number }}&{{ querystring }}"
+     class="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">下一页</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<script>
+function sortTable(key) {
+  const params = new URLSearchParams(window.location.search);
+  const currentSort = params.get('sort') || 'click_num';
+  const currentDir = params.get('dir') || 'desc';
+
+  if (key === currentSort) {
+    params.set('dir', currentDir === 'desc' ? 'asc' : 'desc');
+  } else {
+    params.set('sort', key);
+    params.set('dir', 'desc');
+  }
+  params.delete('page');
+  window.location.search = params.toString();
+}
+</script>
+{% endblock %}

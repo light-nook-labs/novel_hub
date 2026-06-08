@@ -1,0 +1,103 @@
+{% extends "novels/base.html" %}
+
+{% block title %}{{ novel.title }} - Novel Hub{% endblock %}
+
+{% block content %}
+<nav class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+  <a href="{% url 'novels:index' %}" class="hover:text-green-600 dark:hover:text-green-400 transition-colors">首页</a>
+  <span class="mx-2">/</span>
+  <span class="text-gray-900 dark:text-gray-100">{{ novel.title }}</span>
+</nav>
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+  <div class="md:flex">
+    <div class="md:w-1/3 h-72 md:h-auto bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center overflow-hidden">
+      {% if novel.cover %}
+      <img src="{{ novel.cover }}" alt="{{ novel.title }}" class="h-full w-full object-cover">
+      {% else %}
+      <span class="text-white text-7xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
+      {% endif %}
+    </div>
+
+    <div class="md:w-2/3 p-6 lg:p-8">
+      <h1 class="text-3xl font-bold">{{ novel.title }}</h1>
+
+      <div class="flex flex-wrap gap-2 mt-4">
+        <span class="px-3 py-1 text-sm rounded-full
+          {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
+          {% elif novel.status == 1 %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
+          {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
+          {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+          {{ novel.get_status_display }}
+        </span>
+        <span class="px-3 py-1 text-sm rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+          {{ novel.get_genre_display }}
+        </span>
+        <span class="px-3 py-1 text-sm rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+          {{ novel.get_ptype_display }}
+        </span>
+      </div>
+
+      <dl class="grid grid-cols-2 gap-x-6 gap-y-4 mt-8">
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">作者</dt>
+          <dd class="mt-1 font-medium">{{ novel.author|default:"未知" }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">征文</dt>
+          <dd class="mt-1 font-medium">{{ novel.contest|default:"无" }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">字数</dt>
+          <dd class="mt-1 font-medium">{{ novel.word_num|floatformat:0 }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">点击</dt>
+          <dd class="mt-1 font-medium">{{ novel.click_num|floatformat:0 }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">收藏</dt>
+          <dd class="mt-1 font-medium">{{ novel.like_num|floatformat:0 }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">点赞</dt>
+          <dd class="mt-1 font-medium">{{ novel.praise_num|floatformat:0 }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">长评</dt>
+          <dd class="mt-1 font-medium">{{ novel.review_num|floatformat:0 }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">短评</dt>
+          <dd class="mt-1 font-medium">{{ novel.comment_num|floatformat:0 }}</dd>
+        </div>
+        <div class="col-span-2">
+          <dt class="text-sm text-gray-500 dark:text-gray-400">最后更新</dt>
+          <dd class="mt-1 font-medium">{{ novel.last_update|date:"Y-m-d H:i"|default:"未知" }}</dd>
+        </div>
+      </dl>
+
+      {% if novel.tags.all %}
+      <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+        <h3 class="text-sm text-gray-500 dark:text-gray-400 mb-3">标签</h3>
+        <div class="flex flex-wrap gap-2">
+          {% for tag in novel.tags.all %}
+          <span class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 rounded-full">{{ tag.name }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="mt-6">
+  <a href="{% url 'novels:index' %}"
+     class="inline-flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-green-600 dark:hover:text-green-400 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+    </svg>
+    返回列表
+  </a>
+</div>
+{% endblock %}

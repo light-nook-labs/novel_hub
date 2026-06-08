@@ -1,0 +1,6 @@
+[site]
+name = "Novel Hub"
+
+[pagination]
+style = "traditional"
+per_page = 20
