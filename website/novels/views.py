@@ -3,7 +3,7 @@ from django.views.generic import ListView, DetailView
 
 from .models import Novel, Author, Tag, Contest
 from .mappings import GENRE, STATUS, PTYPE
-
+from config.toml import _load_config
 
 COLUMNS = [
     {"key": "info", "label": "小说", "sortable": True, "sort_key": "id"},
@@ -19,6 +19,7 @@ COLUMNS = [
 
 NOVEL_LIST_SELECT = ("author", "contest")
 NOVEL_LIST_PREFETCH = ("tags",)
+_paginate_by = _load_config().get("pagination", {}).get("per_page", 20)
 
 
 def _novel_list_ctx(request, queryset, paginate_by=24):
@@ -37,7 +38,7 @@ class NovelListView(ListView):
     model = Novel
     template_name = "novels/index.html"
     context_object_name = "novels"
-    paginate_by = 24
+    paginate_by = _paginate_by
 
     SORT_OPTIONS = {
         "": "综合排序",
@@ -50,10 +51,16 @@ class NovelListView(ListView):
     }
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related(*NOVEL_LIST_SELECT).prefetch_related(*NOVEL_LIST_PREFETCH)
+        qs = (
+            super()
+            .get_queryset()
+            .select_related(*NOVEL_LIST_SELECT)
+            .prefetch_related(*NOVEL_LIST_PREFETCH)
+        )
         query = self.request.GET.get("q", "").strip()
         if query:
             from django.db.models import Q
+
             qs = qs.filter(Q(title__icontains=query) | Q(author__name__icontains=query))
         genre = self.request.GET.get("genre")
         status = self.request.GET.get("status")
@@ -80,7 +87,8 @@ class NovelListView(ListView):
         def _choices(mapping):
             return [
                 {"value": m.value, "label": mapping.get_zh(m.value)}
-                for m in mapping.enum if m.name != "OTHER"
+                for m in mapping.enum
+                if m.name != "OTHER"
             ]
 
         ctx["genres"] = _choices(GENRE)
@@ -92,7 +100,9 @@ class NovelListView(ListView):
         ctx["current_sort"] = self.request.GET.get("sort", "")
         ctx["sort_options"] = self.SORT_OPTIONS
 
-        latest_banner = Novel.objects.filter(has_banner=True).order_by("-last_update").first()
+        latest_banner = (
+            Novel.objects.filter(has_banner=True).order_by("-last_update").first()
+        )
         ctx["latest_banner"] = latest_banner
 
         params = self.request.GET.copy()
@@ -107,7 +117,12 @@ class NovelDetailView(DetailView):
     context_object_name = "novel"
 
     def get_queryset(self):
-        return super().get_queryset().select_related(*NOVEL_LIST_SELECT).prefetch_related(*NOVEL_LIST_PREFETCH)
+        return (
+            super()
+            .get_queryset()
+            .select_related(*NOVEL_LIST_SELECT)
+            .prefetch_related(*NOVEL_LIST_PREFETCH)
+        )
 
 
 # ── Rank ─────────────────────────────────────────────────────────────
@@ -117,12 +132,17 @@ class NovelRankView(ListView):
     model = Novel
     template_name = "novels/rank.html"
     context_object_name = "novels"
-    paginate_by = 50
+    paginate_by = _paginate_by
 
     SORTABLE = {c.get("sort_key", c["key"]) for c in COLUMNS if c["sortable"]}
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related(*NOVEL_LIST_SELECT).prefetch_related(*NOVEL_LIST_PREFETCH)
+        qs = (
+            super()
+            .get_queryset()
+            .select_related(*NOVEL_LIST_SELECT)
+            .prefetch_related(*NOVEL_LIST_PREFETCH)
+        )
         sort = self.request.GET.get("sort", "click_num")
         if sort not in self.SORTABLE:
             sort = "click_num"
@@ -138,7 +158,9 @@ class NovelRankView(ListView):
         ctx["current_sort"] = sort if sort in self.SORTABLE else "click_num"
         ctx["current_dir"] = direction
         page_obj = ctx.get("page_obj")
-        ctx["page_start"] = (page_obj.number - 1) * self.paginate_by + 1 if page_obj else 1
+        ctx["page_start"] = (
+            (page_obj.number - 1) * self.paginate_by + 1 if page_obj else 1
+        )
         ctx["columns"] = COLUMNS
         params = self.request.GET.copy()
         params.pop("page", None)
@@ -153,7 +175,7 @@ class AuthorListView(ListView):
     model = Author
     template_name = "novels/authors.html"
     context_object_name = "authors"
-    paginate_by = 50
+    paginate_by = _paginate_by
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -177,10 +199,13 @@ class AuthorDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["novels"] = (
-            self.object.novels.select_related("contest").prefetch_related("tags")
+        novels_qs = (
+            self.object.novels.select_related("contest")
+            .prefetch_related("tags")
             .order_by("-click_num")
-        )[:50]
+        )
+        ctx["novels"] = novels_qs[:50]
+        ctx["novel_count"] = self.object.novels.count()
         return ctx
 
 
@@ -191,7 +216,7 @@ class TagListView(ListView):
     model = Tag
     template_name = "novels/tags.html"
     context_object_name = "tags"
-    paginate_by = 50
+    paginate_by = _paginate_by
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -215,10 +240,13 @@ class TagDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["novels"] = (
-            self.object.novels.select_related("author", "contest").prefetch_related("tags")
+        novels_qs = (
+            self.object.novels.select_related("author", "contest")
+            .prefetch_related("tags")
             .order_by("-click_num")
-        )[:50]
+        )
+        ctx["novels"] = novels_qs[:50]
+        ctx["novel_count"] = self.object.novels.count()
         return ctx
 
 
@@ -229,7 +257,7 @@ class ContestListView(ListView):
     model = Contest
     template_name = "novels/contests.html"
     context_object_name = "contests"
-    paginate_by = 50
+    paginate_by = _paginate_by
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -253,10 +281,13 @@ class ContestDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["novels"] = (
-            self.object.novels.select_related("author").prefetch_related("tags")
+        novels_qs = (
+            self.object.novels.select_related("author")
+            .prefetch_related("tags")
             .order_by("-click_num")
-        )[:50]
+        )
+        ctx["novels"] = novels_qs[:50]
+        ctx["novel_count"] = self.object.novels.count()
         return ctx
 
 
@@ -266,7 +297,7 @@ class ContestDetailView(DetailView):
 class EnumListView(ListView):
     template_name = "novels/enum_list.html"
     context_object_name = "items"
-    paginate_by = 50
+    paginate_by = _paginate_by
 
     ENUM_MAP = {"genre": GENRE, "status": STATUS, "ptype": PTYPE}
 
@@ -275,19 +306,23 @@ class EnumListView(ListView):
         self.mapping = self.ENUM_MAP.get(self.enum_type)
         if not self.mapping:
             from django.http import Http404
+
             raise Http404
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         return [
             {"value": m.value, "label": self.mapping.get_zh(m.value)}
-            for m in self.mapping.enum if m.name != "OTHER"
+            for m in self.mapping.enum
+            if m.name != "OTHER"
         ]
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["enum_type"] = self.enum_type
-        ctx["enum_label"] = {"genre": "分类", "status": "状态", "ptype": "类型"}.get(self.enum_type, "")
+        ctx["enum_label"] = {"genre": "分类", "status": "状态", "ptype": "类型"}.get(
+            self.enum_type, ""
+        )
         params = self.request.GET.copy()
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()
@@ -297,7 +332,7 @@ class EnumListView(ListView):
 class EnumDetailView(ListView):
     template_name = "novels/enum_detail.html"
     context_object_name = "novels"
-    paginate_by = 24
+    paginate_by = _paginate_by
 
     ENUM_MAP = {"genre": GENRE, "status": STATUS, "ptype": PTYPE}
 
@@ -306,6 +341,7 @@ class EnumDetailView(ListView):
         self.mapping = self.ENUM_MAP.get(self.enum_type)
         if not self.mapping:
             from django.http import Http404
+
             raise Http404
         self.enum_value = int(kwargs["value"])
         self.enum_label = self.mapping.get_zh(self.enum_value)
@@ -314,7 +350,8 @@ class EnumDetailView(ListView):
     def get_queryset(self):
         return (
             Novel.objects.filter(**{self.enum_type: self.enum_value})
-            .select_related("author", "contest").prefetch_related("tags")
+            .select_related("author", "contest")
+            .prefetch_related("tags")
         )
 
     def get_context_data(self, **kwargs):
@@ -335,12 +372,13 @@ class BannerListView(ListView):
     model = Novel
     template_name = "novels/banners.html"
     context_object_name = "novels"
-    paginate_by = 24
+    paginate_by = _paginate_by
 
     def get_queryset(self):
         return (
             Novel.objects.filter(has_banner=True)
-            .select_related("author", "contest").prefetch_related("tags")
+            .select_related("author", "contest")
+            .prefetch_related("tags")
         )
 
     def get_context_data(self, **kwargs):

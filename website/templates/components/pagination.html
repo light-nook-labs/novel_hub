@@ -41,26 +41,15 @@
     {% endif %}
   </div>
 
-  <div class="flex items-center gap-2">
+  <form class="flex items-center gap-2"
+        hx-get="?{% if querystring %}{{ querystring }}&{% endif %}"
+        hx-target="#content" hx-select="#content">
     <span class="text-sm text-gray-600 dark:text-gray-400">跳至</span>
-    <input type="number"
+    <input type="number" name="page"
            class="w-16 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
            min="1" max="{{ paginator.num_pages }}"
-           value="{{ page_obj.number }}"
-           onkeydown="if(event.key==='Enter')jumpPage(this.value)">
+           value="{{ page_obj.number }}">
     <span class="text-sm text-gray-600 dark:text-gray-400">/ {{ paginator.num_pages }} 页</span>
-  </div>
+  </form>
 </div>
-
-<script>
-function jumpPage(page) {
-  const total = {{ paginator.num_pages }};
-  const target = parseInt(page, 10);
-  if (!isNaN(target) && target >= 1 && target <= total) {
-    const url = new URL(window.location.href);
-    url.searchParams.set('page', target);
-    window.location.href = url.href;
-  }
-}
-</script>
 {% endif %}

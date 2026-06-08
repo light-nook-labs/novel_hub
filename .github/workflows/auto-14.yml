@@ -50,7 +50,7 @@ jobs:
           mkdir -p output
           DAY=$(date +%d)
           FILE=output/meta_${DAY}.jsonl
-          uv run scrapy crawl meta_spider -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o ${FILE}
+          uv run scrapy crawl meta -a begin=${{ env.BEGIN }} -a num=${{ env.NUM }} -o ${FILE}
 
       - name: Update BEGIN
         run: |

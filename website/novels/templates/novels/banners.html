@@ -9,11 +9,11 @@
   <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 个 Banner</p>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
   {% for novel in novels %}
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden cursor-pointer group"
        onclick="openLightbox(this)" data-src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg">
-    <div class="relative overflow-hidden h-32">
+    <div class="relative overflow-hidden" style="aspect-ratio: 3/1">
       <img src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg"
            alt="{{ novel.title }}"
            class="absolute right-0 top-0 h-full w-[182%] max-w-none object-cover group-hover:scale-105 transition-transform duration-300"
