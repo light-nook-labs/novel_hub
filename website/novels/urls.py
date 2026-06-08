@@ -6,6 +6,7 @@ app_name = "novels"
 urlpatterns = [
     path("", views.NovelListView.as_view(), name="index"),
     path("rank/", views.NovelRankView.as_view(), name="rank"),
+    path("banners/", views.BannerListView.as_view(), name="banners"),
     path("novel/<int:pk>/", views.NovelDetailView.as_view(), name="detail"),
     path("authors/", views.AuthorListView.as_view(), name="authors"),
     path("authors/<int:pk>/", views.AuthorDetailView.as_view(), name="author_detail"),

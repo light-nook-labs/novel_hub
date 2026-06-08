@@ -1,0 +1,70 @@
+{% extends "novels/base.html" %}
+{% load novel_tags %}
+
+{% block title %}Banner - Novel Hub{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">Banner</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 个 Banner</p>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  {% for novel in novels %}
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden cursor-pointer group"
+       onclick="openLightbox(this)" data-src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg">
+    <div class="relative">
+      <img src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg"
+           alt="{{ novel.title }}"
+           class="w-full h-auto rounded-t-lg group-hover:scale-105 transition-transform duration-300"
+           onerror="this.parentElement.innerHTML='<div class=\'aspect-[3/1] bg-gradient-to-r from-green-600 to-green-800 flex items-center justify-center\'><span class=\'text-white text-lg font-bold\'>{{ novel.title }}</span></div>'">
+      <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
+        <a href="{% url 'novels:detail' novel.id %}" class="text-white font-medium hover:text-amber-400 transition-colors" onclick="event.stopPropagation()">
+          {{ novel.title }}
+        </a>
+        <p class="text-white/80 text-xs mt-0.5">{{ novel.author|default:"未知" }}</p>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-span-full text-center py-12 text-gray-400">暂无 Banner 数据</div>
+  {% endfor %}
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeLightbox()">
+  <div class="relative max-w-4xl max-h-[90vh] mx-4">
+    <button onclick="closeLightbox()" class="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+    <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script>
+function openLightbox(el) {
+  const src = el.dataset.src;
+  const lightbox = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = src;
+  lightbox.classList.remove('hidden');
+  lightbox.classList.add('flex');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  const lightbox = document.getElementById('lightbox');
+  lightbox.classList.add('hidden');
+  lightbox.classList.remove('flex');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeLightbox();
+});
+</script>
+{% endblock %}
