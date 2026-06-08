@@ -3,8 +3,14 @@ from django.db import models
 from .mappings import GENRE, STATUS, PTYPE
 
 
+class NovelCountQuerySet(models.QuerySet):
+    def annotate_novel_count(self):
+        return self.annotate(novel_count=models.Count("novels")).order_by("-novel_count")
+
+
 class Author(models.Model):
     name = models.CharField(max_length=200, unique=True)
+    objects = NovelCountQuerySet.as_manager()
 
     class Meta:
         ordering = ["name"]
@@ -15,6 +21,7 @@ class Author(models.Model):
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    objects = NovelCountQuerySet.as_manager()
 
     class Meta:
         ordering = ["name"]
@@ -25,6 +32,7 @@ class Tag(models.Model):
 
 class Contest(models.Model):
     name = models.CharField(max_length=300, unique=True)
+    objects = NovelCountQuerySet.as_manager()
 
     class Meta:
         ordering = ["name"]

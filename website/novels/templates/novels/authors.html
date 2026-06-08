@@ -1,0 +1,40 @@
+{% extends "novels/base.html" %}
+
+{% block title %}作者 - Novel Hub{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">作者</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 位作者</p>
+</div>
+
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+  {% for author in authors %}
+  <a href="{% url 'novels:author_detail' author.id %}"
+     class="bg-white dark:bg-gray-800 rounded-lg shadow p-3 hover:shadow-md transition-shadow">
+    <p class="font-medium text-gray-900 dark:text-gray-100 truncate">{{ author.name }}</p>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ author.novel_count }} 本</p>
+  </a>
+  {% empty %}
+  <div class="col-span-full text-center py-12 text-gray-400">暂无数据</div>
+  {% endfor %}
+</div>
+
+{% if authors.has_other_pages %}
+<div class="mt-8 flex justify-center gap-2">
+  {% if authors.has_previous %}
+  <a href="?page={{ authors.previous_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">上一页</a>
+  {% endif %}
+  {% for num in authors.paginator.page_range %}
+    {% if authors.number == num %}
+      <span class="px-4 py-2 bg-green-700 text-white rounded-lg">{{ num }}</span>
+    {% elif num > authors.number|add:'-3' and num < authors.number|add:'3' %}
+      <a href="?page={{ num }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if authors.has_next %}
+  <a href="?page={{ authors.next_page_number }}" class="px-4 py-2 bg-white dark:bg-gray-800 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">下一页</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
