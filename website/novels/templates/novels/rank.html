@@ -99,9 +99,9 @@
             </div>
             {% elif col.key == "has_banner" %}
             {% if novel.has_banner %}
-            <span class="text-green-600 dark:text-green-400 text-xs">Y</span>
+            <div class="h-3 w-8 rounded-sm bg-gradient-to-r from-amber-400 to-amber-600"></div>
             {% else %}
-            <span class="text-gray-400 dark:text-gray-500 text-xs">N</span>
+            <div class="h-3 w-8 rounded-sm bg-gray-200 dark:bg-gray-600"></div>
             {% endif %}
             {% elif col.key == "last_update" %}
             <span class="text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">{{ novel.last_update|date:"Y-m-d"|default:"-" }}</span>
