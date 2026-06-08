@@ -52,10 +52,10 @@
             <div class="flex items-start gap-3">
               <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" class="flex-shrink-0">
                 {% if novel.cover %}
-                <img src="{{ novel.cover }}" alt="" class="h-14 w-auto rounded object-cover">
+                <img src="{{ novel.cover }}" alt="" class="h-20 w-auto rounded object-cover">
                 {% else %}
-                <div class="h-14 w-10 rounded bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
-                  <span class="text-white text-xs font-bold">{{ novel.title|truncatechars:1 }}</span>
+                <div class="h-20 w-14 rounded bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
+                  <span class="text-white text-sm font-bold">{{ novel.title|truncatechars:1 }}</span>
                 </div>
                 {% endif %}
               </a>
@@ -82,6 +82,11 @@
                   <span class="px-1.5 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                     {{ novel.get_ptype_display }}
                   </span>
+                  {% if novel.contest %}
+                  <span class="px-1.5 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                    {{ novel.contest }}
+                  </span>
+                  {% endif %}
                 </div>
                 {% if novel.tags.all %}
                 <div class="flex flex-wrap gap-1.5 mt-1.5">
@@ -92,8 +97,6 @@
                 {% endif %}
               </div>
             </div>
-            {% elif col.key == "contest" %}
-            <span class="text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">{{ novel.contest|default:"-" }}</span>
             {% elif col.key == "has_banner" %}
             {% if novel.has_banner %}
             <span class="text-green-600 dark:text-green-400 text-xs">Y</span>

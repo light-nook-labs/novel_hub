@@ -6,7 +6,6 @@ from .mappings import GENRE, STATUS, PTYPE
 
 COLUMNS = [
     {"key": "info", "label": "小说", "sortable": True, "sort_key": "id"},
-    {"key": "contest", "label": "征文", "sortable": False},
     {"key": "has_banner", "label": "Banner", "sortable": True},
     {"key": "word_num", "label": "字数", "sortable": True},
     {"key": "click_num", "label": "点击", "sortable": True},
