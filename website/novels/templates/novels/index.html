@@ -3,28 +3,62 @@
 
 {% block title %}Novel Hub{% endblock %}
 
-{% block content %}
-<!-- Hero Banner -->
-{% if latest_banner %}
-<div id="hero-banner" class="relative rounded-xl overflow-hidden mb-8 h-48 md:h-64">
-  <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-       style="background-image: url('https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ latest_banner.id }}.jpg')">
+{% block hero %}
+<div class="relative">
+  <div id="hero-banner" class="h-64 md:h-80 lg:h-96 bg-gradient-to-br from-green-800 to-green-900 overflow-hidden">
+    {% if latest_banner %}
+    <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60"
+         data-default-bg="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ latest_banner.id }}.jpg"></div>
+    {% else %}
+    <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60"></div>
+    {% endif %}
+    <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60"></div>
   </div>
-  <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-  <div class="relative h-full flex flex-col justify-end p-6">
-    <a href="{% url 'novels:detail' latest_banner.id %}" class="text-2xl md:text-3xl font-bold text-white hover:text-amber-400 transition-colors">
-      {{ latest_banner.title }}
-    </a>
-    <p class="text-white/80 text-sm mt-1">{{ latest_banner.author|default:"未知" }}</p>
-    <div class="flex items-center gap-2 mt-2">
-      <span class="px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white">{{ latest_banner.get_genre_display }}</span>
-      <span class="px-2 py-0.5 text-xs rounded-full bg-green-500 text-white">{{ latest_banner.get_status_display }}</span>
-      <span class="text-white/60 text-xs">{{ latest_banner.click_num|humanize_num }} 点击</span>
-    </div>
-  </div>
-</div>
-{% endif %}
 
+  <!-- Header overlays the hero -->
+  <header class="absolute top-0 left-0 right-0 z-10 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-8">
+          <a href="{% url 'novels:index' %}" class="text-xl font-bold tracking-tight hover:text-amber-400 transition-colors drop-shadow-lg">
+            Novel Hub
+          </a>
+          <nav class="hidden md:flex items-center gap-6 text-sm">
+            <a href="{% url 'novels:index' %}" class="hover:text-amber-400 transition-colors drop-shadow">全部小说</a>
+            <a href="{% url 'novels:rank' %}" class="hover:text-amber-400 transition-colors drop-shadow">排行榜</a>
+            <a href="{% url 'novels:enum_list' 'genre' %}" class="hover:text-amber-400 transition-colors drop-shadow">分类</a>
+            <a href="{% url 'novels:authors' %}" class="hover:text-amber-400 transition-colors drop-shadow">作者</a>
+            <a href="{% url 'novels:tags' %}" class="hover:text-amber-400 transition-colors drop-shadow">标签</a>
+            <a href="{% url 'novels:contests' %}" class="hover:text-amber-400 transition-colors drop-shadow">征文</a>
+            <a href="{% url 'novels:banners' %}" class="hover:text-amber-400 transition-colors drop-shadow">Banner</a>
+          </nav>
+        </div>
+
+        <form action="{% url 'novels:index' %}" method="get" class="flex-1 max-w-md mx-4">
+          <div class="relative">
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}"
+                   placeholder="搜索小说..."
+                   class="w-full px-4 py-2 bg-white/10 backdrop-blur-sm text-white placeholder-white/60 border border-white/20 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent">
+            <button type="submit" class="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <div class="flex items-center gap-4">
+          <a href="{% url 'admin:index' %}" class="text-sm bg-white/10 backdrop-blur-sm hover:bg-white/20 px-3 py-1.5 rounded-lg transition-colors drop-shadow">
+            Admin
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+{% endblock %}
+
+{% block content %}
 <!-- Filter Bar -->
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
   <div class="flex flex-wrap items-center gap-2 text-sm">
@@ -107,28 +141,4 @@
   </div>
   {% endfor %}
 </div>
-{% endblock %}
-
-{% block extra_head %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const banner = document.getElementById('hero-banner');
-  const bg = document.getElementById('hero-bg');
-  if (!banner || !bg) return;
-
-  const key = 'novel_hub_banner_bg';
-  const cached = localStorage.getItem(key);
-
-  if (cached) {
-    bg.style.backgroundImage = 'url(' + cached + ')';
-  }
-
-  const bgUrl = bg.style.backgroundImage.slice(5, -2);
-  const img = new Image();
-  img.onload = function() {
-    localStorage.setItem(key, bgUrl);
-  };
-  img.src = bgUrl;
-});
-</script>
 {% endblock %}
