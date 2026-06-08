@@ -106,7 +106,7 @@
             {% elif col.key == "last_update" %}
             <span class="text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">{{ novel.last_update|date:"Y-m-d"|default:"-" }}</span>
             {% else %}
-            <span class="text-gray-700 dark:text-gray-300 tabular-nums whitespace-nowrap">{{ novel|get_attr:col.key|default:"-" }}</span>
+            <span class="text-gray-700 dark:text-gray-300 tabular-nums whitespace-nowrap">{{ novel|get_attr:col.key|humanize_num }}</span>
             {% endif %}
           </td>
           {% endfor %}
