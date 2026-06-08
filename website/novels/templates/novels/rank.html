@@ -52,9 +52,9 @@
             <div class="flex items-start gap-3">
               <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" class="flex-shrink-0">
                 {% if novel.cover %}
-                <img src="{{ novel.cover }}" alt="" class="h-20 w-auto rounded object-cover">
+                <img src="{{ novel.cover }}" alt="" class="w-16 h-auto rounded">
                 {% else %}
-                <div class="h-20 w-14 rounded bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
+                <div class="w-16 aspect-[3/4] rounded bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
                   <span class="text-white text-sm font-bold">{{ novel.title|truncatechars:1 }}</span>
                 </div>
                 {% endif %}

@@ -21,11 +21,13 @@
   {% for novel in novels %}
   <a href="{% url 'novels:detail' novel.id %}"
      class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden">
-    <div class="h-32 bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center overflow-hidden">
+    <div class="bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center">
       {% if novel.cover %}
-      <img src="{{ novel.cover }}" alt="" class="h-full w-full object-cover">
+      <img src="{{ novel.cover }}" alt="" class="w-full h-auto">
       {% else %}
-      <span class="text-white text-3xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
+      <div class="aspect-[3/4] flex items-center justify-center">
+        <span class="text-white text-3xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
+      </div>
       {% endif %}
     </div>
     <div class="p-3">
