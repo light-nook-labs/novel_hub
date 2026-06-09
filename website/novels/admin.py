@@ -46,7 +46,12 @@ class AuthorAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_display = ["name", "novel_count"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(novel_count=Count("novels"))
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(novel_count=Count("novels"))
+            .order_by("-novel_count")
+        )
 
     @admin.display(description="小说数", ordering="novel_count")
     def novel_count(self, obj):
@@ -59,7 +64,12 @@ class TagAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_display = ["name", "novel_count"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(novel_count=Count("novels"))
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(novel_count=Count("novels"))
+            .order_by("-novel_count")
+        )
 
     @admin.display(description="小说数", ordering="novel_count")
     def novel_count(self, obj):
@@ -72,7 +82,12 @@ class ContestAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_display = ["name", "novel_count"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).annotate(novel_count=Count("novels"))
+        return (
+            super()
+            .get_queryset(request)
+            .annotate(novel_count=Count("novels"))
+            .order_by("-novel_count")
+        )
 
     @admin.display(description="小说数", ordering="novel_count")
     def novel_count(self, obj):
