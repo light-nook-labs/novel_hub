@@ -5,9 +5,9 @@ Usage:
     uv run python website/task_runner.py --limit 100
     uv run python website/task_runner.py --skip-fill
 
-Pipeline:
-1. fill_tasks — populate Task table with novels that have duplicate covers
-2. run_tasks  — re-scrape each Task's novel, update DB, delete Task
+Two main APIs:
+    fetch_html(session, nid) — detail page HTML → lxml → all fields
+    fetch_api(session, nid)  — comment/review JSON API
 """
 
 import argparse
@@ -32,44 +32,63 @@ USER_AGENT = (
     "AppleWebKit/537.36 (KHTML, like Gecko) "
     "Chrome/147.0.0.0 Safari/537.36"
 )
+HEADERS = {"User-Agent": USER_AGENT}
 COMMON_URL = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 
 
-def fill_tasks():
-    """Call Django management command to populate Task table."""
-    from django.core.management import call_command
-
-    call_command("fill_tasks")
+# ---------------------------------------------------------------------------
+# API 1: fetch_html — detail page HTML via lxml
+# ---------------------------------------------------------------------------
 
 
-def fetch_detail(session, nid):
-    """GET /Novel/{nid}/ — parse HTML with lxml (reusing meta.py selectors).
+def fetch_html(session, nid):
+    """GET /Novel/{nid}/ → parse all fields with lxml.
 
-    CSS selectors from meta.py → XPath equivalents:
+    Reuses CSS selectors from meta.py (converted to XPath):
       .count-detail .text-row .text::text
       #BasicOperation .btn::text
       .title .tag::text
       .d-banner
       .tag-list .tag .highlight .text::text
+
+    Also extracts title, author, cover from page structure.
     """
     url = f"https://book.sfacg.com/Novel/{nid}/"
-    headers = {"User-Agent": USER_AGENT}
-    resp = session.get(url, headers=headers, timeout=10)
+    resp = session.get(url, headers=HEADERS, timeout=10)
     resp.raise_for_status()
     tree = lxml.html.fromstring(resp.text)
 
+    # Title from <h1>
+    h1_texts = tree.xpath("//h1//text()")
+    title = "".join(t.strip() for t in h1_texts)
+
+    # Author from <title> tag
+    # Format: '小说名 - 小说全文阅读 - 类型标签 - 作者 - SF轻小说'
+    raw = tree.xpath("//title/text()")[0].strip()
+    parts = [p.strip() for p in raw.split(" - ")]
+    author_name = parts[-2] if len(parts) >= 3 else ""
+
+    # Cover: first NovelCover image
+    covers = tree.xpath('//img[contains(@src,"NovelCover")]/@src')
+    cover = covers[0] if covers else None
+
+    # Stats row: 类型/字数/人气/更新
     row = tree.xpath(
         '//div[contains(@class,"count-detail")]'
         '//div[contains(@class,"text-row")]'
         '//span[contains(@class,"text")]/text()'
     )
+    # Buttons: 赞/收藏
     btns = tree.xpath(
         '//div[@id="BasicOperation"]' '//a[contains(@class,"btn")]/text()'
     )
+    # Ptype + contest tags
     ptype_contest = tree.xpath(
         '//div[contains(@class,"title")]' '//span[contains(@class,"tag")]/text()'
     )
+    # Banner
     banner = tree.xpath('//div[contains(@class,"d-banner")]')
+    # Tags
     tags = tree.xpath(
         '//div[contains(@class,"tag-list")]'
         '//div[contains(@class,"tag")]'
@@ -78,19 +97,33 @@ def fetch_detail(session, nid):
     )
 
     return {
+        "title": title,
+        "author": author_name,
+        "cover": cover,
         "has_banner": bool(banner),
         "tags": tags,
-        **parse_row(row),
-        **parse_btns(btns),
-        **parse_ptype_contest(ptype_contest),
+        **_parse_row(row),
+        **_parse_btns(btns),
+        **_parse_ptype_contest(ptype_contest),
     }
 
 
-def fetch_comment(session, nid):
-    """GET Common.ashx?op=getcomment — JSON API."""
-    headers = {"User-Agent": USER_AGENT}
-    params = {"op": "getcomment", "nid": nid, "_": int(time_mod.time() * 1000)}
-    resp = session.get(COMMON_URL, params=params, headers=headers, timeout=10)
+# ---------------------------------------------------------------------------
+# API 2: fetch_api — comment/review JSON
+# ---------------------------------------------------------------------------
+
+
+def fetch_api(session, nid):
+    """GET Common.ashx?op=getcomment → JSON.
+
+    Returns comment_num (short comments) and review_num (long reviews).
+    """
+    params = {
+        "op": "getcomment",
+        "nid": nid,
+        "_": int(time_mod.time() * 1000),
+    }
+    resp = session.get(COMMON_URL, params=params, headers=HEADERS, timeout=10)
     resp.raise_for_status()
     data = resp.json()
     return {
@@ -99,20 +132,27 @@ def fetch_comment(session, nid):
     }
 
 
-def parse_row(row):
-    """Parse word_num, status, click_num, last_update.
+# ---------------------------------------------------------------------------
+# HTML parsing helpers (convert meta.py CSS selectors → XPath)
+# ---------------------------------------------------------------------------
 
-    Example row:
+
+def _parse_row(row):
+    """Parse genre, word_num, status, click_num, last_update.
+
+    Example:
         ['类型：魔幻', '字数：3240533字[连载中]',
-         '点击：4757.4万', '更新：2026/5/25 20:26:36']
+         '人气：4757.4万', '更新：2026/5/25 20:26:36']
     """
     if len(row) < 4:
         return {}
     values = [item.split("：")[-1] for item in row]
-    _, wordnum_status, click_num, last_update = values
+    genre, wordnum_status, click_num, last_update = values
     word_num, status = wordnum_status.split("字[")
     status = status.replace("]", "")
+    click_num = click_num.replace("人气", "").replace("点击", "")
     return {
+        "genre": genre,
         "word_num": int(word_num),
         "status": status,
         "click_num": int(
@@ -124,8 +164,8 @@ def parse_row(row):
     }
 
 
-def parse_btns(btns):
-    """Parse praise_num, like_num from buttons.
+def _parse_btns(btns):
+    """Parse praise_num, like_num.
 
     Example: ['点击阅读', '赞 27872', '收藏 278629']
     """
@@ -135,8 +175,8 @@ def parse_btns(btns):
     return {"praise_num": praise_num, "like_num": like_num}
 
 
-def parse_ptype_contest(ptype_contest):
-    """Parse ptype, contest from tags.
+def _parse_ptype_contest(ptype_contest):
+    """Parse ptype, contest.
 
     Example: ['VIP', '第九届冬季征文'] or ['签约'] or []
     """
@@ -150,9 +190,21 @@ def parse_ptype_contest(ptype_contest):
     }
 
 
+# ---------------------------------------------------------------------------
+# fill_tasks + run_tasks
+# ---------------------------------------------------------------------------
+
+
+def fill_tasks():
+    """Call Django management command to populate Task table."""
+    from django.core.management import call_command
+
+    call_command("fill_tasks")
+
+
 def run_tasks(limit=None):
     """Iterate Task table, fetch+update each novel, delete task."""
-    from novels.models import Author, Tag
+    from novels.models import Author, Contest, Tag
 
     session = requests.Session()
     tasks = Task.objects.select_related("novel").all()
@@ -166,11 +218,13 @@ def run_tasks(limit=None):
     for i, task in enumerate(tasks, 1):
         novel = task.novel
         try:
-            detail = fetch_detail(session, novel.id)
-            comment = fetch_comment(session, novel.id)
+            html_data = fetch_html(session, novel.id)
+            api_data = fetch_api(session, novel.id)
+            data = {**html_data, **api_data}
 
-            # Update simple fields
+            # Simple scalar fields
             for key in [
+                "title",
                 "word_num",
                 "click_num",
                 "praise_num",
@@ -180,28 +234,39 @@ def run_tasks(limit=None):
                 "comment_num",
                 "review_num",
             ]:
-                val = {**detail, **comment}.get(key)
+                val = data.get(key)
                 if val is not None:
                     setattr(novel, key, val)
 
-            # Convert enum strings to int
-            if detail.get("status"):
-                novel.status = STATUS.get_value(detail["status"])
-            if detail.get("genre"):
-                novel.genre = GENRE.get_value(detail["genre"])
-            if detail.get("ptype"):
-                novel.ptype = PTYPE.get_value(detail["ptype"])
+            # Cover (skip default images)
+            cover = data.get("cover")
+            if cover and "defaultNew.jpg" not in cover:
+                novel.cover = cover
 
-            # Handle author FK
-            author_name = detail.get("author")
+            # Enum strings → int
+            if data.get("status"):
+                novel.status = STATUS.get_value(data["status"])
+            if data.get("genre"):
+                novel.genre = GENRE.get_value(data["genre"])
+            if data.get("ptype"):
+                novel.ptype = PTYPE.get_value(data["ptype"])
+
+            # Author FK
+            author_name = data.get("author")
             if author_name:
                 author, _ = Author.objects.get_or_create(name=author_name)
                 novel.author = author
 
+            # Contest FK
+            contest_name = data.get("contest")
+            if contest_name:
+                contest, _ = Contest.objects.get_or_create(name=contest_name)
+                novel.contest = contest
+
             novel.save()
 
-            # Handle tags M2M
-            tag_names = detail.get("tags", [])
+            # Tags M2M
+            tag_names = data.get("tags", [])
             if tag_names:
                 tag_objs = []
                 for name in tag_names:
