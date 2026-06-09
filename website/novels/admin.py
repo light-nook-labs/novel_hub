@@ -8,6 +8,25 @@ admin.site.site_title = "Novel Hub"
 admin.site.index_title = "数据管理"
 
 
+NOVEL_READONLY = [
+    "id",
+    "title",
+    "click_num",
+    "word_num",
+    "praise_num",
+    "like_num",
+    "has_banner",
+    "review_num",
+    "comment_num",
+    "cover",
+    "last_update",
+    "db_update",
+    "author",
+    "contest",
+    "tags",
+]
+
+
 class ReadOnlyMixin:
     def has_add_permission(self, request):
         return False
@@ -49,6 +68,10 @@ class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
     ]
     list_filter = ["genre", "status", "ptype"]
     search_fields = ["title"]
+    readonly_fields = NOVEL_READONLY
+
+    def has_change_permission(self, request, obj=None):
+        return True
 
     @admin.display(description="分类")
     def genre_display(self, obj):
