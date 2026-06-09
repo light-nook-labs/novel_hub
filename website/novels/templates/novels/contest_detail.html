@@ -5,7 +5,7 @@
 
 {% block content %}
 <nav class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-  <a href="{% url 'novels:contests' %}" class="hover:text-green-600 dark:hover:text-green-400">征文</a>
+  <a href="{% url 'novels:contests' %}" class="hover:text-amber-600 dark:hover:text-amber-400">征文</a>
   <span class="mx-2">/</span>
   <span class="text-gray-900 dark:text-gray-100">{{ contest.name }}</span>
 </nav>
@@ -21,7 +21,7 @@
     <h3 class="font-medium truncate">{{ novel.title }}</h3>
     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ novel.author|default:"未知" }}</p>
     <div class="flex items-center gap-2 mt-2">
-      <span class="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">{{ novel.get_genre_display }}</span>
+      <span class="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">{{ novel.get_genre_display }}</span>
       <span class="text-xs text-gray-400 tabular-nums">{{ novel.click_num|humanize_num }} 点击</span>
     </div>
   </a>

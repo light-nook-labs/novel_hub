@@ -3,4 +3,4 @@ name = "Novel Hub"
 
 [pagination]
 style = "traditional"
-per_page = 20
+per_page = 24

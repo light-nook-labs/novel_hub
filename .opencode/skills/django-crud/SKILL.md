@@ -9,20 +9,26 @@ description: Generate CRUD views, forms, templates, and tests for a Django model
 - Create templates (list, detail, form, confirm_delete)
 - Add URL patterns
 - Write tests for all views
-- Add pagination support (use LoadMoreMixin for AJAX or traditional)
+- Add pagination support
 
 ## Conventions
 - Class-based views with Django generic views
-- Forms use Tailwind CSS classes (see `templates/form_styles.txt`)
+- Forms use Tailwind CSS classes
 - Use `CheckboxSelectMultiple` for M2M fields
 - Templates extend app's `base.html`
 - Tests cover: GET list, GET detail, GET create, POST create, GET update, POST update, POST delete
-- Staff-only views use `LoginRequiredMixin` and `UserPassesTestMixin`
+- Single admin user only — no authentication, no `LoginRequiredMixin`, no `UserPassesTestMixin`
+
+## Layout rules
+- **Grid-first**: ListView content uses CSS Grid (`grid-cols-4 md:grid-cols-6 lg:grid-cols-8`).
+- Table views (rank, comparison) use `<table>`.
+- Flexbox only for 1D alignment (nav, pills, badges).
 
 ## Pagination
-- Check `site_config.toml` for pagination style
-- `"traditional"` — use `paginate_by = 10` and pagination template
-- `"load_more"` — use `LoadMoreMixin` from `config/mixins.py`
+- `per_page` must be a multiple of 6 (LCM of 4, 6, 8). Default: 24.
+- Exceptions: banner (12), rank (100), detail sublists (50).
+- No pagination for tag/contest list pages — render all as pills.
+- Read `per_page` from `site_config.toml` via context processor.
 
 ## Test pattern
 ```python

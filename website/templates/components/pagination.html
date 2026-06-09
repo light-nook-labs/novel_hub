@@ -3,24 +3,24 @@
   <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
     {% if page_obj.has_previous %}
     <a href="?page=1{% if querystring %}&{{ querystring }}{% endif %}"
-       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">First</a>
+       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">First</a>
     {% else %}
     <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">First</span>
     {% endif %}
 
     {% if page_obj.has_previous %}
     <a href="?page={{ page_obj.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}"
-       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Prev</a>
+       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Prev</a>
     {% else %}
     <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Prev</span>
     {% endif %}
 
     {% for n in paginator.page_range %}
       {% if n == page_obj.number %}
-      <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 bg-blue-600 text-white select-none">{{ n }}</span>
+      <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 bg-amber-600 text-white select-none">{{ n }}</span>
       {% elif n > page_obj.number|add:'-2' and n < page_obj.number|add:'2' %}
       <a href="?page={{ n }}{% if querystring %}&{{ querystring }}{% endif %}"
-         class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{{ n }}</a>
+         class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">{{ n }}</a>
       {% elif n == page_obj.number|add:'-3' or n == page_obj.number|add:'3' %}
       <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 select-none">&hellip;</span>
       {% endif %}
@@ -28,14 +28,14 @@
 
     {% if page_obj.has_next %}
     <a href="?page={{ page_obj.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}"
-       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Next</a>
+       class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Next</a>
     {% else %}
     <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Next</span>
     {% endif %}
 
     {% if page_obj.has_next %}
     <a href="?page={{ paginator.num_pages }}{% if querystring %}&{{ querystring }}{% endif %}"
-       class="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-blue-900 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Last</a>
+       class="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:hover:text-amber-400 transition-colors">Last</a>
     {% else %}
     <span class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Last</span>
     {% endif %}
@@ -46,7 +46,7 @@
         hx-target="#content" hx-select="#content">
     <span class="text-sm text-gray-600 dark:text-gray-400">跳至</span>
     <input type="number" name="page"
-           class="w-16 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+           class="w-16 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"
            min="1" max="{{ paginator.num_pages }}"
            value="{{ page_obj.number }}">
     <span class="text-sm text-gray-600 dark:text-gray-400">/ {{ paginator.num_pages }} 页</span>

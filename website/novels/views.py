@@ -132,7 +132,7 @@ class NovelRankView(ListView):
     model = Novel
     template_name = "novels/rank.html"
     context_object_name = "novels"
-    paginate_by = _paginate_by
+    paginate_by = 100
 
     SORTABLE = {c.get("sort_key", c["key"]) for c in COLUMNS if c["sortable"]}
 

@@ -89,8 +89,6 @@ novel_hub/
     dataset/                # >100MB, gitignored (real data, for later use)
 ```
 
-Reference project: `Desktop/learner` — follow its Django + Tailwind + HTMX patterns.
-
 ## Key Facts
 
 - **Env vars**: Copy `.sample.env` → `.env` to `website/`. Required: `SECRET_KEY`, `DEBUG`
@@ -98,8 +96,6 @@ Reference project: `Desktop/learner` — follow its Django + Tailwind + HTMX pat
 - **Site config**: `website/site_config.toml` — loaded via context processor (`config.toml.toml_config_processor`)
 - **Database**: SQLite default for local dev; MySQL/PostgreSQL via env vars
 - **Mappings**: `novels/mappings.py` defines `Mapping` class + `GENRE`/`STATUS`/`PTYPE` enums (en↔zh). IntEnum index 1 is always `OTHER` (fallback). Loaded as Django context processor for template use
-- **CI workflow** (`.github/workflows/auto-14.yml`): Manual dispatch, runs scrapy spider, commits output to `output/meta_DD.jsonl`
-- **BEGIN.txt**: Tracks spider pagination state across CI runs
 - **Supabase skills** installed via `skills-lock.json` — Supabase Postgres best practices apply
 
 ## Code Style
@@ -108,6 +104,66 @@ Reference project: `Desktop/learner` — follow its Django + Tailwind + HTMX pat
 - **Templates (HTML)**: 2-space indentation
 - **JavaScript**: 2-space indentation
 - **CSS**: 2-space indentation
+
+## Layout Rules
+
+- **Grid-first**: ListView content uses CSS Grid (`grid`). Table views (`/rank`) use `<table>`. Flexbox (`flex`) only for 1D alignment (nav, pills, badges).
+- **Grid columns**: `grid-cols-4 md:grid-cols-6 lg:grid-cols-8` — mobile 4 cols, desktop 6, large 8.
+- **Pagination**: `per_page` must be a multiple of 6 (LCM of 4, 6, 8) so rows fill cleanly at every breakpoint. Default: 24. Exceptions: banner (12), rank (100), detail sublists (50).
+- **No pagination** for tag and contest list pages — they render all items as pills.
+- **Single admin user**: No authentication, no staff roles. Only one admin user via Django admin. Do not add `LoginRequiredMixin`, `UserPassesTestMixin`, or any auth-related code.
+
+## Color Scheme
+
+### Primary Palette
+| Role | Light | Dark | Tailwind |
+|------|-------|------|----------|
+| Header gradient | Amber-200 → Orange-200 | same | `from-amber-200 to-orange-200` |
+| Accent / hover | Amber-400 | Amber-400 | `text-amber-400` |
+| Active filter | White/20 | White/20 | `bg-white/20 text-white` |
+
+### Surface & Background
+| Role | Light | Dark | Tailwind |
+|------|-------|------|----------|
+| Page bg | Gray-50 | Gray-900 | `bg-gray-50 dark:bg-gray-900` |
+| Card / surface | White | Gray-800 | `bg-white dark:bg-gray-800` |
+| Border | Gray-200 | Gray-700 | `border-gray-200 dark:border-gray-700` |
+
+### Text
+| Role | Light | Dark | Tailwind |
+|------|-------|------|----------|
+| Primary | Gray-900 | Gray-100 | `text-gray-900 dark:text-gray-100` |
+| Secondary | Gray-500 | Gray-400 | `text-gray-500 dark:text-gray-400` |
+| Muted | Gray-400 | Gray-500 | `text-gray-400 dark:text-gray-500` |
+
+### Status Badges
+| Status | Light | Dark | Tailwind |
+|--------|-------|------|----------|
+| Finished (已完结) | Green-100/700 | Green-900/300 | `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300` |
+| Ongoing (连载中) | Red-100/700 | Red-900/300 | `bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300` |
+| Died (断更) | Gray-100/700 | Gray-700/300 | `bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300` |
+| Other | Gray-100/700 | Gray-700/300 | same as died |
+
+### Category Badges
+| Category | Light | Dark | Tailwind |
+|----------|-------|------|----------|
+| Genre | Orange-100/700 | Orange-900/300 | `bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300` |
+| Type (ptype) | Rose-100/700 | Rose-900/300 | `bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300` |
+| Contest | Orange-100/700 | Orange-900/300 | `bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300` |
+| Tag / Contest pills | Deterministic HSL from `hash("{model}_{id}")` | same with dark overrides | Inline CSS custom properties |
+
+### Interactive
+| Element | Light | Dark | Tailwind |
+|---------|-------|------|----------|
+| Link hover | Amber-600 | Amber-400 | `hover:text-amber-600 dark:hover:text-amber-400` |
+| Card hover shadow | shadow-md | shadow-md | `hover:shadow-md` |
+| Button primary | Amber-600 | Amber-500 | `bg-amber-600 dark:bg-amber-500` |
+
+## Dark Mode
+
+- Always include `dark:` variants for backgrounds, text, borders, and badges.
+- Dark mode is toggled by `class="dark"` on `<html>` (currently hardcoded).
+- Inline styles that need dark mode use CSS custom properties: set `--var` and `--var-d` inline, override in `.dark .class { --var: var(--var-d) }`.
 
 ## Data Rules
 
