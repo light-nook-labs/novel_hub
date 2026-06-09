@@ -187,3 +187,12 @@ novel_hub/
 - **Idempotent**: `ignore_conflicts=True` makes re-running safe
 - **Dedup**: Keep latest `last_update` per `nid` when duplicates exist
 - **PRAGMA**: SQLite uses `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=OFF` during bulk insert
+
+## Task Model
+
+- **Purpose**: CI-triggered requests spider to re-scrape novels with data issues
+- **Schema**: `id` (auto), `novel_id` (FK UNIQUE to Novel)
+- **Population**: `uv run python manage.py fill_tasks` — finds novels with duplicate cover URLs
+- **Duplicate covers**: Spider bug causes some novels to share the same cover URL. These are inserted into Task ordered by `last_update` DESC
+- **Missing data**: Spider bug also causes missing `comment_num` and `review_num` — do NOT fix or fill into Task
+- **GitHub issues**: See open issues for spider bug details
