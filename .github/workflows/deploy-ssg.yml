@@ -46,8 +46,8 @@ jobs:
           sudo apt-get install -y p7zip-full
           uv run python manage.py migrate --run-syncdb
           gh release download v0.0.1 --repo light-nook-labs/novel_hub --dir ../dataset --pattern "dataset.7z"
-          cd ../dataset && 7z x dataset.7z -y
-          cd ../website && uv run python manage.py load_jsonl ../dataset/data
+          cd ../dataset && 7z x dataset.7z -y && ls -la
+          cd ../website && uv run python manage.py load_jsonl ../dataset
 
       - name: Generate static pages
         working-directory: website
