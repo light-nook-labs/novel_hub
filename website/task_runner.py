@@ -34,12 +34,16 @@ def fill_tasks():
     call_command("fill_tasks")
 
 
-def run_tasks(limit=None):
+def run_tasks(limit=None, nid_min=None, nid_max=None):
     """Iterate Task table, fetch+update each novel, delete task."""
     from novels.models import Author, Contest, Tag
 
     session = requests.Session()
     tasks = Task.objects.select_related("novel").all()
+    if nid_min is not None:
+        tasks = tasks.filter(novel_id__gte=nid_min)
+    if nid_max is not None:
+        tasks = tasks.filter(novel_id__lte=nid_max)
     if limit:
         tasks = tasks[:limit]
     total = tasks.count() if limit is None else limit
@@ -126,6 +130,18 @@ if __name__ == "__main__":
         help="Max number of tasks to process",
     )
     parser.add_argument(
+        "--nid-min",
+        type=int,
+        default=None,
+        help="Min novel ID (inclusive)",
+    )
+    parser.add_argument(
+        "--nid-max",
+        type=int,
+        default=None,
+        help="Max novel ID (inclusive)",
+    )
+    parser.add_argument(
         "--skip-fill",
         action="store_true",
         help="Skip fill_tasks step",
@@ -134,4 +150,8 @@ if __name__ == "__main__":
 
     if not args.skip_fill:
         fill_tasks()
-    run_tasks(limit=args.limit)
+    run_tasks(
+        limit=args.limit,
+        nid_min=args.nid_min,
+        nid_max=args.nid_max,
+    )

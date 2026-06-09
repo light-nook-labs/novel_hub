@@ -233,6 +233,9 @@ dev.db
 # Dataset (>100MB, downloaded from GitHub release)
 dataset/
 
+# Test data (DO NOT DELETE)
+list.csv
+
 # Node modules
 node_modules/
 *.sqlite3-shm
