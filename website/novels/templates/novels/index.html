@@ -139,7 +139,7 @@
     <a href="{% url 'novels:detail' novel.id %}" class="block">
       <div class="relative bg-gradient-to-br from-amber-300 to-orange-300">
         {% if novel.cover %}
-        <img src="{{ novel.cover }}" alt="{{ novel.title }}" class="w-full h-auto group-hover:scale-105 transition-transform duration-300">
+        <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto group-hover:scale-105 transition-transform duration-300">
         {% else %}
         <div class="aspect-[3/4] flex items-center justify-center">
           <span class="text-white text-4xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>

@@ -17,3 +17,4 @@ MOBILE_URL = _cfg.get("mobile_url", "https://m.sfacg.com/b/{nid}/")
 MOBILE_HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
 }
+COVER_PREFIX = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"

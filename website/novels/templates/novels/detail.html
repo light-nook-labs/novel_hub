@@ -1,4 +1,5 @@
 {% extends "novels/base.html" %}
+{% load novel_tags %}
 
 {% block title %}{{ novel.title }} - Novel Hub{% endblock %}
 
@@ -13,7 +14,7 @@
   <div class="md:flex">
     <div class="md:w-1/3 bg-gradient-to-br from-amber-300 to-orange-300 flex items-center justify-center">
       {% if novel.cover %}
-      <img src="{{ novel.cover }}" alt="{{ novel.title }}" class="w-full h-auto">
+      <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto">
       {% else %}
       <div class="aspect-[3/4] flex items-center justify-center">
         <span class="text-white text-7xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>

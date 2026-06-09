@@ -56,7 +56,7 @@ class Novel(models.Model):
     has_banner = models.BooleanField(default=False, db_index=True)
     review_num = models.IntegerField(null=True, blank=True)
     comment_num = models.IntegerField(null=True, blank=True)
-    cover = models.URLField(max_length=500, blank=True, null=True)
+    cover = models.CharField(max_length=500, blank=True, null=True)
     last_update = models.DateTimeField(null=True, blank=True)
     db_update = models.DateTimeField(auto_now=True)
 

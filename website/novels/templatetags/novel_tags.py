@@ -2,6 +2,8 @@ from django import template
 
 register = template.Library()
 
+COVER_PREFIX = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
+
 
 @register.filter
 def get_attr(obj, attr):
@@ -14,6 +16,14 @@ def get_attr(obj, attr):
         return obj
     except (AttributeError, TypeError):
         return ""
+
+
+@register.filter
+def cover_url(suffix):
+    """Reconstruct full cover URL from suffix."""
+    if not suffix:
+        return ""
+    return COVER_PREFIX + suffix
 
 
 @register.filter

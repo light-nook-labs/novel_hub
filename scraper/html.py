@@ -12,7 +12,7 @@ from datetime import datetime
 
 import lxml.html
 
-from .config import HEADERS, MOBILE_HEADERS, MOBILE_URL, NOVEL_URL
+from .config import COVER_PREFIX, HEADERS, MOBILE_HEADERS, MOBILE_URL, NOVEL_URL
 
 
 def fetch_html(session, nid):
@@ -68,9 +68,10 @@ def fetch_html(session, nid):
 
 
 def fetch_cover(session, nid):
-    """GET mobile page → cover URL.
+    """GET mobile page → cover suffix (without prefix).
 
     Cover is in the <li> following the one with .book_newtitle.
+    Returns suffix only (e.g. '2020/10/xxx.jpg'), or None.
     """
     url = MOBILE_URL.format(nid=nid)
     resp = session.get(url, headers=MOBILE_HEADERS, timeout=10)
@@ -84,6 +85,8 @@ def fetch_cover(session, nid):
     cover = covers[0]
     if cover.startswith("//"):
         cover = "http:" + cover
+    if cover.startswith(COVER_PREFIX):
+        cover = cover[len(COVER_PREFIX) :]
     return cover
 
 
