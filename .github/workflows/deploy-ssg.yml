@@ -1,0 +1,63 @@
+name: Deploy Static Site to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Python deps
+        run: uv sync
+
+      - name: Install Node deps
+        run: npm install
+
+      - name: Build Tailwind CSS
+        run: npx @tailwindcss/cli -i ./website/static/css/input.css -o ./website/static/css/output.css --minify
+
+      - name: Create .env
+        run: |
+          echo "SECRET_KEY=gh-actions-ssg-key" > website/.env
+          echo "DEBUG=0" >> website/.env
+
+      - name: Migrate & seed data
+        working-directory: website
+        run: |
+          uv run python manage.py migrate --run-syncdb
+          uv run python manage.py create_fake_data -n 5000
+
+      - name: Generate static pages
+        working-directory: website
+        run: uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50
+
+      - name: Add .nojekyll
+        run: touch static_build/.nojekyll
+
+      - name: Fix static paths for GitHub Pages
+        run: |
+          # Rewrite /static/ to relative static/ in all HTML files
+          find static_build -name "*.html" -exec sed -i 's|href="/static/|href="static/|g; s|src="/static/|src="static/|g' {} +
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./static_build
+          publish_branch: gh-pages
