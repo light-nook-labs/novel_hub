@@ -122,19 +122,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const key = 'novel_hub_banner_bg';
   const cached = localStorage.getItem(key);
+  const serverUrl = bg.dataset.defaultBg;
 
-  if (cached) {
-    bg.style.backgroundImage = 'url(' + cached + ')';
-  } else {
-    const defaultUrl = bg.dataset.defaultBg;
-    if (defaultUrl) {
-      bg.style.backgroundImage = 'url(' + defaultUrl + ')';
-    }
-  }
-
-  const bgUrl = bg.style.backgroundImage;
-  if (bgUrl && bgUrl !== 'none') {
-    const url = bgUrl.slice(5, -2);
+  // Always prefer server URL; fall back to cache
+  const url = serverUrl || cached;
+  if (url) {
+    bg.style.backgroundImage = 'url(' + url + ')';
     const img = new Image();
     img.onload = function() {
       localStorage.setItem(key, url);
