@@ -93,10 +93,20 @@ class Novel(models.Model):
 
 
 class Task(models.Model):
+    class Status(models.TextChoices):
+        URGENT = "u", "urgent"
+        DEFAULT = "d", "default"
+        FINISHED = "f", "finished"
+
     novel = models.OneToOneField(
         Novel,
         on_delete=models.CASCADE,
         related_name="task",
+    )
+    status = models.CharField(
+        max_length=1,
+        choices=Status,
+        default=Status.DEFAULT,
     )
 
     class Meta:

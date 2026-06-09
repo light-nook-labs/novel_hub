@@ -141,6 +141,8 @@ class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ["id", "novel"]
+    list_display = ["id", "novel", "status"]
+    list_filter = ["status"]
     search_fields = ["novel__title"]
     autocomplete_fields = ["novel"]
+    readonly_fields = ["novel"]

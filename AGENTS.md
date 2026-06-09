@@ -66,6 +66,7 @@ uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
 uv run python website/task_runner.py
 uv run python website/task_runner.py --limit 100
 uv run python website/task_runner.py --nid-min 40000 --nid-max 49999 --skip-fill
+uv run python website/task_runner.py --status u
 
 # Formatting & linting
 uv run black .                     # Format (line-length 88, target py313)
@@ -192,6 +193,7 @@ uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
 uv run python website/task_runner.py
 uv run python website/task_runner.py --limit 100
 uv run python website/task_runner.py --nid-min 40000 --nid-max 49999 --skip-fill
+uv run python website/task_runner.py --status u
 ```
 
 ### Rules
@@ -206,9 +208,10 @@ uv run python website/task_runner.py --nid-min 40000 --nid-max 49999 --skip-fill
 ## Task Model
 
 - **Purpose**: CI-triggered requests spider to re-scrape novels with data issues
-- **Schema**: `id` (auto), `novel_id` (FK UNIQUE to Novel)
+- **Schema**: `id` (auto), `novel_id` (FK UNIQUE to Novel), `status` (CharField, choices: `u`=urgent, `d`=default, `f`=finished)
 - **Population**: `uv run python manage.py fill_tasks` — finds novels with duplicate cover URLs
-- **Duplicate covers**: Spider bug causes some novels to share the same cover URL. These are inserted into Task ordered by `last_update` DESC
+- **Duplicate covers**: Spider bug causes some novels to share the same cover URL. These are inserted into Task with `status="d"` ordered by `last_update` DESC
+- **Processing**: task_runner marks finished tasks as `f`, then batch deletes them at the end
 - **Missing data**: Spider bug also causes missing `comment_num` and `review_num` — do NOT fix or fill into Task
 - **Test data**: `list.csv` — banner novels by 10k interval (gitignored, do not delete)
 - **GitHub issues**: See open issues for spider bug details

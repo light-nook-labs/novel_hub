@@ -44,8 +44,8 @@ class Command(BaseCommand):
             for i in range(0, len(novel_ids), BATCH):
                 batch = novel_ids[i : i + BATCH]
                 cursor.executemany(
-                    "INSERT OR IGNORE INTO novels_task (novel_id) VALUES (?)",
-                    [(nid,) for nid in batch],
+                    "INSERT OR IGNORE INTO novels_task (novel_id, status) VALUES (?, ?)",
+                    [(nid, Task.Status.DEFAULT) for nid in batch],
                 )
 
         total = Task.objects.count()

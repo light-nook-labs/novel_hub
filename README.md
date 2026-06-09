@@ -52,15 +52,21 @@ erDiagram
         DateTimeField db_update "auto_now"
     }
 
+    Task {
+        CharField status "u=urgent d=default f=finished"
+    }
+
     Author ||--o{ Novel : "1:N"
     Contest ||--o{ Novel : "1:N"
     Novel }o--o{ Tag : "M2M"
+    Novel ||--o| Task : "1:0..1"
 ```
 
 ### Relationships
 1. Author  : Novel  →  One-to-Many (`ForeignKey`, `on_delete=SET_NULL`)
 2. Contest : Novel  →  One-to-Many (`ForeignKey`, `on_delete=SET_NULL`)
 3. Novel   : Tag    →  Many-to-Many (`ManyToManyField`)
+4. Novel   : Task   →  One-to-One (`OneToOneField`, `on_delete=CASCADE`)
 
 ### Mappings (Context Processor)
 
