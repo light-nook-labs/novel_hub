@@ -46,4 +46,5 @@ urlpatterns = [
         {"enum_type": "ptype"},
         name="ptype_detail",
     ),
+    path("about/", views.AboutView.as_view(), name="about"),
 ]

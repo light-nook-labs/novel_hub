@@ -1,0 +1,45 @@
+{% extends "novels/base.html" %}
+
+{% block title %}关于 - Novel Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold mb-6">关于 Novel Hub</h1>
+
+  <div class="prose prose-gray dark:prose-invert max-w-none">
+    <p class="text-gray-600 dark:text-gray-400">
+      Novel Hub 是一个小说元数据展示网站，数据来源于
+      <a href="https://book.sfacg.com" target="_blank" class="text-amber-600 dark:text-amber-400 hover:underline">sfacg.com</a>（SF轻小说）。
+    </p>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">功能特性</h2>
+    <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+      <li>小说浏览与搜索</li>
+      <li>按分类、状态、类型筛选</li>
+      <li>多维度排行榜（点击、字数、收藏等）</li>
+      <li>作者、标签、征文活动浏览</li>
+      <li>Banner 小说展示</li>
+      <li>深色模式支持</li>
+    </ul>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">技术栈</h2>
+    <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+      <li><strong>后端</strong>：Django 6.0 + Python 3.13</li>
+      <li><strong>前端</strong>：Tailwind CSS 4.x + HTMX</li>
+      <li><strong>数据库</strong>：SQLite（开发）/ PostgreSQL（生产）</li>
+      <li><strong>数据采集</strong>：Scrapy + pandas</li>
+    </ul>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">数据说明</h2>
+    <p class="text-gray-600 dark:text-gray-400">
+      网站收录了 SF轻小说 平台的小说元数据信息，包括标题、作者、分类、状态、点击量等。
+      数据通过 Scrapy 爬虫采集，使用 pandas 进行清洗后导入数据库。
+    </p>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">开源</h2>
+    <p class="text-gray-600 dark:text-gray-400">
+      本项目为开源项目，欢迎贡献代码和提出建议。
+    </p>
+  </div>
+</div>
+{% endblock %}
