@@ -59,8 +59,11 @@ uv run python manage.py test <app_name>
 
 # Scrapy spider — avoid running during dev; if needed, always specify -a and -o
 # NEVER run without arguments. Max 10 pages per run.
-uv run scrapy crawl meta -o o.jsonl -a num=3
-uv run scrapy crawl meta -o o.jsonl -a begin=12465 -a num=5
+uv run scrapy crawl meta_batch -o o.jsonl -a num=3
+uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
+
+# Task maintenance (requests) — fill + process + auto-delete
+uv run python website/task_runner.py
 
 # Formatting & linting
 uv run black .                     # Format (line-length 88, target py313)
@@ -90,7 +93,11 @@ novel_hub/
         static/             # Project-level static files
         manage.py
         site_config.toml    # Site settings (loaded via context processor)
-    meta_spider/            # Scrapy spider (sfacg.com scraper) — minimal changes
+        task_runner.py      # requests-based Task maintenance
+    meta_spider/            # Scrapy spider (sfacg.com scraper)
+        meta_spider/spiders/
+            meta.py         # Legacy (commented out, reference only)
+            meta_batch.py   # Refactored batch spider
     dataset/                # >100MB, gitignored (real data, for later use)
 ```
 
@@ -155,6 +162,37 @@ See `tailwind-component` skill for full design tokens. Key rules:
 - **Idempotent**: `ignore_conflicts=True` makes re-running safe
 - **Dedup**: Keep latest `last_update` per `nid` when duplicates exist
 - **PRAGMA**: SQLite uses `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=OFF` during bulk insert
+
+## Spider Architecture
+
+### Components
+
+| Component | Tech | Purpose |
+|-----------|------|---------|
+| `meta_spider/spiders/meta.py` | — | Legacy (commented out, reference only) |
+| `meta_spider/spiders/meta_batch.py` | Scrapy | Batch crawling list + detail pages |
+| `website/task_runner.py` | requests + lxml | Task table maintenance |
+| `website/novels/management/commands/fill_tasks.py` | Django ORM | Populate Task table with duplicate covers |
+
+### Commands
+
+```bash
+# Batch crawl (Scrapy) — max 10 pages per run, always specify -a and -o
+uv run scrapy crawl meta_batch -o o.jsonl -a num=3
+uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
+
+# Task maintenance (requests) — fill + process + auto-delete
+uv run python website/task_runner.py
+```
+
+### Rules
+
+- CSS selectors/xpaths must NOT be modified — reuse existing selectors from meta.py
+- Legacy meta.py code must NOT be deleted — comment it out
+- New code goes in meta_batch.py (Scrapy) or task_runner.py (requests)
+- Scrapy: batch crawling only (list pages → detail pages → comment API)
+- requests: direct HTTP for Task table maintenance
+- lxml: HTML parsing in task_runner.py (CSS → XPath conversion is mechanical)
 
 ## Task Model
 
