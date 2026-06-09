@@ -37,7 +37,7 @@ class NovelListView(ListView):
         "like_num": "收藏排序",
         "praise_num": "点赞排序",
         "last_update": "最近更新",
-        "id": "最近收录",
+        "db_update": "最近同步",
     }
 
     def get_queryset(self):
