@@ -174,3 +174,16 @@ novel_hub/
 - **Cover URL**: Common prefix `http://rs.sfacg.com/web/novel/images/NovelCover/Big/` — store only the suffix in DB, reconstruct full URL in template
 - **Banner URL**: Pattern `http://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg` — no query params, derive from `nid`
 - **Novel URL**: `https://book.sfacg.com/Novel/{nid}/`
+
+## Data Processing
+
+- **Command**: `uv run python manage.py load_jsonl` (default: `dataset/data/`)
+- **Scale**: ~250k novels, ~10k authors, ~500 tags, ~200 contests
+- **Strategy**: pandas cleaning → Django ORM bulk insert
+  - Tag/Contest: small tables (<=1000), load all into memory dict
+  - Author: >10k, `bulk_create` with `ignore_conflicts=True`, then load into memory dict
+  - Novel: >200k, `bulk_create` in batches of 5000
+  - M2M (novel_tags): raw SQL `INSERT OR IGNORE` in batches
+- **Idempotent**: `ignore_conflicts=True` makes re-running safe
+- **Dedup**: Keep latest `last_update` per `nid` when duplicates exist
+- **PRAGMA**: SQLite uses `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=OFF` during bulk insert
