@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 
 from .mappings import GENRE, PTYPE, STATUS
 from .models import Author, Contest, Novel, Tag, Task
@@ -72,6 +73,21 @@ class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return True
+
+    def formfield_for_dbfield(self, db_field, request, **kwargs):
+        if db_field.name == "genre":
+            kwargs["widget"] = forms.Select(choices=GENRE.choices)
+            kwargs["label"] = "分类"
+            return db_field.formfield(**kwargs)
+        if db_field.name == "status":
+            kwargs["widget"] = forms.Select(choices=STATUS.choices)
+            kwargs["label"] = "状态"
+            return db_field.formfield(**kwargs)
+        if db_field.name == "ptype":
+            kwargs["widget"] = forms.Select(choices=PTYPE.choices)
+            kwargs["label"] = "类型"
+            return db_field.formfield(**kwargs)
+        return super().formfield_for_dbfield(db_field, request, **kwargs)
 
     @admin.display(description="分类")
     def genre_display(self, obj):
