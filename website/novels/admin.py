@@ -1,32 +1,25 @@
 from django.contrib import admin
-from .models import Author, Tag, Contest, Novel, Task
+
+from .models import Author, Contest, Tag
+
+admin.site.site_header = "Novel Hub 管理"
+admin.site.site_title = "Novel Hub"
+admin.site.index_title = "数据管理"
 
 
 @admin.register(Author)
 class AuthorAdmin(admin.ModelAdmin):
     search_fields = ["name"]
+    list_display = ["name"]
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     search_fields = ["name"]
+    list_display = ["name"]
 
 
 @admin.register(Contest)
 class ContestAdmin(admin.ModelAdmin):
     search_fields = ["name"]
-
-
-@admin.register(Novel)
-class NovelAdmin(admin.ModelAdmin):
-    list_display = ["title", "author", "genre", "status", "ptype", "last_update"]
-    list_filter = ["genre", "status", "ptype"]
-    search_fields = ["title"]
-    autocomplete_fields = ["author", "contest"]
-    filter_horizontal = ["tags"]
-
-
-@admin.register(Task)
-class TaskAdmin(admin.ModelAdmin):
-    list_display = ["id", "novel"]
-    search_fields = ["novel__title"]
+    list_display = ["name"]
