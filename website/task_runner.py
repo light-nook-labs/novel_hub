@@ -1,12 +1,16 @@
 """Task table maintenance — requests + lxml
 
-Usage: uv run python website/task_runner.py
+Usage:
+    uv run python website/task_runner.py
+    uv run python website/task_runner.py --limit 100
+    uv run python website/task_runner.py --skip-fill
 
 Pipeline:
 1. fill_tasks — populate Task table with novels that have duplicate covers
 2. run_tasks  — re-scrape each Task's novel, update DB, delete Task
 """
 
+import argparse
 import os
 import sys
 import time as time_mod
@@ -21,6 +25,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 django.setup()
 
 from novels.models import Task  # noqa: E402
+from novels.mappings import GENRE, STATUS, PTYPE  # noqa: E402
 
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -145,11 +150,15 @@ def parse_ptype_contest(ptype_contest):
     }
 
 
-def run_tasks():
+def run_tasks(limit=None):
     """Iterate Task table, fetch+update each novel, delete task."""
+    from novels.models import Author, Tag
+
     session = requests.Session()
     tasks = Task.objects.select_related("novel").all()
-    total = tasks.count()
+    if limit:
+        tasks = tasks[:limit]
+    total = tasks.count() if limit is None else limit
     print(f"Processing {total} tasks ...")
 
     success = 0
@@ -157,23 +166,75 @@ def run_tasks():
     for i, task in enumerate(tasks, 1):
         novel = task.novel
         try:
-            detail = fetch_detail(session, novel.nid)
-            comment = fetch_comment(session, novel.nid)
-            for key, value in {**detail, **comment}.items():
-                if value is not None:
-                    setattr(novel, key, value)
+            detail = fetch_detail(session, novel.id)
+            comment = fetch_comment(session, novel.id)
+
+            # Update simple fields
+            for key in [
+                "word_num",
+                "click_num",
+                "praise_num",
+                "like_num",
+                "has_banner",
+                "last_update",
+                "comment_num",
+                "review_num",
+            ]:
+                val = {**detail, **comment}.get(key)
+                if val is not None:
+                    setattr(novel, key, val)
+
+            # Convert enum strings to int
+            if detail.get("status"):
+                novel.status = STATUS.get_value(detail["status"])
+            if detail.get("genre"):
+                novel.genre = GENRE.get_value(detail["genre"])
+            if detail.get("ptype"):
+                novel.ptype = PTYPE.get_value(detail["ptype"])
+
+            # Handle author FK
+            author_name = detail.get("author")
+            if author_name:
+                author, _ = Author.objects.get_or_create(name=author_name)
+                novel.author = author
+
             novel.save()
+
+            # Handle tags M2M
+            tag_names = detail.get("tags", [])
+            if tag_names:
+                tag_objs = []
+                for name in tag_names:
+                    tag, _ = Tag.objects.get_or_create(name=name)
+                    tag_objs.append(tag)
+                novel.tags.set(tag_objs)
+
             task.delete()
             success += 1
-            print(f"  [{i}/{total}] Novel {novel.nid} updated, task deleted")
+            print(f"  [{i}/{total}] Novel {novel.id} " f"updated, task deleted")
         except Exception as e:
             failed += 1
-            print(f"  [{i}/{total}] Novel {novel.nid} FAILED: {e}")
+            print(f"  [{i}/{total}] Novel {novel.id} FAILED: {e}")
 
     remaining = Task.objects.count()
     print(f"Done. {success} updated, {failed} failed, " f"{remaining} tasks remaining.")
 
 
 if __name__ == "__main__":
-    fill_tasks()
-    run_tasks()
+    parser = argparse.ArgumentParser(description="Task table maintenance")
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Max number of tasks to process",
+    )
+    parser.add_argument(
+        "--skip-fill",
+        action="store_true",
+        help="Skip fill_tasks step",
+    )
+    args = parser.parse_args()
+
+    if not args.skip_fill:
+        fill_tasks()
+    run_tasks(limit=args.limit)
