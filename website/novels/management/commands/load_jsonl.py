@@ -82,6 +82,22 @@ def load_and_clean(files: list[Path]) -> pd.DataFrame:
     )
     df.loc[on_going_mask, "status"] = STATUS.enum.DIED.value
 
+    active_mask = (
+        df["banner"].fillna(False).eq(True)
+        | df["click_num"].fillna(0).ge(10_000_000)
+        | df["praise_num"].fillna(0).ge(10_000)
+        | df["like_num"].fillna(0).ge(10_000)
+        | df["review_num"].fillna(0).ge(80)
+    )
+    df.loc[
+        active_mask & (df["status"] == STATUS.enum.DIED.value),
+        "status",
+    ] = STATUS.enum.ACTIVE_D.value
+    df.loc[
+        active_mask & (df["status"] == STATUS.enum.FINISHED.value),
+        "status",
+    ] = STATUS.enum.ACTIVE_F.value
+
     return df
 
 
@@ -171,21 +187,29 @@ class Command(BaseCommand):
                         author_map.get(row.author) if pd.notna(row.author) else None
                     ),
                     contest_id=(
-                        contest_map.get(row.contest)
-                        if pd.notna(row.contest)
-                        else None
+                        contest_map.get(row.contest) if pd.notna(row.contest) else None
                     ),
                 )
             )
         Novel.objects.bulk_create(novel_objs, batch_size=BATCH, ignore_conflicts=True)
         del novel_objs
+
+        self.stdout.write("  updating statuses via raw SQL ...")
+        status_rows = [
+            (int(row.status), int(row.nid))
+            for row in df[["nid", "status"]].itertuples(index=False)
+            if pd.notna(row.status)
+        ]
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                "UPDATE novels_novel SET status = ? WHERE id = ?",
+                status_rows,
+            )
         self.stdout.write(f"  novels: {time.time() - t_step:.1f}s")
 
         t_step = time.time()
         tag_rows = []
-        for row in (
-            df[["nid", "tags"]].dropna(subset=["tags"]).itertuples(index=False)
-        ):
+        for row in df[["nid", "tags"]].dropna(subset=["tags"]).itertuples(index=False):
             nid = int(row.nid)
             for t in row.tags:
                 tid = tag_map.get(t)
@@ -205,9 +229,11 @@ class Command(BaseCommand):
 
         total = time.time() - t0
         self.stdout.write("")
-        self.stdout.write(self.style.SUCCESS(
-            f"Done in {total:.1f}s — "
-            f"{len(df)} novels, {len(authors)} authors, "
-            f"{len(contests)} contests, {len(all_tags)} tags, "
-            f"{len(tag_rows)} tag links"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done in {total:.1f}s — "
+                f"{len(df)} novels, {len(authors)} authors, "
+                f"{len(contests)} contests, {len(all_tags)} tags, "
+                f"{len(tag_rows)} tag links"
+            )
+        )

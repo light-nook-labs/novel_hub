@@ -61,6 +61,8 @@ STATUS = Mapping(
     finished="已完结",
     on_going="连载中",
     died="断更",
+    active_d="断更D",
+    active_f="完结F",
 )
 
 PTYPE = Mapping(
