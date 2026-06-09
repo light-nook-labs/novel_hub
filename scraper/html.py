@@ -12,7 +12,7 @@ from datetime import datetime
 
 import lxml.html
 
-from .config import HEADERS, NOVEL_URL
+from .config import HEADERS, MOBILE_HEADERS, MOBILE_URL, NOVEL_URL
 
 
 def fetch_html(session, nid):
@@ -31,10 +31,6 @@ def fetch_html(session, nid):
     raw = tree.xpath("//title/text()")[0].strip()
     parts = [p.strip() for p in raw.split(" - ")]
     author_name = parts[-2] if len(parts) >= 3 else ""
-
-    # Cover: first NovelCover image
-    covers = tree.xpath('//img[contains(@src,"NovelCover")]/@src')
-    cover = covers[0] if covers else None
 
     # Stats row
     row = tree.xpath(
@@ -63,13 +59,32 @@ def fetch_html(session, nid):
     return {
         "title": title,
         "author": author_name,
-        "cover": cover,
         "has_banner": bool(banner),
         "tags": tags,
         **_parse_row(row),
         **_parse_btns(btns),
         **_parse_ptype_contest(ptype_contest),
     }
+
+
+def fetch_cover(session, nid):
+    """GET mobile page → cover URL.
+
+    Cover is in the <li> following the one with .book_newtitle.
+    """
+    url = MOBILE_URL.format(nid=nid)
+    resp = session.get(url, headers=MOBILE_HEADERS, timeout=10)
+    resp.raise_for_status()
+    tree = lxml.html.fromstring(resp.text)
+    covers = tree.xpath(
+        '//span[@class="book_newtitle"]' "/parent::li/following-sibling::li[1]/img/@src"
+    )
+    if not covers:
+        return None
+    cover = covers[0]
+    if cover.startswith("//"):
+        cover = "http:" + cover
+    return cover
 
 
 def _parse_row(row):

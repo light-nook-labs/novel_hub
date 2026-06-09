@@ -24,7 +24,7 @@ django.setup()
 
 from novels.models import Task  # noqa: E402
 from novels.mappings import GENRE, STATUS, PTYPE  # noqa: E402
-from scraper import fetch_html, fetch_api  # noqa: E402
+from scraper import fetch_html, fetch_cover, fetch_api  # noqa: E402
 
 
 def fill_tasks():
@@ -55,6 +55,7 @@ def run_tasks(limit=None, nid_min=None, nid_max=None):
         novel = task.novel
         try:
             html_data = fetch_html(session, novel.id)
+            cover_url = fetch_cover(session, novel.id)
             api_data = fetch_api(session, novel.id)
             data = {**html_data, **api_data}
 
@@ -74,10 +75,9 @@ def run_tasks(limit=None, nid_min=None, nid_max=None):
                 if val is not None:
                     setattr(novel, key, val)
 
-            # Cover (skip default images)
-            cover = data.get("cover")
-            if cover and "defaultNew.jpg" not in cover:
-                novel.cover = cover
+            # Cover from mobile page (skip default images)
+            if cover_url and "defaultNew.jpg" not in cover_url:
+                novel.cover = cover_url
 
             # Enum strings → int
             if data.get("status"):

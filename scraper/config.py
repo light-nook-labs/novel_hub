@@ -13,3 +13,7 @@ USER_AGENT = _cfg.get("user_agent", "")
 HEADERS = {"User-Agent": USER_AGENT}
 COMMON_URL = _cfg.get("common_url", "")
 NOVEL_URL = _cfg.get("novel_url", "https://book.sfacg.com/Novel/{nid}/")
+MOBILE_URL = _cfg.get("mobile_url", "https://m.sfacg.com/b/{nid}/")
+MOBILE_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
+}
