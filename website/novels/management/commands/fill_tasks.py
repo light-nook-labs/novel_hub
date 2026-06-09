@@ -16,6 +16,7 @@ class Command(BaseCommand):
         dupes = (
             Novel.objects.filter(cover__isnull=False)
             .exclude(cover="")
+            .exclude(cover__contains="defaultNew.jpg")
             .values("cover")
             .annotate(cnt=Count("id"))
             .filter(cnt__gt=1)
