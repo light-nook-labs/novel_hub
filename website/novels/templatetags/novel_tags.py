@@ -25,6 +25,10 @@ def cover_url(suffix):
 
     cfg = _load_config()
     prefix = cfg.get("scraper", {}).get("cover_prefix", "")
+    if suffix.startswith(prefix):
+        return suffix
+    if suffix.startswith("http"):
+        return suffix
     return prefix + suffix
 
 
