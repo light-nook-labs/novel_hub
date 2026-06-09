@@ -13,7 +13,37 @@ urlpatterns = [
     path("tags/", views.TagListView.as_view(), name="tags"),
     path("tags/<int:pk>/", views.TagDetailView.as_view(), name="tag_detail"),
     path("contests/", views.ContestListView.as_view(), name="contests"),
-    path("contests/<int:pk>/", views.ContestDetailView.as_view(), name="contest_detail"),
-    path("<str:enum_type>/", views.EnumListView.as_view(), name="enum_list"),
-    path("<str:enum_type>/<int:value>/", views.EnumDetailView.as_view(), name="enum_detail"),
+    path(
+        "contests/<int:pk>/", views.ContestDetailView.as_view(), name="contest_detail"
+    ),
+    path(
+        "genres/", views.EnumListView.as_view(), {"enum_type": "genre"}, name="genres"
+    ),
+    path(
+        "genres/<int:value>/",
+        views.EnumDetailView.as_view(),
+        {"enum_type": "genre"},
+        name="genre_detail",
+    ),
+    path(
+        "statuses/",
+        views.EnumListView.as_view(),
+        {"enum_type": "status"},
+        name="statuses",
+    ),
+    path(
+        "statuses/<int:value>/",
+        views.EnumDetailView.as_view(),
+        {"enum_type": "status"},
+        name="status_detail",
+    ),
+    path(
+        "ptypes/", views.EnumListView.as_view(), {"enum_type": "ptype"}, name="ptypes"
+    ),
+    path(
+        "ptypes/<int:value>/",
+        views.EnumDetailView.as_view(),
+        {"enum_type": "ptype"},
+        name="ptype_detail",
+    ),
 ]
