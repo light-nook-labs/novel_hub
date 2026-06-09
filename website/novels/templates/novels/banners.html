@@ -32,39 +32,57 @@
 </div>
 
 <!-- Lightbox -->
-<div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeLightbox()">
-  <div class="relative max-w-4xl max-h-[90vh] mx-4">
-    <button onclick="closeLightbox()" class="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors">
+<div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeLightbox(event)">
+  <div class="relative w-[95vw] max-w-[1400px] mx-4" onclick="event.stopPropagation()">
+    <button onclick="closeLightbox()" class="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors z-10">
       <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
       </svg>
     </button>
-    <img id="lightbox-img" src="" alt="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
+    <img id="lightbox-img" src="" alt="" class="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl">
   </div>
 </div>
-{% endblock %}
 
-{% block extra_head %}
 <script>
-function openLightbox(el) {
-  const src = el.dataset.src;
+(function() {
   const lightbox = document.getElementById('lightbox');
   const img = document.getElementById('lightbox-img');
-  img.src = src;
-  lightbox.classList.remove('hidden');
-  lightbox.classList.add('flex');
-  document.body.style.overflow = 'hidden';
-}
+  let currentIndex = -1;
+  let items = [];
 
-function closeLightbox() {
-  const lightbox = document.getElementById('lightbox');
-  lightbox.classList.add('hidden');
-  lightbox.classList.remove('flex');
-  document.body.style.overflow = '';
-}
+  function getItems() {
+    return document.querySelectorAll('[data-src]');
+  }
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeLightbox();
-});
+  window.openLightbox = function(el) {
+    items = getItems();
+    currentIndex = Array.from(items).indexOf(el);
+    img.src = el.dataset.src;
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeLightbox = function(e) {
+    if (e && e.target !== lightbox && !e.target.closest('button')) return;
+    lightbox.classList.add('hidden');
+    lightbox.classList.remove('flex');
+    document.body.style.overflow = '';
+    currentIndex = -1;
+  };
+
+  function navigate(direction) {
+    if (currentIndex < 0 || !items.length) return;
+    currentIndex = (currentIndex + direction + items.length) % items.length;
+    img.src = items[currentIndex].dataset.src;
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (lightbox.classList.contains('hidden')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') navigate(-1);
+    if (e.key === 'ArrowRight') navigate(1);
+  });
+})();
 </script>
 {% endblock %}
