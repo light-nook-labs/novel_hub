@@ -64,6 +64,8 @@ uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
 
 # Task maintenance (requests) — fill + process + auto-delete
 uv run python website/task_runner.py
+uv run python website/task_runner.py --limit 100
+uv run python website/task_runner.py --nid-min 40000 --nid-max 49999 --skip-fill
 
 # Formatting & linting
 uv run black .                     # Format (line-length 88, target py313)
@@ -188,6 +190,8 @@ uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
 
 # Task maintenance (requests) — fill + process + auto-delete
 uv run python website/task_runner.py
+uv run python website/task_runner.py --limit 100
+uv run python website/task_runner.py --nid-min 40000 --nid-max 49999 --skip-fill
 ```
 
 ### Rules
@@ -206,4 +210,5 @@ uv run python website/task_runner.py
 - **Population**: `uv run python manage.py fill_tasks` — finds novels with duplicate cover URLs
 - **Duplicate covers**: Spider bug causes some novels to share the same cover URL. These are inserted into Task ordered by `last_update` DESC
 - **Missing data**: Spider bug also causes missing `comment_num` and `review_num` — do NOT fix or fill into Task
+- **Test data**: `list.csv` — banner novels by 10k interval (gitignored, do not delete)
 - **GitHub issues**: See open issues for spider bug details
