@@ -37,32 +37,21 @@ jobs:
         run: |
           echo "SECRET_KEY=gh-actions-ssg-key" > website/.env
           echo "DEBUG=0" >> website/.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> website/.env
 
-      - name: Migrate & load real data
+      - name: Migrate & generate static pages
         working-directory: website
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          sudo apt-get install -y p7zip-full
           uv run python manage.py migrate --run-syncdb
-          gh release download v0.0.1 --repo light-nook-labs/novel_hub --dir ../dataset --pattern "dataset.7z"
-          cd ../dataset && 7z x dataset.7z -y && ls -la
-          cd ../website && uv run python manage.py load_jsonl ../dataset
-
-      - name: Generate static pages
-        working-directory: website
-        run: uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50
+          uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50
 
       - name: Add .nojekyll
         run: touch static_build/.nojekyll
 
       - name: Fix paths for GitHub Pages (subdirectory)
         run: |
-          # Add base tag for /novel_hub/ subdirectory
           find static_build -name "*.html" -exec sed -i 's|<head>|<head>\n  <base href="/novel_hub/">|' {} +
-          # Make static paths relative
           find static_build -name "*.html" -exec sed -i 's|href="/static/|href="static/|g; s|src="/static/|src="static/|g' {} +
-          # Make nav links relative (strip leading /)
           find static_build -name "*.html" -exec sed -i 's|href="/|href="|g' {} +
 
       - name: Deploy to gh-pages
