@@ -7,7 +7,7 @@
   <h1 class="text-2xl font-bold">{{ enum_label }}</h1>
 </div>
 
-<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+<div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
   {% for item in items %}
   <a href="{% url 'novels:enum_detail' enum_type item.value %}"
      class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow text-center">

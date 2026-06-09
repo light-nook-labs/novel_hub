@@ -15,7 +15,7 @@
   <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ novel_count }} 本小说</p>
 </div>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+<div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
   {% for novel in novels %}
   <a href="{% url 'novels:detail' novel.id %}" class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow p-4">
     <h3 class="font-medium truncate">{{ novel.title }}</h3>

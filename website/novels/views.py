@@ -1,4 +1,3 @@
-from django.shortcuts import get_object_or_404
 from django.views.generic import ListView, DetailView
 
 from .models import Novel, Author, Tag, Contest
@@ -20,15 +19,6 @@ COLUMNS = [
 NOVEL_LIST_SELECT = ("author", "contest")
 NOVEL_LIST_PREFETCH = ("tags",)
 _paginate_by = _load_config().get("pagination", {}).get("per_page", 20)
-
-
-def _novel_list_ctx(request, queryset, paginate_by=24):
-    """Shared context builder for novel list pages."""
-    from django.core.paginator import Paginator
-
-    paginator = Paginator(queryset, paginate_by)
-    page = paginator.get_page(request.GET.get("page", 1))
-    return {"novels": page, "paginator": paginator}
 
 
 # ── Novel views ──────────────────────────────────────────────────────
