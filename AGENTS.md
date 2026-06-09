@@ -171,7 +171,7 @@ novel_hub/
 - **Died status**: If `status == 连载中` and `last_update` is >= 3 months ago (Asia/Shanghai), treat as `died` (断更)
 - **Missing values**: Use `null`/`None`/`NA` — never fill with `0`. `NA` marks data likely to be updated later; `0` signals finality (will never change)
 - `Mapping` enums default to `OTHER` — no special handling needed for unknown labels
-- **Cover URL**: Common prefix `http://rs.sfacg.com/web/novel/images/NovelCover/Big/` — store only the suffix in DB, reconstruct full URL in template
+- **Cover URL**: Common prefix `http://rs.sfacg.com/web/novel/images/NovelCover/Big/` — store only the suffix in DB, reconstruct full URL in template. URLs containing `defaultNew.jpg` are default covers — store as `None`
 - **Banner URL**: Pattern `http://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg` — no query params, derive from `nid`
 - **Novel URL**: `https://book.sfacg.com/Novel/{nid}/`
 

@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -25,6 +26,14 @@ def _int_or_zero(val):
     return int(val)
 
 
+def _clean_cover(url):
+    if pd.isna(url):
+        return None
+    if "defaultNew.jpg" in url:
+        return None
+    return url
+
+
 def load_and_clean(files: list[Path]) -> pd.DataFrame:
     frames = []
     for f in files:
@@ -50,6 +59,8 @@ def load_and_clean(files: list[Path]) -> pd.DataFrame:
     df["ptype"] = (
         df["price_type"].map(PTYPE_ZH2VAL).fillna(PTYPE_FALLBACK).astype("Int64")
     )
+
+    df["cover"] = df["cover"].apply(_clean_cover)
 
     int_cols = [
         "word_num",
@@ -86,6 +97,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        t0 = time.time()
         path = Path(options["path"])
         if path.is_dir():
             files = sorted(path.glob("*.jsonl"))
@@ -96,41 +108,47 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"No JSONL files found at {path}"))
             return
 
-        self.stdout.write("Loading & cleaning with pandas ...")
+        self.stdout.write(f"Loading {len(files)} files from {path} ...")
+        t_step = time.time()
         df = load_and_clean(files)
-        self.stdout.write(f"After dedup: {len(df)} novels")
+        self.stdout.write(
+            f"  pandas cleaning: {time.time() - t_step:.1f}s — {len(df)} novels after dedup"
+        )
 
         authors = df["author"].dropna().unique().tolist()
         contests = df["contest"].dropna().unique().tolist()
         tag_lists = df["tags"].dropna().tolist()
         all_tags = list({t for tags in tag_lists for t in tags if t})
         self.stdout.write(
-            f"Authors: {len(authors)}, Contests: {len(contests)}, Tags: {len(all_tags)}"
+            f"  unique: {len(authors)} authors, {len(contests)} contests, {len(all_tags)} tags"
         )
 
         BATCH = 5000
 
-        self.stdout.write("Bulk creating authors ...")
+        t_step = time.time()
         Author.objects.bulk_create(
             [Author(name=a) for a in authors], batch_size=BATCH, ignore_conflicts=True
         )
         author_map = {a.name: a.id for a in Author.objects.all()}
+        self.stdout.write(f"  authors: {time.time() - t_step:.1f}s")
 
-        self.stdout.write("Bulk creating contests ...")
+        t_step = time.time()
         Contest.objects.bulk_create(
             [Contest(name=c) for c in contests],
             batch_size=BATCH,
             ignore_conflicts=True,
         )
         contest_map = {c.name: c.id for c in Contest.objects.all()}
+        self.stdout.write(f"  contests: {time.time() - t_step:.1f}s")
 
-        self.stdout.write("Bulk creating tags ...")
+        t_step = time.time()
         Tag.objects.bulk_create(
             [Tag(name=t) for t in all_tags], batch_size=BATCH, ignore_conflicts=True
         )
         tag_map = {t.name: t.id for t in Tag.objects.all()}
+        self.stdout.write(f"  tags: {time.time() - t_step:.1f}s")
 
-        self.stdout.write("Bulk creating novels ...")
+        t_step = time.time()
         novel_objs = []
         for row in df.itertuples(index=False):
             novel_objs.append(
@@ -147,7 +165,7 @@ class Command(BaseCommand):
                     review_num=_int_or_zero(getattr(row, "review_num", 0)),
                     comment_num=_int_or_zero(getattr(row, "comment_num", 0)),
                     has_banner=bool(row.banner) if pd.notna(row.banner) else False,
-                    cover=row.cover if pd.notna(row.cover) else None,
+                    cover=row.cover,
                     last_update=row.last_update if pd.notna(row.last_update) else None,
                     author_id=(
                         author_map.get(row.author) if pd.notna(row.author) else None
@@ -161,8 +179,9 @@ class Command(BaseCommand):
             )
         Novel.objects.bulk_create(novel_objs, batch_size=BATCH, ignore_conflicts=True)
         del novel_objs
+        self.stdout.write(f"  novels: {time.time() - t_step:.1f}s")
 
-        self.stdout.write("Setting M2M tags via raw SQL ...")
+        t_step = time.time()
         tag_rows = []
         for row in (
             df[["nid", "tags"]].dropna(subset=["tags"]).itertuples(index=False)
@@ -182,5 +201,13 @@ class Command(BaseCommand):
                 tag_rows,
             )
             cursor.execute("PRAGMA foreign_keys=ON")
+        self.stdout.write(f"  M2M tags: {time.time() - t_step:.1f}s")
 
-        self.stdout.write(self.style.SUCCESS(f"Done. {len(df)} novels loaded."))
+        total = time.time() - t0
+        self.stdout.write("")
+        self.stdout.write(self.style.SUCCESS(
+            f"Done in {total:.1f}s — "
+            f"{len(df)} novels, {len(authors)} authors, "
+            f"{len(contests)} contests, {len(all_tags)} tags, "
+            f"{len(tag_rows)} tag links"
+        ))
