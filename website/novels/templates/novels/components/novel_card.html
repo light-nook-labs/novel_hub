@@ -1,0 +1,34 @@
+{% load novel_tags %}
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden group">
+  <a href="{% url 'novels:detail' novel.id %}" class="block">
+    <div class="relative bg-gradient-to-br from-amber-300 to-orange-300">
+      {% if novel.cover %}
+      <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto group-hover:scale-105 transition-transform duration-300">
+      {% else %}
+      <div class="aspect-[3/4] flex items-center justify-center">
+        <span class="text-white text-4xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
+      </div>
+      {% endif %}
+      <div class="absolute top-1 right-1 px-1.5 py-0.5 text-xs rounded bg-black/60 text-amber-400 font-bold">
+        {{ novel.click_num|humanize_num }}
+      </div>
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="{% url 'novels:detail' novel.id %}" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold line-clamp-2 md:truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
+    </a>
+    <p class="hidden md:block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="px-1 py-0.5 text-xs rounded
+        {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
+        {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
+        {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+        {{ novel.get_status_display }}
+      </span>
+      <span class="px-1 py-0.5 text-xs rounded bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+        {{ novel.get_genre_display }}
+      </span>
+    </div>
+  </div>
+</div>

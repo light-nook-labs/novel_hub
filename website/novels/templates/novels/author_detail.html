@@ -4,26 +4,22 @@
 {% block title %}{{ author.name }} - Novel Hub{% endblock %}
 
 {% block content %}
-<nav class="mb-6 text-sm text-gray-500 dark:text-gray-400">
+<nav class="mb-4 md:mb-6 text-sm text-gray-500 dark:text-gray-400">
   <a href="{% url 'novels:authors' %}" class="hover:text-amber-600 dark:hover:text-amber-400">作者</a>
   <span class="mx-2">/</span>
   <span class="text-gray-900 dark:text-gray-100">{{ author.name }}</span>
 </nav>
 
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
-  <h1 class="text-2xl font-bold">{{ author.name }}</h1>
+<div class="mb-6">
+  <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50">{{ author.name }}</h1>
   <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ novel_count }} 本小说</p>
 </div>
 
 <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
   {% for novel in novels %}
-  <a href="{% url 'novels:detail' novel.id %}" class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow p-4">
-    <h3 class="font-medium truncate">{{ novel.title }}</h3>
-    <div class="flex items-center gap-2 mt-2">
-      <span class="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">{{ novel.get_genre_display }}</span>
-      <span class="text-xs text-gray-400 tabular-nums">{{ novel.click_num|humanize_num }} 点击</span>
-    </div>
-  </a>
+  {% include "novels/components/novel_card.html" %}
+  {% empty %}
+  <div class="col-span-full text-center py-12 text-gray-400 dark:text-gray-500">暂无小说</div>
   {% endfor %}
 </div>
 {% endblock %}

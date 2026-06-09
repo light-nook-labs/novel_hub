@@ -4,26 +4,16 @@
 {% block title %}征文 - Novel Hub{% endblock %}
 
 {% block content %}
-<style>
-.pill { background: var(--pb); color: var(--pt); }
-.dark .pill { background: var(--pbd); color: var(--ptd); }
-</style>
-
 <div class="mb-6">
-  <h1 class="text-2xl font-bold">征文</h1>
+  <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50">征文</h1>
   <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ contests|length }} 个征文活动</p>
 </div>
 
 <div class="flex flex-wrap gap-3">
   {% for contest in contests %}
-  <a href="{% url 'novels:contest_detail' contest.id %}"
-     class="pill rounded-full shadow px-4 py-2 hover:shadow-md transition-shadow"
-     style="--pb:{{ contest|pill_bg:'contest' }}; --pt:{{ contest|pill_text:'contest' }}; --pbd:{{ contest|pill_bg_dark:'contest' }}; --ptd:{{ contest|pill_text_dark:'contest' }}">
-    <span class="font-medium">{{ contest.name }}</span>
-    <span class="text-xs opacity-70 ml-1">{{ contest.novel_count }}</span>
-  </a>
+  {% include "novels/components/badge.html" with obj=contest model="contest" url_name="novels:contest_detail" count=contest.novel_count %}
   {% empty %}
-  <div class="text-center py-12 text-gray-400">暂无数据</div>
+  <div class="text-center py-12 text-gray-400 dark:text-gray-500">暂无数据</div>
   {% endfor %}
 </div>
 {% endblock %}

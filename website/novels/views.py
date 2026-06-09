@@ -303,12 +303,21 @@ class EnumListView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
+        from django.db.models import Count
+        from .models import Novel
+
         colors = self.BADGE_COLORS.get(self.enum_type, {})
+        counts = dict(
+            Novel.objects.values_list(self.enum_type)
+            .annotate(c=Count("id"))
+            .values_list(self.enum_type, "c")
+        )
         return [
             {
                 "value": m.value,
                 "label": self.mapping.get_zh(m.value),
                 "color": colors.get(m.value, {}),
+                "novel_count": counts.get(m.value, 0),
             }
             for m in self.mapping.enum
             if m.name != "OTHER"

@@ -1,0 +1,51 @@
+{% load novel_tags %}
+<div class="flex items-start gap-3">
+  <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" class="flex-shrink-0">
+    {% if novel.cover %}
+    <img src="{{ novel.cover|cover_url }}" alt="" class="w-16 h-auto rounded">
+    {% else %}
+    <div class="w-16 aspect-[3/4] rounded bg-gradient-to-br from-amber-300 to-orange-300 flex items-center justify-center">
+      <span class="text-white text-sm font-bold">{{ novel.title|truncatechars:1 }}</span>
+    </div>
+    {% endif %}
+  </a>
+  <div class="min-w-0 flex-1">
+    <div class="flex items-center gap-2">
+      <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank"
+         class="font-medium text-gray-900 dark:text-gray-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate">
+        {{ novel.title }}
+      </a>
+    </div>
+    <div class="flex items-center gap-2 mt-0.5">
+      <span class="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 tabular-nums">#{{ novel.id }}</span>
+      <span class="text-xs text-gray-500 dark:text-gray-400">{{ novel.author|default:"未知" }}</span>
+    </div>
+    <div class="flex items-center gap-1.5 mt-1">
+      <span class="px-1.5 py-0.5 text-xs rounded-full
+        {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
+        {% elif novel.status == 1 %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
+        {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
+        {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+        {{ novel.get_status_display }}
+      </span>
+      <span class="px-1.5 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+        {{ novel.get_genre_display }}
+      </span>
+      <span class="px-1.5 py-0.5 text-xs rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
+        {{ novel.get_ptype_display }}
+      </span>
+      {% if novel.contest %}
+      <span class="px-1.5 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+        {{ novel.contest }}
+      </span>
+      {% endif %}
+    </div>
+    {% if novel.tags.all %}
+    <div class="flex flex-wrap gap-1.5 mt-1.5">
+      {% for tag in novel.tags.all %}
+      <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ tag.name }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>

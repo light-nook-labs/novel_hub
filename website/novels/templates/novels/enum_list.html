@@ -6,27 +6,17 @@
 
 {% block content %}
 <div class="mb-6">
-  <h1 class="text-2xl font-bold">{{ enum_label }}</h1>
+  <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50">{{ enum_label }}</h1>
 </div>
 
 <div class="flex flex-wrap gap-3">
   {% for item in items %}
   <a href="{% url 'novels:'|add:enum_type|add:'_detail' item.value %}"
-     class="enum-badge inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 hover:shadow-md"
-     style="--bg: {{ item.color.bg }}; --text: {{ item.color.text }}; --bg-d: {{ item.color.bg_d }}; --text-d: {{ item.color.text_d }};">
-    {{ item.label }}
+     class="pill rounded-full shadow px-4 py-2 hover:shadow-md transition-shadow"
+     style="--pb:{{ item.color.bg }}; --pt:{{ item.color.text }}; --pbd:{{ item.color.bg_d }}; --ptd:{{ item.color.text_d }}">
+    <span class="font-medium">{{ item.label }}</span>
+    <span class="text-xs opacity-70 ml-1">{{ item.novel_count }}</span>
   </a>
   {% endfor %}
 </div>
-
-<style>
-.enum-badge {
-  background-color: var(--bg);
-  color: var(--text);
-}
-.dark .enum-badge {
-  background-color: var(--bg-d);
-  color: var(--text-d);
-}
-</style>
 {% endblock %}

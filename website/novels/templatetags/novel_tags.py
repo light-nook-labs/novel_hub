@@ -73,3 +73,13 @@ def pill_text_dark(obj, model_name):
     """Generate deterministic dark-mode text color."""
     h = hash(f"{model_name}_{obj.id}") % 360
     return f"hsl({h}, 70%, 70%)"
+
+
+@register.filter
+def detail_url(obj, url_name):
+    """Generate detail URL: obj|detail_url:'novels:tag_detail'."""
+    from django.urls import reverse
+    try:
+        return reverse(url_name, args=[obj.id])
+    except Exception:
+        return ""

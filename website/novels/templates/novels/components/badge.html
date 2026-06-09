@@ -1,0 +1,9 @@
+{% load novel_tags %}
+{# Badge component. #}
+{# {% include "novels/components/badge.html" with obj=tag model="tag" url_name="novels:tag_detail" count=tag.novel_count #}
+<a {% if url_name %}href="{{ obj|detail_url:url_name }}"{% endif %}
+   class="pill rounded-full shadow px-4 py-2 hover:shadow-md transition-shadow"
+   style="--pb:{{ obj|pill_bg:model }}; --pt:{{ obj|pill_text:model }}; --pbd:{{ obj|pill_bg_dark:model }}; --ptd:{{ obj|pill_text_dark:model }}">
+  <span class="font-medium">{{ obj }}</span>
+  {% if count %}<span class="text-xs opacity-70 ml-1">{{ count }}</span>{% endif %}
+</a>

@@ -1,0 +1,19 @@
+{# Desktop navigation links #}
+<nav class="hidden md:flex items-center gap-6 text-sm">
+  <a href="{% url 'novels:rank' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">排行榜</a>
+  <div class="relative" id="nav-browse">
+    <button onclick="document.getElementById('nav-browse-menu').classList.toggle('hidden')" class="flex items-center gap-1 hover:text-amber-700 dark:hover:text-amber-300 transition-colors">
+      浏览
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </button>
+    <div id="nav-browse-menu" class="hidden absolute left-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+      <a href="{% url 'novels:genres' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg">分类</a>
+      <a href="{% url 'novels:statuses' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">状态</a>
+      <a href="{% url 'novels:ptypes' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">类型</a>
+      <a href="{% url 'novels:tags' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">标签</a>
+      <a href="{% url 'novels:contests' %}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg">征文</a>
+    </div>
+  </div>
+  <a href="{% url 'novels:authors' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">作者</a>
+  <a href="{% url 'novels:banners' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">Banner</a>
+</nav>
