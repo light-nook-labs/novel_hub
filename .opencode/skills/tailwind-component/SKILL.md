@@ -20,9 +20,9 @@ description: Create Tailwind CSS components following project design system
 **No cold colors (blue, indigo, sky, cyan, violet, purple, fuchsia). No pure colors — use muted warm tones only.**
 
 ### Primary
-- Header gradient: `from-amber-200 to-orange-200`
-- Accent / hover: `text-amber-400`
-- Active filter: `bg-white/20 text-white`
+- Header gradient: `from-amber-200 to-orange-200 dark:from-amber-900 dark:to-orange-900`
+- Accent / hover: `hover:text-amber-700 dark:hover:text-amber-300`
+- Active filter: `bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200`
 
 ### Surface & Background
 - Page bg: `bg-gray-50 dark:bg-gray-900`
@@ -30,8 +30,8 @@ description: Create Tailwind CSS components following project design system
 - Border: `border-gray-200 dark:border-gray-700`
 
 ### Text
-- Primary: `text-gray-900 dark:text-gray-100`
-- Secondary: `text-gray-500 dark:text-gray-400`
+- Primary: `text-gray-800 dark:text-gray-100`
+- Secondary: `text-gray-600 dark:text-gray-400`
 - Muted: `text-gray-400 dark:text-gray-500`
 
 ### Status badges
