@@ -5,7 +5,7 @@
 
 {% block content %}
 <nav class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-  <a href="{% url 'novels:'|add:enum_type|add:'s' %}" class="hover:text-amber-600 dark:hover:text-amber-400">
+  <a href="{% url 'novels:'|add:list_url %}" class="hover:text-amber-600 dark:hover:text-amber-400">
     {% if enum_type == "genre" %}分类{% elif enum_type == "status" %}状态{% else %}类型{% endif %}
   </a>
   <span class="mx-2">/</span>

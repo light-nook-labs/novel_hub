@@ -438,11 +438,14 @@ class EnumDetailView(ListView):
             .prefetch_related("tags")
         )
 
+    LIST_URLS = {"genre": "genres", "status": "statuses", "ptype": "ptypes"}
+
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["enum_type"] = self.enum_type
         ctx["enum_value"] = self.enum_value
         ctx["enum_label"] = self.enum_label
+        ctx["list_url"] = self.LIST_URLS[self.enum_type]
         params = self.request.GET.copy()
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()
