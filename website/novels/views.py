@@ -1,4 +1,4 @@
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView, DetailView, TemplateView
 
 from .models import Novel, Author, Tag, Contest
 from .mappings import GENRE, STATUS, PTYPE
@@ -474,3 +474,10 @@ class BannerListView(ListView):
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()
         return ctx
+
+
+# ── About ────────────────────────────────────────────────────────────
+
+
+class AboutView(TemplateView):
+    template_name = "novels/about.html"
