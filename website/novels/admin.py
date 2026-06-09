@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from .mappings import GENRE, PTYPE, STATUS
 from .models import Author, Contest, Novel, Tag, Task
 
 admin.site.site_header = "Novel Hub 管理"
@@ -27,38 +28,30 @@ class ContestAdmin(admin.ModelAdmin):
 
 @admin.register(Novel)
 class NovelAdmin(admin.ModelAdmin):
-    list_display = ["title", "author", "genre", "status", "ptype", "last_update"]
+    list_display = [
+        "title",
+        "author",
+        "genre_display",
+        "status_display",
+        "ptype_display",
+        "last_update",
+    ]
     list_filter = ["genre", "status", "ptype"]
     search_fields = ["title"]
-    readonly_fields = [
-        "id",
-        "title",
-        "ptype",
-        "genre",
-        "status",
-        "click_num",
-        "word_num",
-        "praise_num",
-        "like_num",
-        "has_banner",
-        "review_num",
-        "comment_num",
-        "cover",
-        "last_update",
-        "db_update",
-        "author",
-        "contest",
-        "tags",
-    ]
+    autocomplete_fields = ["author", "contest"]
+    filter_horizontal = ["tags"]
 
-    def has_add_permission(self, request):
-        return False
+    @admin.display(description="分类")
+    def genre_display(self, obj):
+        return GENRE.get_zh(obj.genre)
 
-    def has_change_permission(self, request, obj=None):
-        return False
+    @admin.display(description="状态")
+    def status_display(self, obj):
+        return STATUS.get_zh(obj.status)
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    @admin.display(description="类型")
+    def ptype_display(self, obj):
+        return PTYPE.get_zh(obj.ptype)
 
 
 @admin.register(Task)
