@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+from django.db.models import Count
 
 from .mappings import GENRE, PTYPE, STATUS
 from .models import Author, Contest, Novel, Tag, Task
@@ -42,19 +43,40 @@ class ReadOnlyMixin:
 @admin.register(Author)
 class AuthorAdmin(ReadOnlyMixin, admin.ModelAdmin):
     search_fields = ["name"]
-    list_display = ["name"]
+    list_display = ["name", "novel_count"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(novel_count=Count("novels"))
+
+    @admin.display(description="小说数", ordering="novel_count")
+    def novel_count(self, obj):
+        return obj.novel_count
 
 
 @admin.register(Tag)
 class TagAdmin(ReadOnlyMixin, admin.ModelAdmin):
     search_fields = ["name"]
-    list_display = ["name"]
+    list_display = ["name", "novel_count"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(novel_count=Count("novels"))
+
+    @admin.display(description="小说数", ordering="novel_count")
+    def novel_count(self, obj):
+        return obj.novel_count
 
 
 @admin.register(Contest)
 class ContestAdmin(ReadOnlyMixin, admin.ModelAdmin):
     search_fields = ["name"]
-    list_display = ["name"]
+    list_display = ["name", "novel_count"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(novel_count=Count("novels"))
+
+    @admin.display(description="小说数", ordering="novel_count")
+    def novel_count(self, obj):
+        return obj.novel_count
 
 
 @admin.register(Novel)
