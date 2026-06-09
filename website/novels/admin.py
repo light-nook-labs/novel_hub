@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Author, Tag, Contest, Novel
+from .models import Author, Tag, Contest, Novel, Task
 
 
 @admin.register(Author)
@@ -24,3 +24,9 @@ class NovelAdmin(admin.ModelAdmin):
     search_fields = ["title"]
     autocomplete_fields = ["author", "contest"]
     filter_horizontal = ["tags"]
+
+
+@admin.register(Task)
+class TaskAdmin(admin.ModelAdmin):
+    list_display = ["id", "novel"]
+    search_fields = ["novel__title"]

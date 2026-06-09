@@ -5,7 +5,9 @@ from .mappings import GENRE, STATUS, PTYPE
 
 class NovelCountQuerySet(models.QuerySet):
     def annotate_novel_count(self):
-        return self.annotate(novel_count=models.Count("novels")).order_by("-novel_count")
+        return self.annotate(novel_count=models.Count("novels")).order_by(
+            "-novel_count"
+        )
 
 
 class Author(models.Model):
@@ -88,3 +90,17 @@ class Novel(models.Model):
 
     def get_ptype_display(self):
         return PTYPE.get_zh(self.ptype)
+
+
+class Task(models.Model):
+    novel = models.OneToOneField(
+        Novel,
+        on_delete=models.CASCADE,
+        related_name="task",
+    )
+
+    class Meta:
+        ordering = ["-novel__last_update"]
+
+    def __str__(self):
+        return f"Task #{self.id} → Novel {self.novel_id}"
