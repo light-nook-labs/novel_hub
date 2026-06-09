@@ -1,198 +1,30 @@
-"""Task table maintenance — requests + lxml
+"""Task table maintenance
 
 Usage:
     uv run python website/task_runner.py
     uv run python website/task_runner.py --limit 100
     uv run python website/task_runner.py --skip-fill
 
-Two main APIs:
-    fetch_html(session, nid) — detail page HTML → lxml → all fields
-    fetch_api(session, nid)  — comment/review JSON API
+Pipeline:
+1. fill_tasks — populate Task table with novels that have duplicate covers
+2. run_tasks  — re-scrape each Task's novel, update DB, delete Task
 """
 
 import argparse
 import os
 import sys
-import time as time_mod
-from datetime import datetime
 
 import django
-import lxml.html
 import requests
 
+# Add project root to path so `import scraper` works
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-sys.path.insert(0, os.path.dirname(__file__))
 django.setup()
 
 from novels.models import Task  # noqa: E402
 from novels.mappings import GENRE, STATUS, PTYPE  # noqa: E402
-
-USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-    "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/147.0.0.0 Safari/537.36"
-)
-HEADERS = {"User-Agent": USER_AGENT}
-COMMON_URL = "https://book.sfacg.com/ajax/ashx/Common.ashx"
-
-
-# ---------------------------------------------------------------------------
-# API 1: fetch_html — detail page HTML via lxml
-# ---------------------------------------------------------------------------
-
-
-def fetch_html(session, nid):
-    """GET /Novel/{nid}/ → parse all fields with lxml.
-
-    Reuses CSS selectors from meta.py (converted to XPath):
-      .count-detail .text-row .text::text
-      #BasicOperation .btn::text
-      .title .tag::text
-      .d-banner
-      .tag-list .tag .highlight .text::text
-
-    Also extracts title, author, cover from page structure.
-    """
-    url = f"https://book.sfacg.com/Novel/{nid}/"
-    resp = session.get(url, headers=HEADERS, timeout=10)
-    resp.raise_for_status()
-    tree = lxml.html.fromstring(resp.text)
-
-    # Title from <h1>
-    h1_texts = tree.xpath("//h1//text()")
-    title = "".join(t.strip() for t in h1_texts)
-
-    # Author from <title> tag
-    # Format: '小说名 - 小说全文阅读 - 类型标签 - 作者 - SF轻小说'
-    raw = tree.xpath("//title/text()")[0].strip()
-    parts = [p.strip() for p in raw.split(" - ")]
-    author_name = parts[-2] if len(parts) >= 3 else ""
-
-    # Cover: first NovelCover image
-    covers = tree.xpath('//img[contains(@src,"NovelCover")]/@src')
-    cover = covers[0] if covers else None
-
-    # Stats row: 类型/字数/人气/更新
-    row = tree.xpath(
-        '//div[contains(@class,"count-detail")]'
-        '//div[contains(@class,"text-row")]'
-        '//span[contains(@class,"text")]/text()'
-    )
-    # Buttons: 赞/收藏
-    btns = tree.xpath(
-        '//div[@id="BasicOperation"]' '//a[contains(@class,"btn")]/text()'
-    )
-    # Ptype + contest tags
-    ptype_contest = tree.xpath(
-        '//div[contains(@class,"title")]' '//span[contains(@class,"tag")]/text()'
-    )
-    # Banner
-    banner = tree.xpath('//div[contains(@class,"d-banner")]')
-    # Tags
-    tags = tree.xpath(
-        '//div[contains(@class,"tag-list")]'
-        '//div[contains(@class,"tag")]'
-        '//span[contains(@class,"highlight")]'
-        '//span[contains(@class,"text")]/text()'
-    )
-
-    return {
-        "title": title,
-        "author": author_name,
-        "cover": cover,
-        "has_banner": bool(banner),
-        "tags": tags,
-        **_parse_row(row),
-        **_parse_btns(btns),
-        **_parse_ptype_contest(ptype_contest),
-    }
-
-
-# ---------------------------------------------------------------------------
-# API 2: fetch_api — comment/review JSON
-# ---------------------------------------------------------------------------
-
-
-def fetch_api(session, nid):
-    """GET Common.ashx?op=getcomment → JSON.
-
-    Returns comment_num (short comments) and review_num (long reviews).
-    """
-    params = {
-        "op": "getcomment",
-        "nid": nid,
-        "_": int(time_mod.time() * 1000),
-    }
-    resp = session.get(COMMON_URL, params=params, headers=HEADERS, timeout=10)
-    resp.raise_for_status()
-    data = resp.json()
-    return {
-        "comment_num": data.get("ShortCommentNum"),
-        "review_num": data.get("LongCommentNum"),
-    }
-
-
-# ---------------------------------------------------------------------------
-# HTML parsing helpers (convert meta.py CSS selectors → XPath)
-# ---------------------------------------------------------------------------
-
-
-def _parse_row(row):
-    """Parse genre, word_num, status, click_num, last_update.
-
-    Example:
-        ['类型：魔幻', '字数：3240533字[连载中]',
-         '人气：4757.4万', '更新：2026/5/25 20:26:36']
-    """
-    if len(row) < 4:
-        return {}
-    values = [item.split("：")[-1] for item in row]
-    genre, wordnum_status, click_num, last_update = values
-    word_num, status = wordnum_status.split("字[")
-    status = status.replace("]", "")
-    click_num = click_num.replace("人气", "").replace("点击", "")
-    return {
-        "genre": genre,
-        "word_num": int(word_num),
-        "status": status,
-        "click_num": int(
-            click_num
-            if "万" not in click_num
-            else float(click_num.replace("万", "")) * 10_000
-        ),
-        "last_update": datetime.strptime(last_update, "%Y/%m/%d %H:%M:%S"),
-    }
-
-
-def _parse_btns(btns):
-    """Parse praise_num, like_num.
-
-    Example: ['点击阅读', '赞 27872', '收藏 278629']
-    """
-    if len(btns) < 2:
-        return {}
-    praise_num, like_num = [int(btn.split(" ")[-1]) for btn in btns[-2:]]
-    return {"praise_num": praise_num, "like_num": like_num}
-
-
-def _parse_ptype_contest(ptype_contest):
-    """Parse ptype, contest.
-
-    Example: ['VIP', '第九届冬季征文'] or ['签约'] or []
-    """
-    ptypes = {"签约", "VIP"}
-    ptype_contest = set(ptype_contest)
-    ptype = ptypes & ptype_contest
-    contest = ptype_contest - ptypes
-    return {
-        "ptype": "免费" if not ptype else ptype.pop(),
-        "contest": "" if not contest else contest.pop(),
-    }
-
-
-# ---------------------------------------------------------------------------
-# fill_tasks + run_tasks
-# ---------------------------------------------------------------------------
+from scraper import fetch_html, fetch_api  # noqa: E402
 
 
 def fill_tasks():

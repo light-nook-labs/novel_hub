@@ -82,6 +82,12 @@ uv run python manage.py load_jsonl ../dataset/data/meta.jsonl
 
 ```
 novel_hub/
+    site_config.toml        # Shared config (site, pagination, scraper)
+    scraper/                # requests-based HTTP client (shared by scrapy + website)
+        __init__.py         # exports fetch_html, fetch_api
+        config.py           # reads from site_config.toml [scraper]
+        html.py             # fetch_html + lxml parsing
+        api.py              # fetch_api (comment/review JSON)
     website/                # Django project root (manage.py lives here)
         config/             # Django settings, urls, wsgi
         novels/             # Main Django app
@@ -92,8 +98,7 @@ novel_hub/
         templates/          # Project-level templates (base.html)
         static/             # Project-level static files
         manage.py
-        site_config.toml    # Site settings (loaded via context processor)
-        task_runner.py      # requests-based Task maintenance
+        task_runner.py      # Task table maintenance (imports scraper)
     meta_spider/            # Scrapy spider (sfacg.com scraper)
         meta_spider/spiders/
             meta.py         # Legacy (commented out, reference only)
@@ -105,7 +110,7 @@ novel_hub/
 
 - **Env vars**: Copy `.sample.env` → `.env` to `website/`. Required: `SECRET_KEY`, `DEBUG`
 - **Django settings**: `website/config/settings.py` — uses `python-dotenv`, loads `.env` from `website/`
-- **Site config**: `website/site_config.toml` — loaded via context processor (`config.toml.toml_config_processor`)
+- **Site config**: `site_config.toml` (project root) — loaded via context processor (`config.toml.toml_config_processor`). Also holds `[scraper]` section shared by `scraper/` package.
 - **Database**: SQLite default for local dev; MySQL/PostgreSQL via env vars
 - **Mappings**: `novels/mappings.py` defines `Mapping` class + `GENRE`/`STATUS`/`PTYPE` enums (en↔zh). IntEnum index 1 is always `OTHER` (fallback). Loaded as Django context processor for template use
 - **Supabase skills** installed via `skills-lock.json` — Supabase Postgres best practices apply
@@ -171,7 +176,7 @@ See `tailwind-component` skill for full design tokens. Key rules:
 |-----------|------|---------|
 | `meta_spider/spiders/meta.py` | — | Legacy (commented out, reference only) |
 | `meta_spider/spiders/meta_batch.py` | Scrapy | Batch crawling list + detail pages |
-| `website/task_runner.py` | requests + lxml | Task table maintenance |
+| `website/task_runner.py` | requests + lxml | Task table maintenance (imports scraper) |
 | `website/novels/management/commands/fill_tasks.py` | Django ORM | Populate Task table with duplicate covers |
 
 ### Commands
