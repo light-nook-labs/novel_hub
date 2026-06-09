@@ -15,7 +15,7 @@ class Author(models.Model):
     objects = NovelCountQuerySet.as_manager()
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["id"]
 
     def __str__(self):
         return self.name
@@ -26,7 +26,7 @@ class Tag(models.Model):
     objects = NovelCountQuerySet.as_manager()
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["id"]
 
     def __str__(self):
         return self.name
@@ -37,7 +37,7 @@ class Contest(models.Model):
     objects = NovelCountQuerySet.as_manager()
 
     class Meta:
-        ordering = ["name"]
+        ordering = ["id"]
 
     def __str__(self):
         return self.name

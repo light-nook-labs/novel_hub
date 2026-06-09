@@ -49,7 +49,6 @@ class AuthorAdmin(ReadOnlyMixin, admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
-            .order_by()  # clear Meta.ordering
             .annotate(novel_count=Count("novels"))
             .order_by("-novel_count")
         )
@@ -68,7 +67,6 @@ class TagAdmin(ReadOnlyMixin, admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
-            .order_by()  # clear Meta.ordering
             .annotate(novel_count=Count("novels"))
             .order_by("-novel_count")
         )
@@ -87,7 +85,6 @@ class ContestAdmin(ReadOnlyMixin, admin.ModelAdmin):
         return (
             super()
             .get_queryset(request)
-            .order_by()  # clear Meta.ordering
             .annotate(novel_count=Count("novels"))
             .order_by("-novel_count")
         )
