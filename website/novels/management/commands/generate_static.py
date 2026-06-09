@@ -93,7 +93,18 @@ class Command(BaseCommand):
             static_dst = out / "static"
             if static_dst.exists():
                 shutil.rmtree(static_dst)
-            shutil.copytree(static_src, static_dst)
+            static_dst.mkdir(parents=True, exist_ok=True)
+            for item in Path(static_src).iterdir():
+                if item.name == "node_modules":
+                    # Only copy htmx dist, not all node_modules
+                    htmx_src = item / "htmx.org" / "dist"
+                    if htmx_src.exists():
+                        shutil.copytree(htmx_src, static_dst / "node_modules" / "htmx.org" / "dist")
+                else:
+                    if item.is_dir():
+                        shutil.copytree(item, static_dst / item.name)
+                    else:
+                        shutil.copy2(item, static_dst / item.name)
             self.stdout.write("  static assets copied")
 
         self.stdout.write(self.style.SUCCESS(f"Done! Output: {out}"))
