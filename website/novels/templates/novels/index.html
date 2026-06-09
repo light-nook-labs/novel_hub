@@ -148,8 +148,8 @@
       <a href="{% url 'novels:detail' novel.id %}" class="block">
         <h3 class="text-sm font-medium truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
       </a>
-      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>
-      <div class="flex items-center gap-1 mt-1">
+      <p class="hidden md:block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>
+      <div class="hidden md:flex items-center gap-1 mt-1">
         <span class="px-1 py-0.5 text-xs rounded
           {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
           {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
