@@ -2,17 +2,31 @@
 
 {% block title %}{{ enum_label }} - Novel Hub{% endblock %}
 
+{% block pagination %}{% endblock %}
+
 {% block content %}
 <div class="mb-6">
   <h1 class="text-2xl font-bold">{{ enum_label }}</h1>
 </div>
 
-<div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+<div class="flex flex-wrap gap-3">
   {% for item in items %}
-  <a href="{% url 'novels:enum_detail' enum_type item.value %}"
-     class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 hover:shadow-md transition-shadow text-center">
-    <p class="font-medium text-gray-900 dark:text-gray-100">{{ item.label }}</p>
+  <a href="{% url 'novels:'|add:enum_type|add:'_detail' item.value %}"
+     class="enum-badge inline-flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all hover:scale-105 hover:shadow-md"
+     style="--bg: {{ item.color.bg }}; --text: {{ item.color.text }}; --bg-d: {{ item.color.bg_d }}; --text-d: {{ item.color.text_d }};">
+    {{ item.label }}
   </a>
   {% endfor %}
 </div>
+
+<style>
+.enum-badge {
+  background-color: var(--bg);
+  color: var(--text);
+}
+.dark .enum-badge {
+  background-color: var(--bg-d);
+  color: var(--text-d);
+}
+</style>
 {% endblock %}

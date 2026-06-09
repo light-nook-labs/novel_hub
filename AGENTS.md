@@ -115,7 +115,8 @@ novel_hub/
 - **Grid-first**: ListView content uses CSS Grid (`grid`). Table views (`/rank`) use `<table>`. Flexbox (`flex`) only for 1D alignment (nav, pills, badges).
 - **Grid columns**: `grid-cols-4 md:grid-cols-6 lg:grid-cols-8` — mobile 4 cols, desktop 6, large 8.
 - **Pagination**: `per_page` must be a multiple of 6 (LCM of 4, 6, 8) so rows fill cleanly at every breakpoint. Default: 24. Exceptions: banner (12), rank (100), detail sublists (50).
-- **No pagination** for tag and contest list pages — they render all items as pills.
+- **No pagination** for tag, contest, and enum list pages — they render all items as pills/badges.
+- **ListView slug**: Always use plural form (`/genres/`, `/statuses/`, `/authors/`, `/tags/`, `/contests/`).
 - **Single admin user**: No authentication, no staff roles. Only one admin user via Django admin. Do not add `LoginRequiredMixin`, `UserPassesTestMixin`, or any auth-related code.
 
 ## Color Scheme

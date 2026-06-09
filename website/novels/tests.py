@@ -210,13 +210,21 @@ class EnumViewTest(TestCase):
         )
 
     def test_enum_list(self):
-        response = self.client.get(reverse("novels:enum_list", args=["genre"]))
+        response = self.client.get(reverse("novels:genres"))
         self.assertEqual(response.status_code, 200)
 
     def test_enum_detail(self):
-        response = self.client.get(reverse("novels:enum_detail", args=["genre", 2]))
+        response = self.client.get(reverse("novels:genre_detail", args=[2]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_enum_list_statuses(self):
+        response = self.client.get(reverse("novels:statuses"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_enum_list_ptypes(self):
+        response = self.client.get(reverse("novels:ptypes"))
         self.assertEqual(response.status_code, 200)
 
     def test_enum_404(self):
-        response = self.client.get(reverse("novels:enum_list", args=["invalid"]))
+        response = self.client.get("/invalid/")
         self.assertEqual(response.status_code, 404)
