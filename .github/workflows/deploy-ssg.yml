@@ -51,9 +51,11 @@ jobs:
       - name: Add .nojekyll
         run: touch static_build/.nojekyll
 
-      - name: Fix static paths for GitHub Pages
+      - name: Fix paths for GitHub Pages (subdirectory)
         run: |
-          # Rewrite /static/ to relative static/ in all HTML files
+          # Add base tag for /novel_hub/ subdirectory
+          find static_build -name "*.html" -exec sed -i 's|<head>|<head>\n  <base href="/novel_hub/">|' {} +
+          # Make static paths relative (remove leading /)
           find static_build -name "*.html" -exec sed -i 's|href="/static/|href="static/|g; s|src="/static/|src="static/|g' {} +
 
       - name: Deploy to gh-pages
