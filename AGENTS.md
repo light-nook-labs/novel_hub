@@ -118,9 +118,9 @@ novel_hub/
 ### Primary Palette
 | Role | Light | Dark | Tailwind |
 |------|-------|------|----------|
-| Header gradient | Amber-200 → Orange-200 | same | `from-amber-200 to-orange-200` |
-| Accent / hover | Amber-400 | Amber-400 | `text-amber-400` |
-| Active filter | White/20 | White/20 | `bg-white/20 text-white` |
+| Header gradient | Amber-200 → Orange-200 | Amber-900 → Orange-900 | `from-amber-200 to-orange-200 dark:from-amber-900 dark:to-orange-900` |
+| Accent / hover | Amber-700 | Amber-300 | `hover:text-amber-700 dark:hover:text-amber-300` |
+| Active filter | Gray-200 | Gray-700 | `bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200` |
 
 ### Surface & Background
 | Role | Light | Dark | Tailwind |
@@ -132,8 +132,8 @@ novel_hub/
 ### Text
 | Role | Light | Dark | Tailwind |
 |------|-------|------|----------|
-| Primary | Gray-900 | Gray-100 | `text-gray-900 dark:text-gray-100` |
-| Secondary | Gray-500 | Gray-400 | `text-gray-500 dark:text-gray-400` |
+| Primary | Gray-800 | Gray-100 | `text-gray-800 dark:text-gray-100` |
+| Secondary | Gray-600 | Gray-400 | `text-gray-600 dark:text-gray-400` |
 | Muted | Gray-400 | Gray-500 | `text-gray-400 dark:text-gray-500` |
 
 ### Status Badges
