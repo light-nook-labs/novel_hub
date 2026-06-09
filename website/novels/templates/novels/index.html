@@ -146,7 +146,7 @@
     </a>
     <div class="p-2">
       <a href="{% url 'novels:detail' novel.id %}" class="block">
-        <h3 class="text-sm font-medium truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
+        <h3 class="text-xs md:text-sm font-medium line-clamp-2 md:truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
       </a>
       <p class="hidden md:block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>
       <div class="hidden md:flex items-center gap-1 mt-1">
