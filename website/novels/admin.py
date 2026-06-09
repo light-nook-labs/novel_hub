@@ -8,26 +8,37 @@ admin.site.site_title = "Novel Hub"
 admin.site.index_title = "数据管理"
 
 
+class ReadOnlyMixin:
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Author)
-class AuthorAdmin(admin.ModelAdmin):
+class AuthorAdmin(ReadOnlyMixin, admin.ModelAdmin):
     search_fields = ["name"]
     list_display = ["name"]
 
 
 @admin.register(Tag)
-class TagAdmin(admin.ModelAdmin):
+class TagAdmin(ReadOnlyMixin, admin.ModelAdmin):
     search_fields = ["name"]
     list_display = ["name"]
 
 
 @admin.register(Contest)
-class ContestAdmin(admin.ModelAdmin):
+class ContestAdmin(ReadOnlyMixin, admin.ModelAdmin):
     search_fields = ["name"]
     list_display = ["name"]
 
 
 @admin.register(Novel)
-class NovelAdmin(admin.ModelAdmin):
+class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_display = [
         "title",
         "author",
@@ -38,8 +49,6 @@ class NovelAdmin(admin.ModelAdmin):
     ]
     list_filter = ["genre", "status", "ptype"]
     search_fields = ["title"]
-    autocomplete_fields = ["author", "contest"]
-    filter_horizontal = ["tags"]
 
     @admin.display(description="分类")
     def genre_display(self, obj):
