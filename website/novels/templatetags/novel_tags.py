@@ -2,8 +2,6 @@ from django import template
 
 register = template.Library()
 
-COVER_PREFIX = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
-
 
 @register.filter
 def get_attr(obj, attr):
@@ -20,10 +18,14 @@ def get_attr(obj, attr):
 
 @register.filter
 def cover_url(suffix):
-    """Reconstruct full cover URL from suffix."""
+    """Reconstruct full cover URL from suffix using site_config."""
     if not suffix:
         return ""
-    return COVER_PREFIX + suffix
+    from config.toml import _load_config
+
+    cfg = _load_config()
+    prefix = cfg.get("scraper", {}).get("cover_prefix", "")
+    return prefix + suffix
 
 
 @register.filter

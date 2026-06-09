@@ -10,3 +10,4 @@ user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 novel_url = "https://book.sfacg.com/Novel/{nid}/"
 mobile_url = "https://m.sfacg.com/b/{nid}/"
+cover_prefix = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
