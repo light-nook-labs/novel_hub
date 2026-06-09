@@ -114,6 +114,24 @@ class NovelDetailView(DetailView):
             .prefetch_related(*NOVEL_LIST_PREFETCH)
         )
 
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        novel = self.object
+        stats = [
+            ("word_num", novel.word_num),
+            ("click_num", novel.click_num),
+            ("like_num", novel.like_num),
+            ("praise_num", novel.praise_num),
+            ("review_num", novel.review_num),
+            ("comment_num", novel.comment_num),
+        ]
+        ranks = {}
+        for field, val in stats:
+            if val is not None:
+                ranks[field] = Novel.objects.filter(**{f"{field}__gt": val}).count() + 1
+        ctx["ranks"] = ranks
+        return ctx
+
 
 # ── Rank ─────────────────────────────────────────────────────────────
 
