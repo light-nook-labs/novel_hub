@@ -55,8 +55,10 @@ jobs:
         run: |
           # Add base tag for /novel_hub/ subdirectory
           find static_build -name "*.html" -exec sed -i 's|<head>|<head>\n  <base href="/novel_hub/">|' {} +
-          # Make static paths relative (remove leading /)
+          # Make static paths relative
           find static_build -name "*.html" -exec sed -i 's|href="/static/|href="static/|g; s|src="/static/|src="static/|g' {} +
+          # Make nav links relative (strip leading /)
+          find static_build -name "*.html" -exec sed -i 's|href="/|href="|g' {} +
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
