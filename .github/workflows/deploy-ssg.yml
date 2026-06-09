@@ -38,11 +38,14 @@ jobs:
           echo "SECRET_KEY=gh-actions-ssg-key" > website/.env
           echo "DEBUG=0" >> website/.env
 
-      - name: Migrate & seed data
+      - name: Migrate & load real data
         working-directory: website
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           uv run python manage.py migrate --run-syncdb
-          uv run python manage.py create_fake_data -n 5000
+          gh release download dataset --repo light-nook-labs/novel_hub --dir ../dataset/data
+          uv run python manage.py load_jsonl ../dataset/data
 
       - name: Generate static pages
         working-directory: website
