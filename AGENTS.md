@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Novel Hub — Django 6.0.5 + Tailwind CSS 4.x + HTMX novel metadata website from sfacg.com. Use faker for development; real data processing (scrapy + pandas) happens after website development is complete.
+Novel Hub — Django 6.0.5 + Tailwind CSS 4.x novel metadata website from sfacg.com. Use faker for development; real data from merged releases.
 
 ## Versioning
 
@@ -46,27 +46,22 @@ uv run python manage.py shell
 # Fake data (for development)
 uv run python manage.py create_fake_data -n 1000
 
-# Real data loading (after website development)
-gh release download --repo <owner>/<repo>  # Download dataset from release
-uv run python manage.py load_jsonl ../dataset/data
+# Data loading (from release/)
+uv run python manage.py load_jsonl ../release/dataset/meta_01.jsonl
+
+# Dump database to release/
+uv run python manage.py dump_jsonl release
+
+# Static site generation
+uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50 --base-path novel_hub
+uv run python manage.py serve_static --port 8080
 
 # Tailwind CSS
 pnpm dev    # Watch mode
 pnpm build  # Production build
 
 # Run tests — ONLY test the app you modified
-uv run python manage.py test <app_name>
-
-# Scrapy spider — avoid running during dev; if needed, always specify -a and -o
-# NEVER run without arguments. Max 10 pages per run.
-uv run scrapy crawl meta_batch -o o.jsonl -a num=3
-uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
-
-# Task maintenance (requests) — fill + process + auto-delete
-uv run python website/task_runner.py
-uv run python website/task_runner.py --limit 100
-uv run python website/task_runner.py --nid-min 40000 --nid-max 49999 --skip-fill
-uv run python website/task_runner.py --status u
+uv run python manage.py test novels
 
 # Formatting & linting
 uv run black .                     # Format (line-length 88, target py313)
@@ -76,16 +71,13 @@ uv run pre-commit run --all-files  # Manual run all hooks
 
 **NEVER run `uv run python manage.py test` without specifying an app.** Always test only the app you changed.
 
-**Test data loading with `meta.jsonl` only** — using full dataset wastes 3+ minutes. Example:
-```bash
-uv run python manage.py load_jsonl ../dataset/data/meta.jsonl
-```
-
 ## Architecture
 
 ```
 novel_hub/
+    .env                    # Environment variables (root, not website/)
     site_config.toml        # Shared config (site, pagination, scraper)
+    models.py               # Shared Pydantic model (Meta) for spider + dump
     scraper/                # requests-based HTTP client (shared by scrapy + website)
         __init__.py         # exports fetch_html, fetch_api
         config.py           # reads from site_config.toml [scraper]
@@ -97,25 +89,39 @@ novel_hub/
             templates/novels/
             static/novels/
             mappings.py     # GENRE/STATUS/PTYPE enum mappings
-            models.py       # Novel, Author, Tag, Contest
-        templates/          # Project-level templates (base.html)
+            models.py       # Novel, Author, Tag, Contest, Task
+            tests.py        # 51 unit tests
+        templates/          # Project-level templates (base.html, pagination)
         static/             # Project-level static files
+            css/
+                input.css   # Tailwind CSS input
+                output.css  # Compiled Tailwind CSS
+                components.css  # Reusable component styles
+            js/
+                main.js     # Theme toggle, search, menu, hero bg
+                banners.js  # Lightbox for banner page
         manage.py
         task_runner.py      # Task table maintenance (imports scraper)
     meta_spider/            # Scrapy spider (sfacg.com scraper)
         meta_spider/spiders/
             meta.py         # Legacy (commented out, reference only)
             meta_batch.py   # Refactored batch spider
-    dataset/                # >100MB, gitignored (real data, for later use)
+    release/                # Generated release data (gitignored)
+        dataset/
+            meta_01.jsonl   # 20k records each
+            ...
+        tasks.csv           # Task table dump
+    merge/                  # Merged data from v0.0.1 + v1.1.0 (temporary)
 ```
 
 ## Key Facts
 
-- **Env vars**: Copy `.sample.env` → `.env` to `website/`. Required: `SECRET_KEY`, `DEBUG`
-- **Django settings**: `website/config/settings.py` — uses `python-dotenv`, loads `.env` from `website/`
+- **Env vars**: `.env` at project root. Required: `SECRET_KEY`, `DEBUG`, `DB_TYPE`
+- **Django settings**: `website/config/settings.py` — uses `python-dotenv`, loads `.env` from project root
 - **Site config**: `site_config.toml` (project root) — loaded via context processor (`config.toml.toml_config_processor`). Also holds `[scraper]` section shared by `scraper/` package.
-- **Database**: SQLite default for local dev; MySQL/PostgreSQL via env vars
+- **Database**: SQLite default for local dev; PostgreSQL (Supabase) via env vars
 - **Mappings**: `novels/mappings.py` defines `Mapping` class + `GENRE`/`STATUS`/`PTYPE` enums (en↔zh). IntEnum index 1 is always `OTHER` (fallback). Loaded as Django context processor for template use
+- **Pydantic model**: `models.py` at root defines `Meta` model shared by spider and dump_jsonl
 
 ## Code Style
 
@@ -139,36 +145,78 @@ See `tailwind-component` skill for full design tokens. Key rules:
 - **No cold colors** (blue, indigo, sky, cyan, violet, purple, fuchsia)
 - **No pure colors** — use muted warm tones only
 - **Header**: `from-amber-200 to-orange-200 dark:from-amber-900 dark:to-orange-900`
-- **Always include `dark:` variants** for backgrounds, text, borders, and badges
+- **Index page**: No dark mode for header/hero section
+- **Always include `dark:` variants** for backgrounds, text, borders, and badges (except index header)
 
 ## Dark Mode
 
 - Dark mode is toggled by `class="dark"` on `<html>` (currently hardcoded).
 - Inline styles that need dark mode use CSS custom properties: set `--var` and `--var-d` inline, override in `.dark .class { --var: var(--var-d) }`.
+- **Index page header**: No dark mode (transparent over banner image).
+
+## Template Structure
+
+```
+templates/base.html                     # Root: blocks (css, head_js, header, body, footer, body_js)
+novels/templates/novels/base.html       # App: extends root, overrides header/footer/pagination/body_js
+novels/templates/novels/index.html      # Page: extends app base, overrides header (hero)
+novels/templates/novels/components/
+    header_solid.html                   # Solid gradient header (non-index pages)
+    header_solid_static.html            # Static mode solid header
+    header_transparent.html             # Transparent header (index page, no dark mode)
+    header_transparent_static.html      # Static mode transparent header
+    header_actions.html                 # Search, theme toggle, mobile menu, GitHub
+    header_actions_index.html           # Index version (no dark mode)
+    header_actions_static.html          # Static mode version
+    nav.html                            # Desktop navigation links
+    nav_index.html                      # Index version (no dark mode)
+    nav_static.html                     # Static mode version
+    footer.html                         # Footer
+    footer_static.html                  # Static mode footer with GitHub link
+    novel_card.html                     # Novel card for grid display
+    novel_row.html                      # Novel row for table display
+```
 
 ## Data Rules
 
-- **Dev data**: Use `create_fake_data` for development. Real data via `load_jsonl` after website is complete
+- **Dev data**: Use `create_fake_data` for development. Real data via `load_jsonl` from `release/dataset/`
 - **Died status**: If `status == 连载中` and `last_update` is >= 3 months ago (Asia/Shanghai), treat as `died` (断更)
 - **Active status**: Virtual statuses for high-engagement novels. If `died` or `finished` AND (`banner=True` OR `click_num>=10M` OR `praise_num>=10k` OR `like_num>=10k` OR `review_num>=80`), upgrade to `active_d` (断更D) or `active_f` (完结F). Real statuses: only `finished`/`on_going`
 - **Missing values**: Use `null`/`None`/`NA` — never fill with `0`. `NA` marks data likely to be updated later; `0` signals finality (will never change)
 - `Mapping` enums default to `OTHER` — no special handling needed for unknown labels
-- **Cover URL**: Common prefix `http://rs.sfacg.com/web/novel/images/NovelCover/Big/` — store only the suffix in DB, reconstruct full URL in template. URLs containing `defaultNew.jpg` are default covers — store as `None`
+- **Cover URL**: Stored in DB, reconstructed in template via `cover_url` filter. Default cover used when cover is None/empty
 - **Banner URL**: Pattern `http://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg` — no query params, derive from `nid`
 - **Novel URL**: `https://book.sfacg.com/Novel/{nid}/`
+- **Title cleaning**: Strip ptype (VIP/签约) and contest name from title if appended
 
 ## Data Processing
 
-- **Command**: `uv run python manage.py load_jsonl` (default: `dataset/data/`)
+- **Load command**: `uv run python manage.py load_jsonl <path>`
+- **Dump command**: `uv run python manage.py dump_jsonl <output_dir>`
 - **Scale**: ~250k novels, ~10k authors, ~500 tags, ~200 contests
 - **Strategy**: pandas cleaning → Django ORM bulk insert
   - Tag/Contest: small tables (<=1000), load all into memory dict
   - Author: >10k, `bulk_create` with `ignore_conflicts=True`, then load into memory dict
   - Novel: >200k, `bulk_create` in batches of 5000
-  - M2M (novel_tags): raw SQL `INSERT OR IGNORE` in batches
+  - M2M (novel_tags): raw SQL `INSERT OR IGNORE` in batches (SQLite) or `ON CONFLICT DO NOTHING` (PostgreSQL)
 - **Idempotent**: `ignore_conflicts=True` makes re-running safe
 - **Dedup**: Keep latest `last_update` per `nid` when duplicates exist
 - **PRAGMA**: SQLite uses `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=OFF` during bulk insert
+- **Data merge**: Text/enum columns from dataset v0.0.1, numeric/cover columns from release v1.1.0
+
+## Static Site Generation (SSG)
+
+- **Command**: `uv run python manage.py generate_static`
+- **Options**: `--output`, `--index-pages`, `--rank-pages`, `--base-path`
+- **Pagination**: Uses file-based links (`page2.html`) instead of `?page=2`
+- **Static mode**: Template variable `static_mode` disables interactive features
+- **Deployment**: GitHub Actions workflow deploys to GitHub Pages on push to main
+
+## Testing
+
+- **Command**: `uv run python manage.py test novels -v 2`
+- **Tests**: 51 unit tests covering views, models, mappings
+- **CI**: GitHub Actions runs tests on push/PR to main
 
 ## Spider Architecture
 

@@ -1,6 +1,6 @@
 # Novel Hub
 
-A novel metadata website for sfacg.com, built with Django + Tailwind CSS + HTMX.
+A novel metadata website for sfacg.com, built with Django + Tailwind CSS.
 
 ## Features
 
@@ -11,13 +11,15 @@ A novel metadata website for sfacg.com, built with Django + Tailwind CSS + HTMX.
 - Banner novel showcase
 - Dark mode support
 - Mobile-responsive design
+- Static site generation for GitHub Pages
 
 ## Tech Stack
 
 - **Backend**: Django 6.0 + Python 3.13
-- **Frontend**: Tailwind CSS 4.x + HTMX
-- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **Frontend**: Tailwind CSS 4.x
+- **Database**: SQLite (dev) / PostgreSQL (Supabase prod)
 - **Data Collection**: Scrapy + pandas
+- **Deployment**: GitHub Actions + GitHub Pages
 
 ## Database ER Diagram
 
@@ -36,6 +38,7 @@ erDiagram
     }
 
     Novel {
+        BigIntegerField id PK "sfacg nid"
         CharField title
         SmallIntegerField ptype INDEX
         SmallIntegerField genre INDEX
@@ -47,7 +50,7 @@ erDiagram
         BooleanField has_banner INDEX
         IntegerField review_num
         IntegerField comment_num
-        URLField cover
+        CharField cover
         DateTimeField last_update
         DateTimeField db_update "auto_now"
     }
@@ -109,11 +112,49 @@ For development with fake data:
 uv run python manage.py create_fake_data -n 1000
 ```
 
-For real data (after website development):
+For real data (from release):
 ```bash
-gh release download --repo <owner>/<repo>
-uv run python manage.py load_jsonl ../dataset/data
+gh release download v1.1.0 --repo light-nook-labs/novel_hub --pattern '*.tar.gz'
+tar -xzf release-v1.1.0.tar.gz
+uv run python manage.py load_jsonl release/dataset/meta_01.jsonl
 ```
+
+## Data Dump
+
+Dump database to release format:
+```bash
+uv run python manage.py dump_jsonl release
+```
+
+Output structure:
+```
+release/
+├── dataset/
+│   ├── meta_01.jsonl   # 20k records each
+│   ├── ...
+│   └── meta_13.jsonl
+└── tasks.csv
+```
+
+## Static Site Generation
+
+Generate static HTML for GitHub Pages:
+```bash
+uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50 --base-path novel_hub
+```
+
+Preview locally:
+```bash
+uv run python manage.py serve_static --port 8080
+```
+
+## Testing
+
+```bash
+uv run python manage.py test novels -v 2
+```
+
+51 unit tests covering views, models, and mappings.
 
 ## License
 
