@@ -45,21 +45,25 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
-// Search toggle
+// Search toggle - inline expandable
 document.addEventListener('DOMContentLoaded', function() {
   var searchToggle = document.getElementById('search-toggle');
-  var searchWrap = document.getElementById('search-input-wrap');
-  if (searchToggle && searchWrap) {
+  var searchForm = document.getElementById('search-form');
+  var searchWrap = document.getElementById('search-wrap');
+  if (searchToggle && searchForm) {
     searchToggle.addEventListener('click', function(e) {
       e.stopPropagation();
-      searchWrap.classList.toggle('hidden');
-      if (!searchWrap.classList.contains('hidden')) {
-        searchWrap.querySelector('input').focus();
+      var isHidden = searchForm.classList.contains('hidden');
+      searchForm.classList.toggle('hidden');
+      searchToggle.classList.toggle('hidden');
+      if (isHidden) {
+        searchForm.querySelector('input').focus();
       }
     });
     document.addEventListener('click', function(e) {
-      if (!searchWrap.contains(e.target) && e.target !== searchToggle) {
-        searchWrap.classList.add('hidden');
+      if (searchWrap && !searchWrap.contains(e.target)) {
+        searchForm.classList.add('hidden');
+        searchToggle.classList.remove('hidden');
       }
     });
   }
