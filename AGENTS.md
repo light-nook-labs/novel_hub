@@ -116,7 +116,6 @@ novel_hub/
 - **Site config**: `site_config.toml` (project root) — loaded via context processor (`config.toml.toml_config_processor`). Also holds `[scraper]` section shared by `scraper/` package.
 - **Database**: SQLite default for local dev; MySQL/PostgreSQL via env vars
 - **Mappings**: `novels/mappings.py` defines `Mapping` class + `GENRE`/`STATUS`/`PTYPE` enums (en↔zh). IntEnum index 1 is always `OTHER` (fallback). Loaded as Django context processor for template use
-- **Supabase skills** installed via `skills-lock.json` — Supabase Postgres best practices apply
 
 ## Code Style
 
