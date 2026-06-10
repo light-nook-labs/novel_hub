@@ -106,12 +106,7 @@ novel_hub/
         meta_spider/spiders/
             meta.py         # Legacy (commented out, reference only)
             meta_batch.py   # Refactored batch spider
-    release/                # Generated release data (gitignored)
-        dataset/
-            meta_01.jsonl   # 20k records each
-            ...
-        tasks.csv           # Task table dump
-    merge/                  # Merged data from v0.0.1 + v1.1.0 (temporary)
+    release/                # Release data (dataset/*.jsonl + tasks.csv)
 ```
 
 ## Key Facts
