@@ -1,6 +1,7 @@
 """Generate static HTML pages for GitHub Pages deployment."""
 
 import math
+import re
 from pathlib import Path
 
 from django.conf import settings
@@ -24,6 +25,11 @@ class Command(BaseCommand):
         parser.add_argument("--output", default="static_build")
         parser.add_argument("--index-pages", type=int, default=10)
         parser.add_argument("--rank-pages", type=int, default=50)
+        parser.add_argument(
+            "--base-path",
+            default="",
+            help="Base path for subdirectory deploy (e.g. 'novel_hub')",
+        )
 
     def _render_page(self, view_cls, url, page=None):
         factory = RequestFactory()
@@ -36,34 +42,54 @@ class Command(BaseCommand):
         except Http404:
             return None
 
+    def _fix_paths(self, html, depth):
+        """Convert absolute paths to relative paths for subdirectory deploy."""
+        prefix = "../" * depth if depth > 0 else ""
+
+        html = re.sub(
+            r'(href|src)="/static/',
+            rf'\1="{prefix}static/',
+            html,
+        )
+        html = re.sub(
+            r'(href|src)="/',
+            rf'\1="{prefix}',
+            html,
+        )
+        return html
+
+    def _page_depth(self, rel_path):
+        """Calculate directory depth of a file relative to output root."""
+        return len(rel_path.parts) - 1
+
     def handle(self, *args, **options):
         out = Path(options["output"])
         index_pages = options["index_pages"]
         rank_pages = options["rank_pages"]
+        base_path = options["base_path"].strip("/")
 
         self.stdout.write("Generating static pages...")
 
-        # ── Index pages ───────────────────────────────────────────
+        pages = []
+
         for page in range(1, index_pages + 1):
             html = self._render_page(NovelListView, "/", page)
             if not html:
                 self.stdout.write(f"  index page {page} — empty, stopping")
                 break
             fname = "index.html" if page == 1 else f"page{page}.html"
-            self._write(out / fname, html)
+            pages.append((Path(fname), html))
             self.stdout.write(f"  index page {page}")
 
-        # ── Rank pages ────────────────────────────────────────────
         for page in range(1, rank_pages + 1):
             html = self._render_page(NovelRankView, "/rank/", page)
             if not html:
                 self.stdout.write(f"  rank page {page} — empty, stopping")
                 break
             fname = "index.html" if page == 1 else f"page{page}.html"
-            self._write(out / "rank" / fname, html)
+            pages.append((Path("rank") / fname, html))
             self.stdout.write(f"  rank page {page}")
 
-        # ── Banner pages ──────────────────────────────────────────
         banner_count = Novel.objects.filter(has_banner=True).count()
         banner_total = max(1, math.ceil(banner_count / 12))
         for page in range(1, banner_total + 1):
@@ -71,19 +97,25 @@ class Command(BaseCommand):
             if not html:
                 break
             fname = "index.html" if page == 1 else f"page{page}.html"
-            self._write(out / "banners" / fname, html)
+            pages.append((Path("banners") / fname, html))
             self.stdout.write(f"  banner page {page}")
 
-        # ── About page ────────────────────────────────────────────
         html = self._render_page(AboutView, "/about/")
         if html:
-            self._write(out / "about" / "index.html", html)
+            pages.append((Path("about") / "index.html", html))
             self.stdout.write("  about page")
 
-        # ── Copy static assets ────────────────────────────────────
-        static_src = settings.STATICFILES_DIRS[0] if settings.STATICFILES_DIRS else None
+        for rel_path, content in pages:
+            if base_path:
+                depth = self._page_depth(rel_path)
+                content = self._fix_paths(content, depth)
+            self._write(out / rel_path, content)
+
+        staticfiles_dirs = settings.STATICFILES_DIRS
+        static_src = staticfiles_dirs[0] if staticfiles_dirs else None
         if static_src:
             import shutil
+
             static_dst = out / "static"
             if static_dst.exists():
                 shutil.rmtree(static_dst)
@@ -92,7 +124,10 @@ class Command(BaseCommand):
                 if item.name == "node_modules":
                     htmx_src = item / "htmx.org" / "dist"
                     if htmx_src.exists():
-                        shutil.copytree(htmx_src, static_dst / "node_modules" / "htmx.org" / "dist")
+                        shutil.copytree(
+                            htmx_src,
+                            static_dst / "node_modules" / "htmx.org" / "dist",
+                        )
                 else:
                     if item.is_dir():
                         shutil.copytree(item, static_dst / item.name)

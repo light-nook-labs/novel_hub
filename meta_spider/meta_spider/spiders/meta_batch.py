@@ -7,7 +7,7 @@ from scrapy import Spider, Request
 from scrapy.exceptions import CloseSpider
 from scrapy.http import HtmlResponse
 
-from ..models import Meta
+from models import Meta
 
 
 class MetaBatchSpider(Spider):
@@ -44,13 +44,11 @@ class MetaBatchSpider(Spider):
             cover: str | None = item.css(".Conjunction a img::attr(src)").get()
             title: str | None = item.css(".Conjunction a img::attr(alt)").get()
             author: str | None = item.css('a[id*="AuthorLink"]::text').get()
-            score: str | None = item.css(".font_red::text").get()
             genre: str | None = item.css(".font_red ~a::text").get()
             meta_info = dict(
                 nid=int(novel_url.strip("/").split("/")[-1] if novel_url else 0),
                 title=(title.strip() if title else ""),
                 author=(author.strip() if author else ""),
-                score=float(score.strip().replace("分", "") if score else 5),
                 genre=(genre.strip() if genre else ""),
                 cover=cover,
             )
