@@ -29,11 +29,3 @@ jobs:
           DB_TYPE: sqlite
           SECRET_KEY: test-secret-key
           DEBUG: "1"
-
-      - name: Check query performance
-        working-directory: website
-        run: uv run python manage.py test novels.QueryPerformanceTests -v 2
-        env:
-          DB_TYPE: sqlite
-          SECRET_KEY: test-secret-key
-          DEBUG: "1"

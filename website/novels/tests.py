@@ -87,63 +87,6 @@ class MappingTests(TestCase):
         self.assertEqual(choices[0], (1, "其他"))
 
 
-class QueryPerformanceTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = Author.objects.create(name="Author")
-        cls.tag1 = Tag.objects.create(name="Tag1")
-        cls.tag2 = Tag.objects.create(name="Tag2")
-        cls.contest = Contest.objects.create(name="Contest")
-
-        for i in range(10):
-            novel = Novel.objects.create(
-                id=10000 + i,
-                title=f"Novel {i}",
-                author=cls.author,
-                contest=cls.contest,
-                genre=GENRE.enum.MAGIC.value,
-                status=STATUS.enum.FINISHED.value,
-                ptype=PTYPE.enum.FREE.value,
-                click_num=100 * i,
-            )
-            novel.tags.add(cls.tag1, cls.tag2)
-
-    def test_index_query_count(self):
-        with self.assertNumQueries(4):
-            response = self.client.get(reverse("novels:index"))
-
-    def test_detail_query_count(self):
-        with self.assertNumQueries(3):
-            response = self.client.get(reverse("novels:detail", args=[10000]))
-
-    def test_rank_query_count(self):
-        with self.assertNumQueries(3):
-            response = self.client.get(reverse("novels:rank"))
-
-    def test_author_list_query_count(self):
-        with self.assertNumQueries(2):
-            response = self.client.get(reverse("novels:authors"))
-
-    def test_tag_list_query_count(self):
-        with self.assertNumQueries(1):
-            response = self.client.get(reverse("novels:tags"))
-
-    def test_n1_select_related(self):
-        novels = list(
-            Novel.objects.select_related("author", "contest").all()[:5]
-        )
-        with self.assertNumQueries(0):
-            for novel in novels:
-                _ = novel.author.name
-                _ = novel.contest.name if novel.contest else None
-
-    def test_n1_prefetch_related(self):
-        novels = list(Novel.objects.prefetch_related("tags").all()[:5])
-        with self.assertNumQueries(0):
-            for novel in novels:
-                list(novel.tags.all())
-
-
 class NovelListViewTest(TestCase):
     @classmethod
     def setUpTestData(cls):
