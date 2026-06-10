@@ -19,12 +19,14 @@ def get_attr(obj, attr):
 @register.filter
 def cover_url(suffix):
     """Reconstruct full cover URL from suffix using site_config."""
-    if not suffix:
-        return ""
     from config.toml import _load_config
 
     cfg = _load_config()
     prefix = cfg.get("scraper", {}).get("cover_prefix", "")
+    default = cfg.get("scraper", {}).get("default_cover", "defaultNew.jpg")
+
+    if not suffix or suffix == "nan":
+        return prefix + default
     if suffix.startswith(prefix):
         return suffix
     if suffix.startswith("http"):
@@ -79,6 +81,7 @@ def pill_text_dark(obj, model_name):
 def detail_url(obj, url_name):
     """Generate detail URL: obj|detail_url:'novels:tag_detail'."""
     from django.urls import reverse
+
     try:
         return reverse(url_name, args=[obj.id])
     except Exception:

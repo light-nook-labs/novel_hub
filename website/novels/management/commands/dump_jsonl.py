@@ -10,9 +10,7 @@ from django.db.models import Prefetch
 from novels.models import Novel, Tag, Task
 from novels.mappings import GENRE, STATUS, PTYPE
 
-sys.path.insert(
-    0, str(Path(__file__).resolve().parent.parent.parent.parent.parent)
-)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent.parent))
 from models import Meta  # noqa: E402
 
 RECORDS_PER_FILE = 20_000
@@ -100,7 +98,11 @@ class Command(BaseCommand):
                 out_file = open(out_path, "w", encoding="utf-8")
                 record_idx = 0
 
-            cover = cover_prefix + novel.cover if novel.cover else ""
+            cover = novel.cover
+            if not cover or cover == "nan":
+                cover = cover_prefix + "defaultNew.jpg"
+            else:
+                cover = cover_prefix + cover
 
             try:
                 meta = Meta(
@@ -123,9 +125,7 @@ class Command(BaseCommand):
                     cover=cover,
                 )
             except Exception as e:
-                self.stderr.write(
-                    f"  validation error for novel {novel.id}: {e}"
-                )
+                self.stderr.write(f"  validation error for novel {novel.id}: {e}")
                 errors += 1
                 continue
 
@@ -143,9 +143,7 @@ class Command(BaseCommand):
 
     def _dump_tasks(self, out_dir):
         out_path = out_dir / "tasks.csv"
-        tasks = Task.objects.select_related("novel").only(
-            "id", "status", "novel__id"
-        )
+        tasks = Task.objects.select_related("novel").only("id", "status", "novel__id")
         total = tasks.count()
         self.stdout.write(f"Dumping {total} tasks to {out_path}")
 

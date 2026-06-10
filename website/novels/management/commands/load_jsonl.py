@@ -29,6 +29,8 @@ def _int_or_zero(val):
 def _clean_cover(url):
     if pd.isna(url):
         return None
+    if not url or url == "nan":
+        return None
     if "defaultNew.jpg" in url:
         return None
     return url
@@ -201,10 +203,16 @@ class Command(BaseCommand):
             if pd.notna(row.status)
         ]
         with connection.cursor() as cursor:
-            cursor.executemany(
-                "UPDATE novels_novel SET status = ? WHERE id = ?",
-                status_rows,
-            )
+            if connection.vendor == "postgresql":
+                cursor.executemany(
+                    "UPDATE novels_novel SET status = %s WHERE id = %s",
+                    status_rows,
+                )
+            else:
+                cursor.executemany(
+                    "UPDATE novels_novel SET status = ? WHERE id = ?",
+                    status_rows,
+                )
         self.stdout.write(f"  novels: {time.time() - t_step:.1f}s")
 
         t_step = time.time()
@@ -217,14 +225,20 @@ class Command(BaseCommand):
                     tag_rows.append((nid, int(tid)))
 
         with connection.cursor() as cursor:
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            cursor.execute("PRAGMA foreign_keys=OFF")
-            cursor.executemany(
-                "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
-                tag_rows,
-            )
-            cursor.execute("PRAGMA foreign_keys=ON")
+            if connection.vendor == "postgresql":
+                cursor.executemany(
+                    "INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                    tag_rows,
+                )
+            else:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                cursor.execute("PRAGMA foreign_keys=OFF")
+                cursor.executemany(
+                    "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
+                    tag_rows,
+                )
+                cursor.execute("PRAGMA foreign_keys=ON")
         self.stdout.write(f"  M2M tags: {time.time() - t_step:.1f}s")
 
         total = time.time() - t0

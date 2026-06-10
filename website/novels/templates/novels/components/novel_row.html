@@ -1,13 +1,7 @@
 {% load novel_tags %}
 <div class="flex items-start gap-3">
   <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" class="flex-shrink-0">
-    {% if novel.cover %}
     <img src="{{ novel.cover|cover_url }}" alt="" class="w-16 h-auto rounded">
-    {% else %}
-    <div class="w-16 aspect-[3/4] rounded bg-gradient-to-br from-amber-300 to-orange-300 flex items-center justify-center">
-      <span class="text-white text-sm font-bold">{{ novel.title|truncatechars:1 }}</span>
-    </div>
-    {% endif %}
   </a>
   <div class="min-w-0 flex-1">
     <div class="flex items-center gap-2">

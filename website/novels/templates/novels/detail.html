@@ -18,13 +18,7 @@
   <!-- Cover: center on mobile, left on desktop -->
   <div class="w-28 md:w-44 lg:w-52 flex-shrink-0 mx-auto md:mx-0">
     <div class="relative rounded-lg overflow-hidden shadow-lg ring-1 ring-black/10 dark:ring-white/10 bg-gradient-to-br from-amber-300 to-orange-300">
-      {% if novel.cover %}
       <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto aspect-[3/4] object-cover">
-      {% else %}
-      <div class="aspect-[3/4] flex items-center justify-center">
-        <span class="text-white text-3xl md:text-5xl font-bold opacity-80">{{ novel.title|truncatechars:1 }}</span>
-      </div>
-      {% endif %}
     </div>
     <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" rel="noopener noreferrer"
        class="mt-2.5 md:mt-3 flex items-center justify-center gap-1.5 px-3 py-1.5 md:py-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white rounded-lg shadow transition-all text-xs md:text-sm font-medium whitespace-nowrap">
