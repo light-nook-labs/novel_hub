@@ -3,14 +3,11 @@
   <a href="{% url 'novels:detail' novel.id %}" class="block">
     <div class="relative bg-gradient-to-br from-amber-300 to-orange-300">
       <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto group-hover:scale-105 transition-transform duration-300">
-      <div class="absolute top-1 right-1 px-1.5 py-0.5 text-xs rounded bg-black/60 text-amber-400 font-bold">
-        {{ novel.click_num|humanize_num }}
-      </div>
     </div>
   </a>
   <div class="p-2">
     <a href="{% url 'novels:detail' novel.id %}" class="block">
-      <h3 class="text-[10px] md:text-sm font-bold line-clamp-2 md:truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
     </a>
     <p class="hidden md:block text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>
     <div class="hidden md:flex items-center gap-1 mt-1">

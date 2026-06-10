@@ -3,7 +3,8 @@
 
 {% block title %}Novel Hub{% endblock %}
 
-{% block hero %}
+{% block header %}
+<div id="header">
 <div class="relative h-40 md:h-[12rem] lg:h-[15rem]">
   <!-- Hero Background -->
   <div id="hero-banner" class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
@@ -34,7 +35,7 @@
   {% else %}
   <div class="absolute bottom-0 left-0 right-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-      <div class="rounded-lg p-4 text-gray-800 dark:text-gray-100" hx-boost="true" hx-target="#content" hx-select="#content" hx-push-url="true">
+      <div class="rounded-lg p-4 text-gray-800 dark:text-gray-100">
         <div class="flex flex-wrap items-center gap-2 text-sm">
           <span class="text-gray-700 dark:text-gray-200 font-bold">分类：</span>
           <a href="?{% if current_sort %}sort={{ current_sort }}{% endif %}"
@@ -72,6 +73,7 @@
     </div>
   </div>
   {% endif %}
+</div>
 </div>
 {% endblock %}
 

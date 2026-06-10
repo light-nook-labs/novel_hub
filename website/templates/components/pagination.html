@@ -41,9 +41,14 @@
     {% endif %}
   </div>
 
-  <form class="flex items-center gap-2"
-        hx-get="?{% if querystring %}{{ querystring }}&{% endif %}"
-        hx-target="#content" hx-select="#content">
+  <form class="flex items-center gap-2" method="get" action="">
+    {% if querystring %}
+    {% for key, value in request.GET.items %}
+      {% if key != 'page' %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+      {% endif %}
+    {% endfor %}
+    {% endif %}
     <span class="text-sm text-gray-600 dark:text-gray-400">跳至</span>
     <input type="number" name="page"
            class="w-16 px-2 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-colors"

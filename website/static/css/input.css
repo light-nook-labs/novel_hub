@@ -1,2 +1,12 @@
 @import "tailwindcss";
 @custom-variant dark (&:is(.dark *));
+
+.pill {
+  background: var(--pb);
+  color: var(--pt);
+}
+
+.dark .pill {
+  background: var(--pbd);
+  color: var(--ptd);
+}

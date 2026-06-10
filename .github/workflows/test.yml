@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tests
+        working-directory: website
+        run: uv run python manage.py test novels -v 2
+        env:
+          DB_TYPE: sqlite
+          SECRET_KEY: test-secret-key
+          DEBUG: "1"
+
+      - name: Check query performance
+        working-directory: website
+        run: uv run python manage.py test novels.QueryPerformanceTests -v 2
+        env:
+          DB_TYPE: sqlite
+          SECRET_KEY: test-secret-key
+          DEBUG: "1"
