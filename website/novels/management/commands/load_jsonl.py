@@ -36,6 +36,23 @@ def _clean_cover(url):
     return url
 
 
+def _clean_title(row):
+    """Strip contest name from title if appended."""
+    title = row.novel_title
+    contest = row.contest
+    if pd.isna(title) or pd.isna(contest):
+        return title
+    contest = contest.strip()
+    if contest:
+        # Strip "VIP" + contest or just contest
+        vip_contest = "VIP" + contest
+        if title.endswith(vip_contest):
+            title = title[: -len(vip_contest)].rstrip()
+        elif title.endswith(contest):
+            title = title[: -len(contest)].rstrip()
+    return title
+
+
 def load_and_clean(files: list[Path]) -> pd.DataFrame:
     frames = []
     for f in files:
@@ -63,6 +80,9 @@ def load_and_clean(files: list[Path]) -> pd.DataFrame:
     )
 
     df["cover"] = df["cover"].apply(_clean_cover)
+
+    if "contest" in df.columns:
+        df["novel_title"] = df.apply(_clean_title, axis=1)
 
     int_cols = [
         "word_num",

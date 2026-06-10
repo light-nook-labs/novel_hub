@@ -104,10 +104,20 @@ class Command(BaseCommand):
             else:
                 cover = cover_prefix + cover
 
+            title = novel.title
+            contest_name = novel.contest.name if novel.contest else ""
+            if contest_name:
+                # Strip "VIP" + contest or just contest
+                vip_contest = "VIP" + contest_name
+                if title.endswith(vip_contest):
+                    title = title[: -len(vip_contest)].rstrip()
+                elif title.endswith(contest_name):
+                    title = title[: -len(contest_name)].rstrip()
+
             try:
                 meta = Meta(
                     nid=novel.id,
-                    title=novel.title,
+                    title=title,
                     author=novel.author.name if novel.author else "",
                     genre=GENRE.get_zh(novel.genre),
                     status=STATUS.get_zh(novel.status),
@@ -117,7 +127,7 @@ class Command(BaseCommand):
                     praise_num=novel.praise_num,
                     like_num=novel.like_num,
                     ptype=PTYPE.get_zh(novel.ptype),
-                    contest=novel.contest.name if novel.contest else "",
+                    contest=contest_name,
                     last_update=novel.last_update,
                     review_num=novel.review_num,
                     comment_num=novel.comment_num,
