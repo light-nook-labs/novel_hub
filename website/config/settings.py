@@ -15,10 +15,29 @@ DEBUG = os.environ.get("DEBUG", "true").lower() in ("true", "1", "yes")
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "*").split(",")]
 
 # Database
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if DATABASE_URL:
-    import dj_database_url
-    DATABASES = {"default": dj_database_url.parse(DATABASE_URL)}
+DB_TYPE = os.environ.get("DB_TYPE", "sqlite")
+if DB_TYPE == "postgresql":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "postgres"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+        }
+    }
+elif DB_TYPE == "mysql":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ.get("DB_NAME", "database"),
+            "USER": os.environ.get("DB_USER", "root"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "3306"),
+        }
+    }
 else:
     DATABASES = {
         "default": {

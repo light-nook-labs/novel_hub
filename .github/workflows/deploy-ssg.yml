@@ -35,9 +35,16 @@ jobs:
 
       - name: Create .env
         run: |
-          echo "SECRET_KEY=gh-actions-ssg-key" > website/.env
-          echo "DEBUG=0" >> website/.env
-          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> website/.env
+          cat > website/.env << EOF
+          SECRET_KEY=gh-actions-ssg-key
+          DEBUG=0
+          DB_TYPE=postgresql
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          EOF
 
       - name: Migrate & generate static pages
         working-directory: website
