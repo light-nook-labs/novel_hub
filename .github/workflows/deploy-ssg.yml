@@ -24,6 +24,9 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install Python deps
         run: uv sync
 
