@@ -1,0 +1,14 @@
+{# Static mode: transparent header with preview label #}
+<header class="absolute top-0 left-0 right-0 z-20 bg-white/10 dark:bg-black/10 backdrop-blur-md text-gray-800 dark:text-gray-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-14">
+      <div class="flex items-center gap-8">
+        <a href="{% url 'novels:index' %}" class="text-xl font-bold tracking-tight hover:text-amber-700 dark:hover:text-amber-300 transition-colors">
+          Novel Hub <span class="text-xs font-normal text-gray-400 dark:text-gray-500 align-top">preview</span>
+        </a>
+        {% include "novels/components/nav_static.html" %}
+      </div>
+      {% include "novels/components/header_actions_static.html" %}
+    </div>
+  </div>
+</header>

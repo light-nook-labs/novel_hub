@@ -3,7 +3,11 @@
 
 {% block body %}
 {% block hero %}
-{% include "novels/components/header_solid.html" %}
+{% if static_mode %}
+  {% include "novels/components/header_solid_static.html" %}
+{% else %}
+  {% include "novels/components/header_solid.html" %}
+{% endif %}
 {% endblock %}
 
 <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
@@ -19,7 +23,11 @@
   {% endblock %}
 </main>
 
-{% include "novels/components/footer.html" %}
+{% if static_mode %}
+  {% include "novels/components/footer_static.html" %}
+{% else %}
+  {% include "novels/components/footer.html" %}
+{% endif %}
 
 <script>
 (function() {
