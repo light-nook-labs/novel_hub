@@ -36,31 +36,23 @@ jobs:
       - name: Build Tailwind CSS
         run: pnpm build
 
-      - name: Download release data
-        run: |
-          gh release download v1.1.0 \
-            --repo light-nook-labs/novel_hub \
-            --pattern '*.tar.gz' \
-            --dir /tmp/release
-          mkdir -p release
-          tar -xzf /tmp/release/*.tar.gz -C . --strip-components=0
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Load data into SQLite
-        working-directory: website
-        run: |
-          DB_TYPE=sqlite uv run python manage.py migrate --run-syncdb
-          DB_TYPE=sqlite uv run python manage.py load_jsonl ../release/dataset/meta_01.jsonl
-
       - name: Generate static pages
         working-directory: website
         run: |
-          DB_TYPE=sqlite uv run python manage.py generate_static \
+          uv run python manage.py generate_static \
             --output ../static_build \
             --index-pages 10 \
             --rank-pages 50 \
             --base-path novel_hub
+        env:
+          DB_TYPE: postgresql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          SECRET_KEY: gh-actions-ssg-key
+          DEBUG: "0"
 
       - name: Add .nojekyll
         run: touch static_build/.nojekyll
