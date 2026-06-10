@@ -117,18 +117,30 @@ class NovelDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         novel = self.object
-        stats = [
-            ("word_num", novel.word_num),
-            ("click_num", novel.click_num),
-            ("like_num", novel.like_num),
-            ("praise_num", novel.praise_num),
-            ("review_num", novel.review_num),
-            ("comment_num", novel.comment_num),
-        ]
-        ranks = {}
-        for field, val in stats:
+
+        from django.db.models import Q, Sum, Case, When, Value, IntegerField
+
+        stats = ["word_num", "click_num", "like_num", "praise_num", "review_num", "comment_num"]
+        q = Q()
+        for field in stats:
+            val = getattr(novel, field)
             if val is not None:
-                ranks[field] = Novel.objects.filter(**{f"{field}__gt": val}).count() + 1
+                q |= Q(**{f"{field}__gt": val})
+
+        if q:
+            counts = Novel.objects.filter(q).aggregate(
+                **{f"{field}_gt": Sum(
+                    Case(
+                        When(**{f"{field}__gt": getattr(novel, field)}, then=Value(1)),
+                        default=Value(0),
+                        output_field=IntegerField(),
+                    )
+                ) for field in stats if getattr(novel, field) is not None}
+            )
+            ranks = {k.replace("_gt", ""): v + 1 for k, v in counts.items() if v is not None}
+        else:
+            ranks = {field: 1 for field in stats}
+
         ctx["ranks"] = ranks
         return ctx
 
