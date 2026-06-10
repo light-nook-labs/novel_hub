@@ -35,6 +35,7 @@ class Command(BaseCommand):
         factory = RequestFactory()
         params = {"page": page} if page else {}
         req = factory.get(url, params)
+        req.static_mode = True
         try:
             resp = view_cls.as_view()(req)
             resp.render()

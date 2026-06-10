@@ -11,7 +11,11 @@
     {% block content %}{% endblock %}
   </div>
   {% block pagination %}
-    {% include "components/pagination.html" %}
+    {% if static_mode %}
+      {% include "components/pagination_static.html" %}
+    {% else %}
+      {% include "components/pagination.html" %}
+    {% endif %}
   {% endblock %}
 </main>
 

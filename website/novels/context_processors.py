@@ -7,3 +7,9 @@ def mappings_context(request):
         "STATUS": STATUS,
         "PTYPE": PTYPE,
     }
+
+
+def static_mode_context(request):
+    return {
+        "static_mode": getattr(request, "static_mode", False),
+    }

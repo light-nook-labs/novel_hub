@@ -81,6 +81,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 "config.toml.toml_config_processor",
                 "novels.context_processors.mappings_context",
+                "novels.context_processors.static_mode_context",
             ],
         },
     },
