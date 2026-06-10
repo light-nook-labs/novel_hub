@@ -11,25 +11,21 @@
       </a>
     </div>
     <div class="flex items-center gap-2 mt-0.5">
-      <span class="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400 tabular-nums">#{{ novel.id }}</span>
-      <span class="text-xs text-gray-500 dark:text-gray-400">{{ novel.author|default:"未知" }}</span>
+      <span class="badge badge-sm badge-square" style="--bg:#f3f4f6;--tc:#6b7280;--bgd:#374151;--tcd:#9ca3af">#{{ novel.id }}</span>
+      <span class="text-secondary">{{ novel.author|default:"未知" }}</span>
     </div>
     <div class="flex items-center gap-1.5 mt-1">
-      <span class="px-1.5 py-0.5 text-xs rounded-full
-        {% if novel.status == 2 %}bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300
-        {% elif novel.status == 1 %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300
-        {% elif novel.status == 3 %}bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300
-        {% else %}bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300{% endif %}">
+      <span class="badge {% if novel.status == 2 %}badge-finished{% elif novel.status == 3 %}badge-ongoing{% elif novel.status == 5 %}badge-active-d{% elif novel.status == 6 %}badge-active-f{% else %}badge-died{% endif %}">
         {{ novel.get_status_display }}
       </span>
-      <span class="px-1.5 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+      <span class="badge badge-genre">
         {{ novel.get_genre_display }}
       </span>
-      <span class="px-1.5 py-0.5 text-xs rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900 dark:text-rose-300">
+      <span class="badge badge-ptype">
         {{ novel.get_ptype_display }}
       </span>
       {% if novel.contest %}
-      <span class="px-1.5 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300">
+      <span class="badge badge-contest">
         {{ novel.contest }}
       </span>
       {% endif %}
@@ -37,7 +33,7 @@
     {% if novel.tags.all %}
     <div class="flex flex-wrap gap-1.5 mt-1.5">
       {% for tag in novel.tags.all %}
-      <span class="px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300">{{ tag.name }}</span>
+      <span class="pill badge-sm" style="--pb:{{ tag|pill_bg:'tag' }};--pt:{{ tag|pill_text:'tag' }};--pbd:{{ tag|pill_bg_dark:'tag' }};--ptd:{{ tag|pill_text_dark:'tag' }}">{{ tag.name }}</span>
       {% endfor %}
     </div>
     {% endif %}
