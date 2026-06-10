@@ -106,15 +106,24 @@ class Command(BaseCommand):
 
             title = novel.title
             contest_name = novel.contest.name if novel.contest else ""
-            ptype_name = PTYPE.get_zh(novel.ptype)
+            ptype_val = novel.ptype
+            ptype_name = PTYPE.get_zh(ptype_val)
 
-            # Strip ptype from title
-            if ptype_name and title.endswith(ptype_name):
-                title = title[: -len(ptype_name)].rstrip()
-
-            # Strip contest from title
+            # Strip contest first (it's at the end)
             if contest_name and title.endswith(contest_name):
                 title = title[: -len(contest_name)].rstrip()
+
+            # Strip VIP/签约 from title and fix ptype if needed
+            if title.endswith("VIP"):
+                title = title[:-3].rstrip()
+                ptype_name = "VIP"
+                ptype_val = PTYPE.get_value("VIP")
+            elif title.endswith("签约"):
+                title = title[:-2].rstrip()
+                ptype_name = "签约"
+                ptype_val = PTYPE.get_value("签约")
+            elif ptype_name and title.endswith(ptype_name):
+                title = title[: -len(ptype_name)].rstrip()
 
             try:
                 meta = Meta(
@@ -128,7 +137,7 @@ class Command(BaseCommand):
                     click_num=novel.click_num,
                     praise_num=novel.praise_num,
                     like_num=novel.like_num,
-                    ptype=PTYPE.get_zh(novel.ptype),
+                    ptype=ptype_name,
                     contest=contest_name,
                     last_update=novel.last_update,
                     review_num=novel.review_num,

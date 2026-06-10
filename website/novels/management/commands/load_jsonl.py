@@ -42,21 +42,27 @@ def _clean_title(row):
     contest = row.contest
     ptype = row.price_type
     if pd.isna(title):
-        return title
+        return title, ptype
 
-    # Strip ptype (VIP/签约) from title
-    if not pd.isna(ptype):
-        ptype = ptype.strip()
-        if ptype and title.endswith(ptype):
-            title = title[: -len(ptype)].rstrip()
+    ptype_str = ptype.strip() if not pd.isna(ptype) else ""
 
-    # Strip contest from title
+    # Strip contest first (it's at the end)
     if not pd.isna(contest):
         contest = contest.strip()
         if contest and title.endswith(contest):
             title = title[: -len(contest)].rstrip()
 
-    return title
+    # Strip VIP/签约 from title and fix ptype if needed
+    if title.endswith("VIP"):
+        title = title[:-3].rstrip()
+        ptype = "VIP"
+    elif title.endswith("签约"):
+        title = title[:-2].rstrip()
+        ptype = "签约"
+    elif ptype_str and title.endswith(ptype_str):
+        title = title[: -len(ptype_str)].rstrip()
+
+    return title, ptype
 
 
 def load_and_clean(files: list[Path]) -> pd.DataFrame:
@@ -88,7 +94,13 @@ def load_and_clean(files: list[Path]) -> pd.DataFrame:
     df["cover"] = df["cover"].apply(_clean_cover)
 
     if "contest" in df.columns:
-        df["novel_title"] = df.apply(_clean_title, axis=1)
+        df[["novel_title", "price_type"]] = df.apply(
+            _clean_title, axis=1, result_type="expand"
+        )
+        # Re-map ptype after cleaning
+        df["ptype"] = (
+            df["price_type"].map(PTYPE_ZH2VAL).fillna(PTYPE_FALLBACK).astype("Int64")
+        )
 
     int_cols = [
         "word_num",
