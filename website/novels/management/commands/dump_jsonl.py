@@ -1,3 +1,4 @@
+import csv
 import json
 import sys
 import time
@@ -6,7 +7,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand
 from django.db.models import Prefetch
 
-from novels.models import Novel, Tag
+from novels.models import Novel, Tag, Task
 from novels.mappings import GENRE, STATUS, PTYPE
 
 sys.path.insert(
@@ -18,26 +19,25 @@ RECORDS_PER_FILE = 20_000
 
 
 class Command(BaseCommand):
-    help = "Dump database to JSONL files (20k records each) for release"
+    help = "Dump database to release/ (dataset/*.jsonl + tasks.csv)"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "path",
             nargs="?",
-            default="dataset/release",
-            help="Output directory (default: dataset/release)",
+            default="release",
+            help="Output directory (default: release)",
         )
         parser.add_argument(
             "--batch-size",
             type=int,
             default=2000,
-            help="Queryset chunk size for memory efficiency (default: 2000)",
+            help="Queryset chunk size (default: 2000)",
         )
 
     def handle(self, *args, **options):
         t0 = time.time()
         out_dir = Path(options["path"])
-        out_dir.mkdir(parents=True, exist_ok=True)
         batch_size = options["batch_size"]
 
         from config.toml import _load_config
@@ -45,8 +45,18 @@ class Command(BaseCommand):
         config = _load_config()
         cover_prefix = config["scraper"]["cover_prefix"]
 
+        self._dump_novels(out_dir, cover_prefix, batch_size)
+        self._dump_tasks(out_dir)
+
+        elapsed = time.time() - t0
+        self.stdout.write(self.style.SUCCESS(f"Done in {elapsed:.1f}s"))
+
+    def _dump_novels(self, out_dir, cover_prefix, batch_size):
+        dataset_dir = out_dir / "dataset"
+        dataset_dir.mkdir(parents=True, exist_ok=True)
+
         total = Novel.objects.count()
-        self.stdout.write(f"Dumping {total} novels to {out_dir}/")
+        self.stdout.write(f"Dumping {total} novels to {dataset_dir}/")
 
         file_idx = 0
         record_idx = 0
@@ -85,7 +95,7 @@ class Command(BaseCommand):
                 if out_file:
                     out_file.close()
                 file_idx += 1
-                out_path = out_dir / f"meta_{file_idx:02d}.jsonl"
+                out_path = dataset_dir / f"meta_{file_idx:02d}.jsonl"
                 self.stdout.write(f"  writing {out_path} ...")
                 out_file = open(out_path, "w", encoding="utf-8")
                 record_idx = 0
@@ -126,8 +136,23 @@ class Command(BaseCommand):
         if out_file:
             out_file.close()
 
-        elapsed = time.time() - t0
-        msg = f"Done in {elapsed:.1f}s — {total} novels → {file_idx} files"
+        msg = f"  {total} novels → {file_idx} files"
         if errors:
             msg += f" ({errors} validation errors skipped)"
-        self.stdout.write(self.style.SUCCESS(msg))
+        self.stdout.write(msg)
+
+    def _dump_tasks(self, out_dir):
+        out_path = out_dir / "tasks.csv"
+        tasks = Task.objects.select_related("novel").only(
+            "id", "status", "novel__id"
+        )
+        total = tasks.count()
+        self.stdout.write(f"Dumping {total} tasks to {out_path}")
+
+        with open(out_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["id", "novel_id", "status"])
+            for task in tasks.iterator(chunk_size=2000):
+                writer.writerow([task.id, task.novel_id, task.status])
+
+        self.stdout.write(f"  {total} tasks written")

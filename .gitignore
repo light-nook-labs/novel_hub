@@ -233,6 +233,9 @@ dev.db
 # Dataset (>100MB, downloaded from GitHub release)
 dataset/
 
+# Generated release data
+release/
+
 # Test data (DO NOT DELETE)
 list.csv
 
