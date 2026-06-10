@@ -20,19 +20,30 @@ STATUS_FALLBACK = STATUS.enum.OTHER.value
 PTYPE_FALLBACK = PTYPE.enum.OTHER.value
 
 
+def _get_cover_prefix():
+    """Read cover_prefix from site_config.toml."""
+    from config.toml import _load_config
+
+    config = _load_config()
+    return config.get("scraper", {}).get("cover_prefix", "")
+
+
 def _int_or_zero(val):
     if pd.isna(val):
         return None
     return int(val)
 
 
-def _clean_cover(url):
+def _clean_cover(url, cover_prefix):
     if pd.isna(url):
         return None
     if not url or url == "nan":
         return None
     if "defaultNew.jpg" in url:
         return None
+    # Remove prefix (possibly doubled from bad dumps)
+    while cover_prefix and url.startswith(cover_prefix):
+        url = url[len(cover_prefix):]
     return url
 
 
@@ -65,7 +76,7 @@ def _clean_title(row):
     return title, ptype
 
 
-def load_and_clean(files: list[Path]) -> pd.DataFrame:
+def load_and_clean(files: list[Path], cover_prefix: str) -> pd.DataFrame:
     frames = []
     for f in files:
         frames.append(pd.read_json(f, lines=True, dtype_backend="numpy_nullable"))
@@ -91,7 +102,9 @@ def load_and_clean(files: list[Path]) -> pd.DataFrame:
         df["price_type"].map(PTYPE_ZH2VAL).fillna(PTYPE_FALLBACK).astype("Int64")
     )
 
-    df["cover"] = df["cover"].apply(_clean_cover)
+    df["cover"] = df["cover"].apply(lambda x: _clean_cover(x, cover_prefix))
+    # pandas stores None as NaN in float columns; cast to object first so where gives real None
+    df["cover"] = df["cover"].astype(object).where(df["cover"].notna(), other=None)
 
     if "contest" in df.columns:
         df[["novel_title", "price_type"]] = df.apply(
@@ -151,10 +164,18 @@ class Command(BaseCommand):
             default="dataset/data",
             help="JSONL file or directory (default: dataset/data)",
         )
+        parser.add_argument(
+            "--limit",
+            type=int,
+            default=0,
+            help="Limit number of records to load (0 = no limit)",
+        )
 
     def handle(self, *args, **options):
         t0 = time.time()
         path = Path(options["path"])
+        limit = options["limit"]
+
         if path.is_dir():
             files = sorted(path.glob("*.jsonl"))
         else:
@@ -164,9 +185,19 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"No JSONL files found at {path}"))
             return
 
+        # Read cover_prefix from site_config.toml
+        cover_prefix = _get_cover_prefix()
+        self.stdout.write(f"Cover prefix: {cover_prefix}")
+
         self.stdout.write(f"Loading {len(files)} files from {path} ...")
         t_step = time.time()
-        df = load_and_clean(files)
+        df = load_and_clean(files, cover_prefix)
+
+        # Apply limit if specified
+        if limit > 0:
+            df = df.head(limit)
+            self.stdout.write(f"  Limited to {limit} records")
+
         self.stdout.write(
             f"  pandas cleaning: {time.time() - t_step:.1f}s — {len(df)} novels after dedup"
         )
