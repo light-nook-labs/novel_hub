@@ -106,13 +106,15 @@ class Command(BaseCommand):
 
             title = novel.title
             contest_name = novel.contest.name if novel.contest else ""
-            if contest_name:
-                # Strip "VIP" + contest or just contest
-                vip_contest = "VIP" + contest_name
-                if title.endswith(vip_contest):
-                    title = title[: -len(vip_contest)].rstrip()
-                elif title.endswith(contest_name):
-                    title = title[: -len(contest_name)].rstrip()
+            ptype_name = PTYPE.get_zh(novel.ptype)
+
+            # Strip ptype from title
+            if ptype_name and title.endswith(ptype_name):
+                title = title[: -len(ptype_name)].rstrip()
+
+            # Strip contest from title
+            if contest_name and title.endswith(contest_name):
+                title = title[: -len(contest_name)].rstrip()
 
             try:
                 meta = Meta(

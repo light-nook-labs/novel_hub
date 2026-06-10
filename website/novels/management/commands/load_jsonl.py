@@ -37,19 +37,25 @@ def _clean_cover(url):
 
 
 def _clean_title(row):
-    """Strip contest name from title if appended."""
+    """Strip ptype and contest name from title if appended."""
     title = row.novel_title
     contest = row.contest
-    if pd.isna(title) or pd.isna(contest):
+    ptype = row.price_type
+    if pd.isna(title):
         return title
-    contest = contest.strip()
-    if contest:
-        # Strip "VIP" + contest or just contest
-        vip_contest = "VIP" + contest
-        if title.endswith(vip_contest):
-            title = title[: -len(vip_contest)].rstrip()
-        elif title.endswith(contest):
+
+    # Strip ptype (VIP/签约) from title
+    if not pd.isna(ptype):
+        ptype = ptype.strip()
+        if ptype and title.endswith(ptype):
+            title = title[: -len(ptype)].rstrip()
+
+    # Strip contest from title
+    if not pd.isna(contest):
+        contest = contest.strip()
+        if contest and title.endswith(contest):
             title = title[: -len(contest)].rstrip()
+
     return title
 
 
