@@ -1,3 +1,4 @@
+import csv
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -6,7 +7,7 @@ import pandas as pd
 from django.db import connection
 from django.core.management.base import BaseCommand
 
-from novels.models import Novel, Author, Tag, Contest
+from novels.models import Novel, Author, Tag, Contest, Task
 from novels.mappings import GENRE, STATUS, PTYPE
 
 DIED_THRESHOLD = timedelta(days=90)
@@ -258,6 +259,40 @@ def _bulk_insert_tags_sqlite(cursor, tag_rows):
     cursor.execute("PRAGMA foreign_keys=ON")
 
 
+def _load_tasks(path, stdout, stderr):
+    """Load tasks.csv if path is a directory (full dataset load)."""
+    if not path.is_dir():
+        return  # skip for single file loads
+
+    # Look for tasks.csv in the dataset dir, then parent dir
+    tasks_file = path / "tasks.csv"
+    if not tasks_file.exists():
+        tasks_file = path.parent / "tasks.csv"
+    if not tasks_file.exists():
+        stdout.write("  tasks.csv not found, skipping")
+        return
+
+    t_step = time.time()
+    batch = []
+    total = 0
+    Task.objects.all().delete()
+
+    with open(tasks_file) as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            batch.append(Task(novel_id=int(row["novel_id"]), status=row["status"]))
+            if len(batch) >= 5000:
+                Task.objects.bulk_create(batch, ignore_conflicts=True)
+                total += len(batch)
+                batch = []
+
+    if batch:
+        Task.objects.bulk_create(batch, ignore_conflicts=True)
+        total += len(batch)
+
+    stdout.write(f"  tasks: {time.time() - t_step:.1f}s — {total} loaded")
+
+
 # ── Command ─────────────────────────────────────────────────────────
 
 
@@ -365,6 +400,8 @@ class Command(BaseCommand):
             else:
                 _bulk_insert_tags_sqlite(cursor, tag_rows)
         self.stdout.write(f"  M2M tags: {time.time() - t_step:.1f}s")
+
+        _load_tasks(path, self.stdout, self.stderr)
 
         total = time.time() - t0
         self.stdout.write("")
