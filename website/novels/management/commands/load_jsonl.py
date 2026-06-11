@@ -273,9 +273,13 @@ class Command(BaseCommand):
         ]
         with connection.cursor() as cursor:
             if connection.vendor == "postgresql":
-                cursor.executemany(
-                    "UPDATE novels_novel SET status = %s WHERE id = %s",
+                from psycopg2.extras import execute_values
+
+                execute_values(
+                    cursor,
+                    "UPDATE novels_novel SET status = v.s FROM (VALUES %s) AS v(s, id) WHERE novels_novel.id = v.id",
                     status_rows,
+                    page_size=5000,
                 )
             else:
                 cursor.executemany(
@@ -295,9 +299,13 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             if connection.vendor == "postgresql":
-                cursor.executemany(
-                    "INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                from psycopg2.extras import execute_values
+
+                execute_values(
+                    cursor,
+                    "INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES %s ON CONFLICT DO NOTHING",
                     tag_rows,
+                    page_size=5000,
                 )
             else:
                 cursor.execute("PRAGMA journal_mode=WAL")
