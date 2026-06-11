@@ -1,4 +1,5 @@
 from django import template
+from django.conf import settings
 
 register = template.Library()
 
@@ -18,10 +19,8 @@ def get_attr(obj, attr):
 
 @register.filter
 def cover_url(suffix):
-    """Reconstruct full cover URL from suffix using site_config."""
-    from config.toml import _load_config
-
-    cfg = _load_config()
+    """Reconstruct full cover URL from suffix using TOML config."""
+    cfg = settings.TOML
     prefix = cfg.get("scraper", {}).get("cover_prefix", "")
     default = cfg.get("scraper", {}).get("default_cover", "defaultNew.jpg")
 

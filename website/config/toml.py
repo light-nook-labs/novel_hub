@@ -20,4 +20,4 @@ def _load_config():
 
 
 def toml_config_processor(request):
-    return {"site_config": _load_config()}
+    return {"TOML": _load_config()}

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
+from django.conf import settings
 from django.db import connection
 from django.core.management.base import BaseCommand
 
@@ -22,11 +23,8 @@ PTYPE_FALLBACK = PTYPE.enum.OTHER.value
 
 
 def _get_cover_prefix():
-    """Read cover_prefix from site_config.toml."""
-    from config.toml import _load_config
-
-    config = _load_config()
-    return config.get("scraper", {}).get("cover_prefix", "")
+    """Read cover_prefix from TOML config."""
+    return settings.TOML.get("scraper", {}).get("cover_prefix", "")
 
 
 def _int_or_zero(val):

@@ -1,8 +1,8 @@
 from django.views.generic import ListView, DetailView, TemplateView
+from django.conf import settings
 
 from .models import Novel, Author, Tag, Contest
 from .mappings import GENRE, STATUS, PTYPE
-from config.toml import _load_config
 
 COLUMNS = [
     {"key": "info", "label": "小说", "sortable": True, "sort_key": "id"},
@@ -18,7 +18,7 @@ COLUMNS = [
 
 NOVEL_LIST_SELECT = ("author", "contest")
 NOVEL_LIST_PREFETCH = ("tags",)
-_paginate_by = _load_config().get("pagination", {}).get("per_page", 20)
+_paginate_by = settings.TOML.get("pagination", {}).get("per_page", 20)
 
 
 # ── Novel views ──────────────────────────────────────────────────────

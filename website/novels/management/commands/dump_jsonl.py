@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db.models import Prefetch
 
@@ -38,10 +39,7 @@ class Command(BaseCommand):
         out_dir = Path(options["path"])
         batch_size = options["batch_size"]
 
-        from config.toml import _load_config
-
-        config = _load_config()
-        cover_prefix = config["scraper"]["cover_prefix"]
+        cover_prefix = settings.TOML["scraper"]["cover_prefix"]
 
         self._dump_novels(out_dir, cover_prefix, batch_size)
         self._dump_tasks(out_dir)

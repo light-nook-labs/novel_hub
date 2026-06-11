@@ -7,6 +7,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR.parent / ".env")
 
+# Load site_config.toml
+from config.toml import _load_config
+
+TOML = _load_config()
+
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
