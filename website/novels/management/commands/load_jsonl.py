@@ -90,7 +90,7 @@ def load_and_clean(files: list[Path], cover_prefix: str) -> pd.DataFrame:
     if "author" in df.columns:
         df["author"] = df["author"].str.strip().str.replace(r"\s+", " ", regex=True)
 
-    df["last_update"] = pd.to_datetime(df["last_update"], errors="coerce")
+    df["last_update"] = pd.to_datetime(df["last_update"], unit="ms", errors="coerce")
 
     df = df.loc[df.groupby("nid")["last_update"].idxmax()].reset_index(drop=True)
 
