@@ -154,6 +154,113 @@ def load_and_clean(files: list[Path], cover_prefix: str) -> pd.DataFrame:
     return df
 
 
+# ── Database-specific bulk operations ───────────────────────────────
+
+
+def _bulk_create_authors(authors, batch_size):
+    Author.objects.bulk_create(
+        [Author(name=a) for a in authors], batch_size=batch_size, ignore_conflicts=True
+    )
+    return {a.name: a.id for a in Author.objects.all()}
+
+
+def _bulk_create_contests(contests, batch_size):
+    Contest.objects.bulk_create(
+        [Contest(name=c) for c in contests],
+        batch_size=batch_size,
+        ignore_conflicts=True,
+    )
+    return {c.name: c.id for c in Contest.objects.all()}
+
+
+def _bulk_create_tags(all_tags, batch_size):
+    Tag.objects.bulk_create(
+        [Tag(name=t) for t in all_tags], batch_size=batch_size, ignore_conflicts=True
+    )
+    return {t.name: t.id for t in Tag.objects.all()}
+
+
+def _bulk_create_novels(df, author_map, contest_map, batch_size):
+    novel_objs = []
+    for row in df.itertuples(index=False):
+        novel_objs.append(
+            Novel(
+                id=row.nid,
+                title=row.novel_title if pd.notna(row.novel_title) else "",
+                ptype=row.ptype,
+                genre=row.genre,
+                status=row.status,
+                click_num=_int_or_zero(row.click_num),
+                word_num=_int_or_zero(row.word_num),
+                praise_num=_int_or_zero(row.praise_num),
+                like_num=_int_or_zero(row.like_num),
+                review_num=_int_or_zero(getattr(row, "review_num", 0)),
+                comment_num=_int_or_zero(getattr(row, "comment_num", 0)),
+                has_banner=bool(row.banner) if pd.notna(row.banner) else False,
+                cover=row.cover,
+                last_update=row.last_update if pd.notna(row.last_update) else None,
+                author_id=(
+                    author_map.get(row.author) if pd.notna(row.author) else None
+                ),
+                contest_id=(
+                    contest_map.get(row.contest) if pd.notna(row.contest) else None
+                ),
+            )
+        )
+    Novel.objects.bulk_create(novel_objs, batch_size=batch_size, ignore_conflicts=True)
+    del novel_objs
+
+
+def _bulk_update_status_psql(cursor, status_rows):
+    """PostgreSQL: UPDATE FROM VALUES (single query, fastest)."""
+    from psycopg2.extras import execute_values
+
+    execute_values(
+        cursor,
+        "UPDATE novels_novel SET status = v.s "
+        "FROM (VALUES %s) AS v(s, id) "
+        "WHERE novels_novel.id = v.id",
+        status_rows,
+        page_size=5000,
+    )
+
+
+def _bulk_update_status_sqlite(cursor, status_rows):
+    """SQLite: executemany (no VALUES syntax support)."""
+    cursor.executemany(
+        "UPDATE novels_novel SET status = ? WHERE id = ?",
+        status_rows,
+    )
+
+
+def _bulk_insert_tags_psql(cursor, tag_rows):
+    """PostgreSQL: execute_values with ON CONFLICT (single query, fastest)."""
+    from psycopg2.extras import execute_values
+
+    execute_values(
+        cursor,
+        "INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES %s "
+        "ON CONFLICT DO NOTHING",
+        tag_rows,
+        page_size=5000,
+    )
+
+
+def _bulk_insert_tags_sqlite(cursor, tag_rows):
+    """SQLite: PRAGMA tuning + executemany."""
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA foreign_keys=OFF")
+    cursor.executemany(
+        "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
+        tag_rows,
+    )
+    cursor.execute("PRAGMA foreign_keys=ON")
+
+
+# ── Command ─────────────────────────────────────────────────────────
+
+
 class Command(BaseCommand):
     help = "Load novel data from JSONL files (pandas cleaning, fast bulk insert)"
 
@@ -185,6 +292,8 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"No JSONL files found at {path}"))
             return
 
+        is_psql = connection.vendor == "postgresql"
+
         # Read cover_prefix from site_config.toml
         cover_prefix = _get_cover_prefix()
         self.stdout.write(f"Cover prefix: {cover_prefix}")
@@ -213,80 +322,33 @@ class Command(BaseCommand):
         BATCH = 5000
 
         t_step = time.time()
-        Author.objects.bulk_create(
-            [Author(name=a) for a in authors], batch_size=BATCH, ignore_conflicts=True
-        )
-        author_map = {a.name: a.id for a in Author.objects.all()}
+        author_map = _bulk_create_authors(authors, BATCH)
         self.stdout.write(f"  authors: {time.time() - t_step:.1f}s")
 
         t_step = time.time()
-        Contest.objects.bulk_create(
-            [Contest(name=c) for c in contests],
-            batch_size=BATCH,
-            ignore_conflicts=True,
-        )
-        contest_map = {c.name: c.id for c in Contest.objects.all()}
+        contest_map = _bulk_create_contests(contests, BATCH)
         self.stdout.write(f"  contests: {time.time() - t_step:.1f}s")
 
         t_step = time.time()
-        Tag.objects.bulk_create(
-            [Tag(name=t) for t in all_tags], batch_size=BATCH, ignore_conflicts=True
-        )
-        tag_map = {t.name: t.id for t in Tag.objects.all()}
+        tag_map = _bulk_create_tags(all_tags, BATCH)
         self.stdout.write(f"  tags: {time.time() - t_step:.1f}s")
 
         t_step = time.time()
-        novel_objs = []
-        for row in df.itertuples(index=False):
-            novel_objs.append(
-                Novel(
-                    id=row.nid,
-                    title=row.novel_title if pd.notna(row.novel_title) else "",
-                    ptype=row.ptype,
-                    genre=row.genre,
-                    status=row.status,
-                    click_num=_int_or_zero(row.click_num),
-                    word_num=_int_or_zero(row.word_num),
-                    praise_num=_int_or_zero(row.praise_num),
-                    like_num=_int_or_zero(row.like_num),
-                    review_num=_int_or_zero(getattr(row, "review_num", 0)),
-                    comment_num=_int_or_zero(getattr(row, "comment_num", 0)),
-                    has_banner=bool(row.banner) if pd.notna(row.banner) else False,
-                    cover=row.cover,
-                    last_update=row.last_update if pd.notna(row.last_update) else None,
-                    author_id=(
-                        author_map.get(row.author) if pd.notna(row.author) else None
-                    ),
-                    contest_id=(
-                        contest_map.get(row.contest) if pd.notna(row.contest) else None
-                    ),
-                )
-            )
-        Novel.objects.bulk_create(novel_objs, batch_size=BATCH, ignore_conflicts=True)
-        del novel_objs
+        _bulk_create_novels(df, author_map, contest_map, BATCH)
+        self.stdout.write(f"  novels: {time.time() - t_step:.1f}s")
 
-        self.stdout.write("  updating statuses via raw SQL ...")
+        t_step = time.time()
         status_rows = [
             (int(row.status), int(row.nid))
             for row in df[["nid", "status"]].itertuples(index=False)
             if pd.notna(row.status)
         ]
         with connection.cursor() as cursor:
-            if connection.vendor == "postgresql":
-                from psycopg2.extras import execute_values
-
-                execute_values(
-                    cursor,
-                    "UPDATE novels_novel SET status = v.s FROM (VALUES %s) AS v(s, id) WHERE novels_novel.id = v.id",
-                    status_rows,
-                    page_size=5000,
-                )
+            if is_psql:
+                _bulk_update_status_psql(cursor, status_rows)
             else:
-                cursor.executemany(
-                    "UPDATE novels_novel SET status = ? WHERE id = ?",
-                    status_rows,
-                )
-        self.stdout.write(f"  novels: {time.time() - t_step:.1f}s")
+                _bulk_update_status_sqlite(cursor, status_rows)
+        self.stdout.write(f"  statuses: {time.time() - t_step:.1f}s")
 
         t_step = time.time()
         tag_rows = []
@@ -298,24 +360,10 @@ class Command(BaseCommand):
                     tag_rows.append((nid, int(tid)))
 
         with connection.cursor() as cursor:
-            if connection.vendor == "postgresql":
-                from psycopg2.extras import execute_values
-
-                execute_values(
-                    cursor,
-                    "INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES %s ON CONFLICT DO NOTHING",
-                    tag_rows,
-                    page_size=5000,
-                )
+            if is_psql:
+                _bulk_insert_tags_psql(cursor, tag_rows)
             else:
-                cursor.execute("PRAGMA journal_mode=WAL")
-                cursor.execute("PRAGMA synchronous=NORMAL")
-                cursor.execute("PRAGMA foreign_keys=OFF")
-                cursor.executemany(
-                    "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
-                    tag_rows,
-                )
-                cursor.execute("PRAGMA foreign_keys=ON")
+                _bulk_insert_tags_sqlite(cursor, tag_rows)
         self.stdout.write(f"  M2M tags: {time.time() - t_step:.1f}s")
 
         total = time.time() - t0
