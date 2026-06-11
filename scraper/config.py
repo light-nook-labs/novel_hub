@@ -7,7 +7,9 @@ _ROOT = Path(__file__).resolve().parent.parent
 _config_path = _ROOT / "site_config.toml"
 
 with open(_config_path, "rb") as f:
-    _cfg = tomllib.load(f).get("scraper", {})
+    TOML = tomllib.load(f)
+
+_cfg = TOML.get("scraper", {})
 
 USER_AGENT = _cfg.get("user_agent", "")
 HEADERS = {"User-Agent": USER_AGENT}
@@ -21,3 +23,4 @@ COVER_PREFIX = _cfg.get(
     "cover_prefix",
     "http://rs.sfacg.com/web/novel/images/NovelCover/Big/",
 )
+DEFAULT_COVER = _cfg.get("default_cover", "defaultNew.jpg")
