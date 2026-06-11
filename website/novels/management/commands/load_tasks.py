@@ -19,6 +19,11 @@ class Command(BaseCommand):
             default="../release/tasks.csv",
             help="Path to tasks.csv (default: ../release/tasks.csv)",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Delete all existing tasks before loading",
+        )
 
     def handle(self, *args, **options):
         t0 = time.time()
@@ -26,6 +31,12 @@ class Command(BaseCommand):
 
         if not path.exists():
             self.stderr.write(self.style.ERROR(f"File not found: {path}"))
+            return
+
+        if not options["force"]:
+            self.stderr.write(
+                self.style.ERROR("Refusing to delete all tasks without --force")
+            )
             return
 
         self.stdout.write(f"Loading tasks from {path} ...")

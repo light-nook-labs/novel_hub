@@ -18,7 +18,11 @@ COLUMNS = [
 
 NOVEL_LIST_SELECT = ("author", "contest")
 NOVEL_LIST_PREFETCH = ("tags",)
-_paginate_by = settings.TOML.get("pagination", {}).get("per_page", 20)
+_pagination = settings.TOML.get("pagination", {})
+_paginate_by = _pagination.get("per_page", 24)
+_rank_paginate_by = _pagination.get("rank_per_page", 100)
+_banner_paginate_by = _pagination.get("banner_per_page", 12)
+_detail_novel_limit = _pagination.get("detail_novel_limit", 50)
 
 
 # ── Novel views ──────────────────────────────────────────────────────
@@ -152,7 +156,7 @@ class NovelRankView(ListView):
     model = Novel
     template_name = "novels/rank.html"
     context_object_name = "novels"
-    paginate_by = 100
+    paginate_by = _rank_paginate_by
 
     SORTABLE = {c.get("sort_key", c["key"]) for c in COLUMNS if c["sortable"]}
 
@@ -224,7 +228,7 @@ class AuthorDetailView(DetailView):
             .prefetch_related("tags")
             .order_by("-click_num")
         )
-        ctx["novels"] = novels_qs[:50]
+        ctx["novels"] = novels_qs[:_detail_novel_limit]
         ctx["novel_count"] = self.object.novels.count()
         return ctx
 
@@ -257,7 +261,7 @@ class TagDetailView(DetailView):
             .prefetch_related("tags")
             .order_by("-click_num")
         )
-        ctx["novels"] = novels_qs[:50]
+        ctx["novels"] = novels_qs[:_detail_novel_limit]
         ctx["novel_count"] = self.object.novels.count()
         return ctx
 
@@ -290,7 +294,7 @@ class ContestDetailView(DetailView):
             .prefetch_related("tags")
             .order_by("-click_num")
         )
-        ctx["novels"] = novels_qs[:50]
+        ctx["novels"] = novels_qs[:_detail_novel_limit]
         ctx["novel_count"] = self.object.novels.count()
         return ctx
 
@@ -467,6 +471,12 @@ class EnumDetailView(ListView):
 
             raise Http404
         self.enum_value = int(kwargs["value"])
+        try:
+            self.mapping.enum(self.enum_value)
+        except ValueError:
+            from django.http import Http404
+
+            raise Http404
         self.enum_label = self.mapping.get_zh(self.enum_value)
         return super().dispatch(request, *args, **kwargs)
 
@@ -498,7 +508,7 @@ class BannerListView(ListView):
     model = Novel
     template_name = "novels/banners.html"
     context_object_name = "novels"
-    paginate_by = 12
+    paginate_by = _banner_paginate_by
 
     def get_queryset(self):
         return (

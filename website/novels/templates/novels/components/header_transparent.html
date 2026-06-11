@@ -4,11 +4,11 @@
     <div class="flex items-center justify-between h-14">
       <div class="flex items-center gap-8">
         <a href="{% url 'novels:index' %}" class="text-xl font-bold tracking-tight hover:text-amber-700 transition-colors">
-          Novel Hub
+          {{ TOML.site.name }}
         </a>
-        {% include "novels/components/nav_index.html" %}
+        {% with no_dark=1 %}{% include "novels/components/nav.html" %}{% endwith %}
       </div>
-      {% include "novels/components/header_actions_index.html" %}
+      {% with no_dark=1 %}{% include "novels/components/header_actions.html" %}{% endwith %}
     </div>
   </div>
 </header>

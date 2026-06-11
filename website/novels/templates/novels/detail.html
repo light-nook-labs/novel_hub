@@ -1,7 +1,7 @@
 {% extends "novels/base.html" %}
 {% load novel_tags %}
 
-{% block title %}{{ novel.title }} - Novel Hub{% endblock %}
+{% block title %}{{ novel.title }} - {{ TOML.site.name }}{% endblock %}
 
 {% block content %}
 

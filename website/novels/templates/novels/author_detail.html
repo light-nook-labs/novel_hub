@@ -1,7 +1,7 @@
 {% extends "novels/base.html" %}
 {% load novel_tags %}
 
-{% block title %}{{ author.name }} - Novel Hub{% endblock %}
+{% block title %}{{ author.name }} - {{ TOML.site.name }}{% endblock %}
 
 {% block content %}
 <nav class="mb-4 md:mb-6 text-sm text-gray-500 dark:text-gray-400">

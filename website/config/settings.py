@@ -15,7 +15,7 @@ TOML = _load_config()
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-DEBUG = os.environ.get("DEBUG", "true").lower() in ("true", "1", "yes")
+DEBUG = os.environ.get("DEBUG", "false").lower() in ("true", "1", "yes")
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", "*").split(",")]
 
@@ -111,7 +111,7 @@ TIME_ZONE = "Asia/Shanghai"
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 STATIC_URL = "static/"
@@ -122,3 +122,10 @@ STATICFILES_DIRS = [
 
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Security headers (production only)
+if not DEBUG:
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = "DENY"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True

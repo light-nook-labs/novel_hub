@@ -1,12 +1,14 @@
 from django.contrib import admin
 from django import forms
+from django.conf import settings
 from django.db.models import Count
 
 from .mappings import GENRE, PTYPE, STATUS
 from .models import Author, Contest, Novel, Tag, Task
 
-admin.site.site_header = "Novel Hub 管理"
-admin.site.site_title = "Novel Hub"
+_site = settings.TOML.get("site", {})
+admin.site.site_header = f"{_site.get('name', 'Novel Hub')} 管理"
+admin.site.site_title = _site.get("name", "Novel Hub")
 admin.site.index_title = "数据管理"
 
 
@@ -107,6 +109,13 @@ class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
     list_filter = ["genre", "status", "ptype"]
     search_fields = ["title"]
     readonly_fields = NOVEL_READONLY
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("author", "contest")
+        )
 
     def has_change_permission(self, request, obj=None):
         return True

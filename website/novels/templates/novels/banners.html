@@ -1,7 +1,7 @@
 {% extends "novels/base.html" %}
 {% load novel_tags static %}
 
-{% block title %}Banner - Novel Hub{% endblock %}
+{% block title %}Banner - {{ TOML.site.name }}{% endblock %}
 
 {% block content %}
 <div class="mb-6">
@@ -17,7 +17,7 @@
       <img src="{% banner_url novel.id %}"
            alt="{{ novel.title }}"
            class="absolute right-0 top-0 h-full w-[182%] max-w-none object-cover group-hover:scale-105 transition-transform duration-300"
-           onerror="this.parentElement.innerHTML='<div class=\'h-full bg-gradient-to-r from-amber-300 to-orange-300 flex items-center justify-center\'><span class=\'text-gray-800 text-lg font-bold\'>{{ novel.title }}</span></div>'">
+           onerror="handleBannerError(this)">
       <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
         <a href="{% url 'novels:detail' novel.id %}" class="text-white font-medium hover:text-amber-400 transition-colors" onclick="event.stopPropagation()">
           {{ novel.title }}

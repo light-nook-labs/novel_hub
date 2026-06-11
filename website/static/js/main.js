@@ -34,9 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  var browseBtn = document.querySelector('#nav-browse button');
   var browseMenu = document.getElementById('nav-browse-menu');
-  if (browseBtn && browseMenu) {
+  if (browseMenu) {
     document.addEventListener('click', function(e) {
       if (!document.getElementById('nav-browse').contains(e.target)) {
         browseMenu.classList.add('hidden');
@@ -59,6 +58,9 @@ document.addEventListener('DOMContentLoaded', function() {
       if (isHidden) {
         searchForm.querySelector('input').focus();
       }
+    });
+    searchForm.addEventListener('click', function(e) {
+      e.stopPropagation();
     });
     document.addEventListener('click', function(e) {
       if (searchWrap && !searchWrap.contains(e.target)) {

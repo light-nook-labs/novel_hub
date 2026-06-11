@@ -2,7 +2,7 @@
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="text-sm text-gray-500 dark:text-gray-400">
-        Novel Hub &mdash; sfacg.com novel metadata
+        &copy; {% now "Y" %} {{ TOML.site.author|default:TOML.site.name }} &mdash; {{ TOML.site.name }}
       </div>
       <nav class="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
         <a href="{% url 'novels:index' %}" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">首页</a>

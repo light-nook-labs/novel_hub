@@ -19,7 +19,7 @@ A novel metadata website for sfacg.com, built with Django + Tailwind CSS.
 - **Frontend**: Tailwind CSS 4.x
 - **Database**: SQLite (dev) / PostgreSQL (Supabase prod)
 - **Data Collection**: Scrapy + pandas
-- **Deployment**: GitHub Actions + GitHub Pages
+- **Deployment**: Docker / GitHub Actions + GitHub Pages
 
 ## Database ER Diagram
 
@@ -85,6 +85,8 @@ Unknown values fall back to `OTHER` (index 1).
 
 ## Quick Start
 
+### Local Development
+
 ```bash
 # Install dependencies
 uv sync
@@ -103,6 +105,21 @@ uv run python manage.py runserver
 
 # Build Tailwind CSS
 pnpm build
+```
+
+### Docker
+
+```bash
+# Build and run
+docker compose up -d --build
+
+# Access at http://localhost:8000
+
+# View logs
+docker compose logs -f web
+
+# Stop
+docker compose down
 ```
 
 ## Data Loading

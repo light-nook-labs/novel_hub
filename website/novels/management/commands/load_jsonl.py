@@ -11,11 +11,13 @@ from django.core.management.base import BaseCommand
 from novels.models import Novel, Author, Tag, Contest, Task
 from novels.mappings import GENRE, STATUS, PTYPE
 
-DIED_THRESHOLD = timedelta(days=90)
+DIED_THRESHOLD = timedelta(
+    days=settings.TOML.get("thresholds", {}).get("died_days", 90)
+)
 
-GENRE_ZH2VAL = {zh: GENRE.get_value(zh) for zh in GENRE._zh_en}
-STATUS_ZH2VAL = {zh: STATUS.get_value(zh) for zh in STATUS._zh_en}
-PTYPE_ZH2VAL = {zh: PTYPE.get_value(zh) for zh in PTYPE._zh_en}
+GENRE_ZH2VAL = {zh: GENRE.get_value(zh) for zh in GENRE.zh_labels()}
+STATUS_ZH2VAL = {zh: STATUS.get_value(zh) for zh in STATUS.zh_labels()}
+PTYPE_ZH2VAL = {zh: PTYPE.get_value(zh) for zh in PTYPE.zh_labels()}
 
 GENRE_FALLBACK = GENRE.enum.OTHER.value
 STATUS_FALLBACK = STATUS.enum.OTHER.value
@@ -134,12 +136,18 @@ def load_and_clean(files: list[Path], cover_prefix: str) -> pd.DataFrame:
     )
     df.loc[on_going_mask, "status"] = STATUS.enum.DIED.value
 
+    _t = settings.TOML.get("thresholds", {})
+    _active_click = _t.get("active_click", 10_000_000)
+    _active_praise = _t.get("active_praise", 10_000)
+    _active_like = _t.get("active_like", 10_000)
+    _active_review = _t.get("active_review", 80)
+
     active_mask = (
         df["banner"].fillna(False).eq(True)
-        | df["click_num"].fillna(0).ge(10_000_000)
-        | df["praise_num"].fillna(0).ge(10_000)
-        | df["like_num"].fillna(0).ge(10_000)
-        | df["review_num"].fillna(0).ge(80)
+        | df["click_num"].fillna(0).ge(_active_click)
+        | df["praise_num"].fillna(0).ge(_active_praise)
+        | df["like_num"].fillna(0).ge(_active_like)
+        | df["review_num"].fillna(0).ge(_active_review)
     )
     df.loc[
         active_mask & (df["status"] == STATUS.enum.DIED.value),
@@ -250,17 +258,23 @@ def _bulk_insert_tags_sqlite(cursor, tag_rows):
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
     cursor.execute("PRAGMA foreign_keys=OFF")
-    cursor.executemany(
-        "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
-        tag_rows,
-    )
-    cursor.execute("PRAGMA foreign_keys=ON")
+    try:
+        cursor.executemany(
+            "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
+            tag_rows,
+        )
+    finally:
+        cursor.execute("PRAGMA foreign_keys=ON")
 
 
-def _load_tasks(path, stdout, stderr):
+def _load_tasks(path, stdout, stderr, force=False):
     """Load tasks.csv if path is a directory (full dataset load)."""
     if not path.is_dir():
         return  # skip for single file loads
+
+    if not force:
+        stdout.write("  tasks: skipped (use --force to delete and reload)")
+        return
 
     # Look for tasks.csv in the dataset dir, then parent dir
     tasks_file = path / "tasks.csv"
@@ -309,6 +323,11 @@ class Command(BaseCommand):
             type=int,
             default=0,
             help="Limit number of records to load (0 = no limit)",
+        )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Also delete and reload tasks.csv",
         )
 
     def handle(self, *args, **options):
@@ -399,7 +418,7 @@ class Command(BaseCommand):
                 _bulk_insert_tags_sqlite(cursor, tag_rows)
         self.stdout.write(f"  M2M tags: {time.time() - t_step:.1f}s")
 
-        _load_tasks(path, self.stdout, self.stderr)
+        _load_tasks(path, self.stdout, self.stderr, force=options["force"])
 
         total = time.time() - t0
         self.stdout.write("")

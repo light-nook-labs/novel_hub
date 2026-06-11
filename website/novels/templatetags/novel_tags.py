@@ -1,3 +1,5 @@
+import hashlib
+
 from django import template
 from django.conf import settings
 
@@ -35,62 +37,71 @@ def cover_url(suffix):
 
 @register.filter
 def humanize_num(value):
-    """Format number: >=10000 as X.XXw+, else original."""
+    """Format number: >=10000 as X.Xw+, else original."""
     try:
         if value is None:
             return "-"
         n = int(value)
         if n >= 10000:
             w = n / 10000
-            return f"{int(w)}w+"
+            return f"{round(w, 1)}w+"
         return str(n)
     except (ValueError, TypeError):
         return "-"
 
 
+def _pill_hue(key):
+    """Deterministic hue (0-359) from string key."""
+    return int(hashlib.md5(key.encode()).hexdigest(), 16) % 360
+
+
 @register.filter
 def pill_bg(obj, model_name):
     """Generate deterministic background color from object ID + model name."""
-    h = hash(f"{model_name}_{obj.id}") % 360
+    h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 70%, 92%)"
 
 
 @register.filter
 def pill_bg_dark(obj, model_name):
     """Generate deterministic dark-mode background color."""
-    h = hash(f"{model_name}_{obj.id}") % 360
+    h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 60%, 20%)"
 
 
 @register.filter
 def pill_text(obj, model_name):
     """Generate deterministic text color from object ID + model name."""
-    h = hash(f"{model_name}_{obj.id}") % 360
+    h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 70%, 35%)"
 
 
 @register.filter
 def pill_text_dark(obj, model_name):
     """Generate deterministic dark-mode text color."""
-    h = hash(f"{model_name}_{obj.id}") % 360
+    h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 70%, 70%)"
 
 
 @register.filter
 def detail_url(obj, url_name):
     """Generate detail URL: obj|detail_url:'novels:tag_detail'."""
-    from django.urls import reverse
+    from django.urls import NoReverseMatch, reverse
 
     try:
         return reverse(url_name, args=[obj.id])
-    except Exception:
+    except NoReverseMatch:
         return ""
 
 
 @register.simple_tag
 def banner_url(nid):
     """Generate banner image URL from nid."""
-    return f"https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
+    cfg = settings.TOML
+    pattern = cfg.get("scraper", {}).get(
+        "banner_url", "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
+    )
+    return pattern.format(nid=nid)
 
 
 @register.simple_tag
