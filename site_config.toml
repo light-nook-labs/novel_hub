@@ -1,14 +1,27 @@
 [site]
 name = "Novel Hub"
+author = "light-nook-labs"
+github_url = "https://github.com/light-nook-labs/novel_hub"
 
 [pagination]
 style = "traditional"
 per_page = 24
+rank_per_page = 100
+banner_per_page = 12
+detail_novel_limit = 50
 
 [scraper]
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
 common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 novel_url = "https://book.sfacg.com/Novel/{nid}/"
 mobile_url = "https://m.sfacg.com/b/{nid}/"
+banner_url = "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
 cover_prefix = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
 default_cover = "defaultNew.jpg"
+
+[thresholds]
+died_days = 90
+active_click = 10000000
+active_praise = 10000
+active_like = 10000
+active_review = 80

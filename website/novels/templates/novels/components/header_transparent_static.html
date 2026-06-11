@@ -4,7 +4,7 @@
     <div class="flex items-center justify-between h-14">
       <div class="flex items-center gap-8">
         <a href="{% url 'novels:index' %}" class="text-xl font-bold tracking-tight hover:text-amber-700 transition-colors">
-          Novel Hub <span class="text-xs font-normal text-gray-500 align-top">preview</span>
+          {{ TOML.site.name }} <span class="text-xs font-normal text-gray-500 align-top">preview</span>
         </a>
         {% include "novels/components/nav_static.html" %}
       </div>

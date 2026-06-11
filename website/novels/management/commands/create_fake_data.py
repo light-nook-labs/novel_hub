@@ -10,9 +10,9 @@ from novels.mappings import GENRE, STATUS, PTYPE
 
 fake = Faker("zh_CN")
 
-GENRES = list(GENRE._en_zh.keys() - {"other"})
-STATUSES = list(STATUS._en_zh.keys() - {"other"})
-PTYPES = list(PTYPE._en_zh.keys() - {"other"})
+GENRES = GENRE.en_keys()
+STATUSES = STATUS.en_keys()
+PTYPES = PTYPE.en_keys()
 TAGS_POOL = [
     "冒险", "热血", "搞笑", "恋爱", "校园", "都市",
     "穿越", "重生", "系统", "升级", "女频", "男频",

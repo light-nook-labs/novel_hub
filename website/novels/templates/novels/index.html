@@ -1,11 +1,11 @@
 {% extends "novels/base.html" %}
 {% load novel_tags %}
 
-{% block title %}Novel Hub{% endblock %}
+{% block title %}{{ TOML.site.name }}{% endblock %}
 
 {% block header %}
-<div id="header">
-<div class="relative h-40 md:h-[12rem] lg:h-[15rem]">
+<div id="header" class="relative z-50">
+<div class="relative h-48 md:h-[13rem] lg:h-[16rem]">
   <!-- Hero Background -->
   <div id="hero-banner" class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
     {% if latest_banner %}
@@ -25,16 +25,16 @@
   <!-- Header 2: Filters (transparent, no dark mode) -->
   {% if static_mode %}
   <div class="absolute bottom-0 left-0 right-0 z-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-      <div class="rounded-lg p-4 text-gray-800 text-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3">
+      <div class="rounded-lg p-3 text-gray-800 text-sm">
         筛选和排序功能已隐藏。如需完整功能请自行部署。
       </div>
     </div>
   </div>
   {% else %}
   <div class="absolute bottom-0 left-0 right-0 z-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-      <div class="rounded-lg p-4 text-gray-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3">
+      <div class="rounded-lg p-3 text-gray-800">
         <div class="flex flex-wrap items-center gap-2 text-sm">
           <span class="text-gray-700 font-bold">分类：</span>
           <a href="?{% if current_sort %}sort={{ current_sort }}{% endif %}"
@@ -44,7 +44,7 @@
              class="px-2 py-1 rounded {% if current_genre == g.value|stringformat:'d' %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">{{ g.label }}</a>
           {% endfor %}
         </div>
-        <div class="flex flex-wrap items-center gap-2 text-sm mt-2">
+        <div class="hidden sm:flex flex-wrap items-center gap-2 text-sm mt-2">
           <span class="text-gray-700 font-bold">状态：</span>
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
              class="px-2 py-1 rounded {% if not current_status %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">全部</a>
@@ -61,7 +61,7 @@
              class="px-2 py-1 rounded {% if current_ptype == p.value|stringformat:'d' %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">{{ p.label }}</a>
           {% endfor %}
         </div>
-        <div class="flex flex-wrap items-center gap-2 text-sm mt-2">
+        <div class="hidden sm:flex flex-wrap items-center gap-2 text-sm mt-2">
           <span class="text-gray-700 font-bold">排序：</span>
           {% for key, label in sort_options.items %}
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}sort={{ key }}"

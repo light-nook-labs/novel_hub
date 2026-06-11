@@ -1,3 +1,14 @@
+function handleBannerError(img) {
+  var title = img.alt;
+  var div = document.createElement('div');
+  div.className = 'h-full bg-gradient-to-r from-amber-300 to-orange-300 flex items-center justify-center';
+  var span = document.createElement('span');
+  span.className = 'text-gray-800 text-lg font-bold';
+  span.textContent = title;
+  div.appendChild(span);
+  img.parentElement.replaceChild(div, img);
+}
+
 // Banners lightbox
 (function() {
   const lightbox = document.getElementById('lightbox');

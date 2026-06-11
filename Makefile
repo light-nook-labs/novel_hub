@@ -1,4 +1,4 @@
-.PHONY: dev static serve test lint clean reset-db
+.PHONY: dev static serve test lint clean reset-db docker-build docker-up docker-down
 
 # Development
 dev:
@@ -75,3 +75,13 @@ tailwind:
 
 tailwind-build:
 	cd website && pnpm build
+
+# Docker
+docker-build:
+	docker compose build
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down

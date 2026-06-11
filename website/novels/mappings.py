@@ -44,6 +44,18 @@ class Mapping:
         except ValueError:
             return "其他"
 
+    def zh_labels(self) -> list[str]:
+        """Return all Chinese labels."""
+        return list(self._zh_en.keys())
+
+    def en_keys(self) -> list[str]:
+        """Return all English keys (excluding 'other')."""
+        return [k for k in self._en_zh if k != "other"]
+
+    def zh_to_value(self, zh_label: str) -> int:
+        """Chinese label → enum int value. Falls back to OTHER."""
+        return self.get_value(zh_label)
+
 
 GENRE = Mapping(
     magic="魔幻",

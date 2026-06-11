@@ -1,6 +1,6 @@
 """Serve the static build locally for preview."""
 
-import os
+from functools import partial
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -31,12 +31,11 @@ class Command(BaseCommand):
             self.stderr.write("Run: uv run python manage.py generate_static")
             return
 
-        os.chdir(directory)
         self.stdout.write(f"Serving {directory} at http://127.0.0.1:{port}")
 
         from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-        handler = SimpleHTTPRequestHandler
+        handler = partial(SimpleHTTPRequestHandler, directory=str(directory))
         httpd = HTTPServer(("127.0.0.1", port), handler)
         try:
             httpd.serve_forever()

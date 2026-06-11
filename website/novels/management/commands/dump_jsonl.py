@@ -11,7 +11,7 @@ from django.db.models import Prefetch
 from novels.models import Novel, Tag, Task
 from novels.mappings import GENRE, STATUS, PTYPE
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent.parent))
+sys.path.insert(0, str(settings.BASE_DIR.parent))
 from models import Meta  # noqa: E402
 
 RECORDS_PER_FILE = 20_000

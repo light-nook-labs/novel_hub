@@ -1,14 +1,27 @@
 {% extends "novels/base.html" %}
 
-{% block title %}关于 - Novel Hub{% endblock %}
+{% block title %}关于 - {{ TOML.site.name }}{% endblock %}
+
+{% block css %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var isDark = document.documentElement.classList.contains('dark');
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: isDark ? 'dark' : 'default'
+    });
+  });
+</script>
+{% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto">
-  <h1 class="text-2xl font-bold mb-6">关于 Novel Hub</h1>
+  <h1 class="text-2xl font-bold mb-6">关于 {{ TOML.site.name }}</h1>
 
   <div class="prose prose-gray dark:prose-invert max-w-none">
     <p class="text-gray-600 dark:text-gray-400">
-      Novel Hub 是一个小说元数据展示网站，数据来源于
+      {{ TOML.site.name }} 是一个小说元数据展示网站，数据来源于
       <a href="https://book.sfacg.com" target="_blank" class="text-amber-600 dark:text-amber-400 hover:underline">sfacg.com</a>（SF轻小说）。
     </p>
 
@@ -29,6 +42,74 @@
       <li><strong>数据库</strong>：SQLite（开发）/ PostgreSQL（生产）</li>
       <li><strong>数据采集</strong>：Scrapy + pandas</li>
     </ul>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">数据库结构</h2>
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
+      <pre class="mermaid">
+erDiagram
+    Author {
+        CharField name UK
+    }
+    Tag {
+        CharField name UK
+    }
+    Contest {
+        CharField name UK
+    }
+    Novel {
+        BigIntegerField id PK
+        CharField title
+        SmallIntegerField ptype
+        SmallIntegerField genre
+        SmallIntegerField status
+        IntegerField click_num
+        IntegerField word_num
+        IntegerField praise_num
+        IntegerField like_num
+        BooleanField has_banner
+        IntegerField review_num
+        IntegerField comment_num
+        CharField cover
+        DateTimeField last_update
+    }
+    Task {
+        CharField status
+    }
+    Author ||--o{ Novel : "1:N"
+    Contest ||--o{ Novel : "1:N"
+    Novel }o--o{ Tag : "M2M"
+    Novel ||--o| Task : "1:0..1"
+      </pre>
+    </div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">枚举映射</h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-2">
+      <code>ptype</code>、<code>genre</code>、<code>status</code> 字段存储整数值，通过 <code>Mapping</code> 类映射为中文标签。
+    </p>
+    <div class="overflow-x-auto">
+      <table class="text-sm text-gray-600 dark:text-gray-400">
+        <thead>
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="text-left py-2 pr-4">字段</th>
+            <th class="text-left py-2">映射 (en → zh)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="py-2 pr-4 font-mono">genre</td>
+            <td class="py-2">魔幻、玄幻、古风、科幻、校园、都市、游戏、同人、悬疑</td>
+          </tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="py-2 pr-4 font-mono">status</td>
+            <td class="py-2">已完结、连载中、断更、断更D、完结F</td>
+          </tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="py-2 pr-4 font-mono">ptype</td>
+            <td class="py-2">免费、签约、VIP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <h2 class="text-xl font-semibold mt-8 mb-4">数据说明</h2>
     <p class="text-gray-600 dark:text-gray-400">
