@@ -13,8 +13,18 @@ from models import Meta
 class MetaBatchSpider(Spider):
     name = "meta_batch"
     allowed_domains = ["book.sfacg.com"]
-    _base_url = "https://book.sfacg.com/List/default.aspx"
-    _common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from scrapy.utils.project import get_project_settings
+
+        settings = get_project_settings()
+        toml = settings.get("TOML", {})
+        scraper = toml.get("scraper", {})
+        self._base_url = "https://book.sfacg.com/List/default.aspx"
+        self._common_url = scraper.get(
+            "common_url", "https://book.sfacg.com/ajax/ashx/Common.ashx"
+        )
 
     async def start(self):
         """CLI Args

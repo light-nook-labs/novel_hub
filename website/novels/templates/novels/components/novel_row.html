@@ -1,11 +1,11 @@
 {% load novel_tags %}
 <div class="flex items-start gap-3">
-  <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" class="flex-shrink-0">
+  <a href="{% novel_url novel.id %}" target="_blank" class="flex-shrink-0">
     <img src="{{ novel.cover|cover_url }}" alt="" class="w-16 h-auto rounded">
   </a>
   <div class="min-w-0 flex-1">
     <div class="flex items-center gap-2">
-      <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank"
+      <a href="{% novel_url novel.id %}" target="_blank"
          class="font-medium text-gray-900 dark:text-gray-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate">
         {{ novel.title }}
       </a>

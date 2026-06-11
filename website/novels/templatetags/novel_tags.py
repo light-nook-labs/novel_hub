@@ -85,3 +85,17 @@ def detail_url(obj, url_name):
         return reverse(url_name, args=[obj.id])
     except Exception:
         return ""
+
+
+@register.simple_tag
+def banner_url(nid):
+    """Generate banner image URL from nid."""
+    return f"https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
+
+
+@register.simple_tag
+def novel_url(nid):
+    """Generate novel page URL from nid."""
+    cfg = settings.TOML
+    pattern = cfg.get("scraper", {}).get("novel_url", "https://book.sfacg.com/Novel/{nid}/")
+    return pattern.format(nid=nid)

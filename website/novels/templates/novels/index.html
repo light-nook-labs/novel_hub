@@ -10,7 +10,7 @@
   <div id="hero-banner" class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
     {% if latest_banner %}
     <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60"
-         data-default-bg="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ latest_banner.id }}.jpg"></div>
+         data-default-bg="{% banner_url latest_banner.id %}"></div>
     {% else %}
     <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60"></div>
     {% endif %}

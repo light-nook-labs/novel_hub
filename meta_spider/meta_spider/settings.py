@@ -7,6 +7,17 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import tomllib
+from pathlib import Path
+
+# Load site_config.toml from project root
+_ROOT = Path(__file__).resolve().parent.parent.parent
+_config_path = _ROOT / "site_config.toml"
+with open(_config_path, "rb") as f:
+    TOML = tomllib.load(f)
+
+_scraper = TOML.get("scraper", {})
+
 BOT_NAME = "meta_spider"
 
 SPIDER_MODULES = ["meta_spider.spiders"]
@@ -15,8 +26,8 @@ NEWSPIDER_MODULE = "meta_spider.spiders"
 ADDONS = {}
 
 
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+# Crawl responsibly by identifying yourself (and your website) via user-agent
+USER_AGENT = _scraper.get("user_agent", "Scrapy")
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True

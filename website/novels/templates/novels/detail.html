@@ -20,7 +20,7 @@
     <div class="relative rounded-lg overflow-hidden shadow-lg ring-1 ring-black/10 dark:ring-white/10 bg-gradient-to-br from-amber-300 to-orange-300">
       <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto aspect-[3/4] object-cover">
     </div>
-    <a href="https://book.sfacg.com/Novel/{{ novel.id }}/" target="_blank" rel="noopener noreferrer"
+    <a href="{% novel_url novel.id %}" target="_blank" rel="noopener noreferrer"
        class="mt-2.5 md:mt-3 flex items-center justify-center gap-1.5 px-3 py-1.5 md:py-2 bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500 text-white rounded-lg shadow transition-all text-xs md:text-sm font-medium whitespace-nowrap">
       <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>

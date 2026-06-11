@@ -12,9 +12,9 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
   {% for novel in novels %}
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden cursor-pointer group"
-       onclick="openLightbox(this)" data-src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg">
+       onclick="openLightbox(this)" data-src="{% banner_url novel.id %}">
     <div class="relative overflow-hidden" style="aspect-ratio: 3/1">
-      <img src="https://rs.sfacg.com/web/novel/images/images/beitouNew/{{ novel.id }}.jpg"
+      <img src="{% banner_url novel.id %}"
            alt="{{ novel.title }}"
            class="absolute right-0 top-0 h-full w-[182%] max-w-none object-cover group-hover:scale-105 transition-transform duration-300"
            onerror="this.parentElement.innerHTML='<div class=\'h-full bg-gradient-to-r from-amber-300 to-orange-300 flex items-center justify-center\'><span class=\'text-gray-800 text-lg font-bold\'>{{ novel.title }}</span></div>'">
