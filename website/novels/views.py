@@ -1,5 +1,6 @@
 from django.views.generic import ListView, DetailView, TemplateView
 from django.conf import settings
+from django.db import models
 
 from .models import Novel, Author, Tag, Contest
 from .mappings import GENRE, STATUS, PTYPE
@@ -199,17 +200,67 @@ class AuthorListView(ListView):
     model = Author
     template_name = "novels/authors.html"
     context_object_name = "authors"
-    paginate_by = _paginate_by
+    paginate_by = 100
+
+    SORT_OPTIONS = {
+        "total_click": "总点击",
+        "novel_count": "作品数",
+        "total_word": "总字数",
+        "total_like": "总收藏",
+        "total_praise": "总点赞",
+        "total_review": "总长评",
+        "total_comment": "总短评",
+        "latest_update": "最近更新",
+    }
 
     def get_queryset(self):
+        from django.db.models import Subquery, OuterRef
+
         qs = super().get_queryset()
         q = self.request.GET.get("q", "").strip()
         if q:
             qs = qs.filter(name__icontains=q)
-        return qs.annotate_novel_count()
+
+        top_novel = (
+            Novel.objects.filter(author=OuterRef("pk"))
+            .order_by("-click_num")
+            .values("id", "title", "click_num")[:1]
+        )
+
+        qs = qs.annotate(
+            novel_count=models.Count("novels"),
+            total_click=models.Sum("novels__click_num"),
+            total_word=models.Sum("novels__word_num"),
+            total_like=models.Sum("novels__like_num"),
+            total_praise=models.Sum("novels__praise_num"),
+            total_review=models.Sum("novels__review_num"),
+            total_comment=models.Sum("novels__comment_num"),
+            banner_count=models.Count("novels", filter=models.Q(novels__has_banner=True)),
+            latest_update=models.Max("novels__last_update"),
+            top_novel_id=Subquery(top_novel.values("id")),
+            top_novel_title=Subquery(top_novel.values("title")),
+            top_novel_click=Subquery(top_novel.values("click_num")),
+        )
+
+        sort = self.request.GET.get("sort", "total_click")
+        if sort in self.SORT_OPTIONS:
+            direction = self.request.GET.get("dir", "desc")
+            prefix = "" if direction == "asc" else "-"
+            qs = qs.order_by(f"{prefix}{sort}", "-novel_count")
+        else:
+            qs = qs.order_by("-total_click")
+
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
+        ctx["sort_options"] = self.SORT_OPTIONS
+        ctx["current_sort"] = self.request.GET.get("sort", "total_click")
+        ctx["current_dir"] = self.request.GET.get("dir", "desc")
+        page_obj = ctx.get("page_obj")
+        ctx["page_start"] = (
+            (page_obj.number - 1) * self.paginate_by + 1 if page_obj else 1
+        )
         params = self.request.GET.copy()
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()

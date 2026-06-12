@@ -4,7 +4,7 @@
   <div class="relative" id="nav-browse">
     <button onclick="document.getElementById('nav-browse-menu').classList.toggle('hidden')" class="flex items-center gap-1 hover:text-amber-700{% if not no_dark %} dark:hover:text-amber-300{% endif %} transition-colors">
       浏览
-      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      {% include "icons/chevron-down.html" with cls="w-3.5 h-3.5" %}
     </button>
     <div id="nav-browse-menu" class="hidden absolute left-0 mt-2 w-32 bg-white{% if not no_dark %} dark:bg-gray-800{% endif %} rounded-lg shadow-lg border border-gray-200{% if not no_dark %} dark:border-gray-700{% endif %} z-50">
       <a href="{% url 'novels:genres' %}" class="block px-4 py-2 text-sm text-gray-700{% if not no_dark %} dark:text-gray-300{% endif %} hover:bg-gray-100{% if not no_dark %} dark:hover:bg-gray-700{% endif %} rounded-t-lg">分类</a>
@@ -15,5 +15,5 @@
     </div>
   </div>
   <a href="{% url 'novels:authors' %}" class="hover:text-amber-700{% if not no_dark %} dark:hover:text-amber-300{% endif %} transition-colors">作者</a>
-  <a href="{% url 'novels:banners' %}" class="hover:text-amber-700{% if not no_dark %} dark:hover:text-amber-300{% endif %} transition-colors">Banner</a>
+  <a href="{% url 'novels:banners' %}" class="hover:text-amber-700{% if not no_dark %} dark:hover:text-amber-300{% endif %} transition-colors">背投</a>
 </nav>

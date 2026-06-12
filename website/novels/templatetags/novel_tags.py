@@ -1,9 +1,36 @@
 import hashlib
+import unicodedata
 
 from django import template
 from django.conf import settings
 
 register = template.Library()
+
+
+def _display_width(text):
+    """Calculate display width: CJK chars = 2, others = 1."""
+    w = 0
+    for ch in text:
+        if unicodedata.east_asian_width(ch) in ("W", "F"):
+            w += 2
+        else:
+            w += 1
+    return w
+
+
+@register.filter
+def truncate_cjk(text, max_width=26):
+    """Truncate text by display width (CJK=2, ASCII=1). Adds '…' if truncated."""
+    max_width = int(max_width)
+    if _display_width(text) <= max_width:
+        return text
+    w = 0
+    for i, ch in enumerate(text):
+        cw = 2 if unicodedata.east_asian_width(ch) in ("W", "F") else 1
+        if w + cw > max_width - 1:
+            return text[:i] + "…"
+        w += cw
+    return text
 
 
 @register.filter
