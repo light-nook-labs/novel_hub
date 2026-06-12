@@ -566,6 +566,7 @@ class BannerListView(ListView):
             Novel.objects.filter(has_banner=True)
             .select_related("author", "contest")
             .prefetch_related("tags")
+            .order_by("-last_update")
         )
 
     def get_context_data(self, **kwargs):
