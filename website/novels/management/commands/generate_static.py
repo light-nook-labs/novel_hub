@@ -155,11 +155,14 @@ def _render_page_static(view_cls, url, page, data):
             self.num_pages = num_pages
             self.has_next = has_next
             self.has_previous = has_previous
+            self.previous_page_number = number - 1 if has_previous else None
+            self.next_page_number = number + 1 if has_next else None
 
     class FakePaginator:
         def __init__(self, count, num_pages):
             self.count = count
             self.num_pages = num_pages
+            self.page_range = range(1, num_pages + 1)
 
     fake_page = FakePage(
         page_num, total_pages,

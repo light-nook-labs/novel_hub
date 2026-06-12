@@ -4,22 +4,18 @@
 dev:
 	cd website && uv run python manage.py runserver
 
-# Static site generation
+# Static site generation (local preview)
 static:
-	cd website && uv run python manage.py generate_static --output ../build --base-path novel_hub
+	cd website && uv run python manage.py generate_static --output ../build
 
-# Serve static site (background)
+# Serve static site (foreground, Ctrl+C to stop)
 serve:
-	cd build && python3 -m http.server 3000 &
-	@sleep 1
-	@echo "Server started at http://127.0.0.1:3000"
+	cd website && uv run python manage.py serve_static --dir ../build --port 3000
 
-# Stop static server
-serve-stop:
-	@pkill -f "http.server 3000" 2>/dev/null || true
-
-# Test static site
-test-serve: serve
+# Test static site (auto start/stop)
+test-serve:
+	@cd website && uv run python manage.py serve_static --dir ../build --port 3000 &
+	@sleep 2
 	@echo "=== Testing static site ==="
 	@curl -s http://127.0.0.1:3000/ | head -5
 	@echo ""
@@ -28,7 +24,7 @@ test-serve: serve
 	@echo ""
 	@echo "=== Checking covers ==="
 	@curl -s http://127.0.0.1:3000/ | grep -oP 'src="[^"]*"' | head -3
-	@$(MAKE) serve-stop
+	@pkill -f "serve_static" 2>/dev/null || true
 
 # Test Django server
 test-dev:
