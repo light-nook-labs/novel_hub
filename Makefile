@@ -6,28 +6,28 @@ dev:
 
 # Static site generation
 static:
-	cd website && uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50 --base-path novel_hub
+	cd website && uv run python manage.py generate_static --output ../build --base-path novel_hub
 
 # Serve static site (background)
 serve:
-	cd static_build && python3 -m http.server 8080 &
+	cd build && python3 -m http.server 3000 &
 	@sleep 1
-	@echo "Server started at http://127.0.0.1:8080"
+	@echo "Server started at http://127.0.0.1:3000"
 
 # Stop static server
 serve-stop:
-	@pkill -f "http.server 8080" 2>/dev/null || true
+	@pkill -f "http.server 3000" 2>/dev/null || true
 
 # Test static site
 test-serve: serve
 	@echo "=== Testing static site ==="
-	@curl -s http://127.0.0.1:8080/ | head -5
+	@curl -s http://127.0.0.1:3000/ | head -5
 	@echo ""
 	@echo "=== Checking rank page ==="
-	@curl -s http://127.0.0.1:8080/rank/ | grep -oP '1970-01-01' | wc -l | xargs -I{} echo "Zero dates: {}"
+	@curl -s http://127.0.0.1:3000/rank/ | grep -oP '1970-01-01' | wc -l | xargs -I{} echo "Zero dates: {}"
 	@echo ""
 	@echo "=== Checking covers ==="
-	@curl -s http://127.0.0.1:8080/ | grep -oP 'src="[^"]*"' | head -3
+	@curl -s http://127.0.0.1:3000/ | grep -oP 'src="[^"]*"' | head -3
 	@$(MAKE) serve-stop
 
 # Test Django server
@@ -51,7 +51,7 @@ lint:
 
 # Clean
 clean:
-	rm -rf static_build
+	rm -rf build
 	rm -f website/db.sqlite3
 
 # Reset PostgreSQL database

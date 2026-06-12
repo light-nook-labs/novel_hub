@@ -78,7 +78,7 @@ uv run python manage.py dump_jsonl release
 uv run python manage.py reset_psql --limit 100
 
 # Static site
-uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50 --base-path novel_hub
+uv run python manage.py generate_static --output ../build --base-path novel_hub
 uv run python manage.py serve_static --port 8080
 
 # Testing

@@ -243,5 +243,5 @@ list.csv
 node_modules/
 *.sqlite3-shm
 *.sqlite3-wal
-static_build/
+build/
 pwd.txt
