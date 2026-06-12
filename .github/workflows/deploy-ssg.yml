@@ -41,8 +41,6 @@ jobs:
         run: |
           uv run python manage.py generate_static \
             --output ../build \
-            --index-pages 10 \
-            --rank-pages 50 \
             --base-path novel_hub
         env:
           DB_TYPE: postgresql
