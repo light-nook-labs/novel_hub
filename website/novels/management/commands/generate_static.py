@@ -293,6 +293,9 @@ class Command(BaseCommand):
 
         tasks.append((AboutView, "/about/", None, Path("about") / "index.html"))
 
+        # 404 page (rendered via view, not template directly)
+        tasks.append((None, "/404/", None, Path("404.html")))
+
         return tasks
 
     def handle(self, *args, **options):
@@ -326,7 +329,15 @@ class Command(BaseCommand):
 
         def render_one(task):
             view_cls, url, page, rel_path = task
-            html = _render_page_static(view_cls, url, page, _SSG_DATA)
+            if view_cls is None:
+                # 404 page - render directly
+                from django.template.loader import render_to_string
+                from django.test import RequestFactory
+                request = RequestFactory().get(url)
+                request.static_mode = True
+                html = render_to_string("novels/404.html", request=request)
+            else:
+                html = _render_page_static(view_cls, url, page, _SSG_DATA)
             return (rel_path, html)
 
         t_render = time.time()
