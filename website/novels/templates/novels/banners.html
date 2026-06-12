@@ -1,12 +1,12 @@
 {% extends "novels/base.html" %}
 {% load novel_tags static %}
 
-{% block title %}Banner - {{ TOML.site.name }}{% endblock %}
+{% block title %}背投 - {{ TOML.site.name }}{% endblock %}
 
 {% block content %}
 <div class="mb-6">
-  <h1 class="text-2xl font-bold">Banner</h1>
-  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 个 Banner</p>
+  <h1 class="text-2xl font-bold">背投</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 个背投</p>
 </div>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -19,7 +19,7 @@
            class="absolute right-0 top-0 h-full w-[182%] max-w-none object-cover group-hover:scale-105 transition-transform duration-300"
            onerror="handleBannerError(this)">
       <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-        <a href="{% url 'novels:detail' novel.id %}" class="text-white font-medium hover:text-amber-400 transition-colors" onclick="event.stopPropagation()">
+        <a href="{% if static_mode %}{% novel_url novel.id %}{% else %}{% url 'novels:detail' novel.id %}{% endif %}" class="text-white font-medium hover:text-amber-400 transition-colors" onclick="event.stopPropagation()"{% if static_mode %} target="_blank"{% endif %}>
           {{ novel.title }}
         </a>
         <p class="text-white/80 text-xs mt-0.5">{{ novel.author|default:"未知" }}</p>
@@ -27,7 +27,7 @@
     </div>
   </div>
   {% empty %}
-  <div class="col-span-full text-center py-12 text-gray-400 dark:text-gray-500">暂无 Banner 数据</div>
+  <div class="col-span-full text-center py-12 text-gray-400 dark:text-gray-500">暂无背投数据</div>
   {% endfor %}
 </div>
 
@@ -35,9 +35,7 @@
 <div id="lightbox" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm" onclick="closeLightbox(event)">
   <div class="relative w-[95vw] max-w-[1400px] mx-4" onclick="event.stopPropagation()">
     <button onclick="closeLightbox()" class="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors z-10">
-      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
+      {% include "icons/close.html" with cls="w-8 h-8" %}
     </button>
     <img id="lightbox-img" src="" alt="" class="w-full h-auto max-h-[85vh] object-contain rounded-lg shadow-2xl">
   </div>

@@ -1,12 +1,12 @@
 {% load novel_tags %}
 <div class="card card-hover group">
-  <a href="{% url 'novels:detail' novel.id %}" class="block">
+  <a href="{% if static_mode %}{% novel_url novel.id %}{% else %}{% url 'novels:detail' novel.id %}{% endif %}"{% if static_mode %} target="_blank"{% endif %} class="block">
     <div class="relative bg-gradient-to-br from-amber-300 to-orange-300">
       <img src="{{ novel.cover|cover_url }}" alt="{{ novel.title }}" class="w-full h-auto group-hover:scale-105 transition-transform duration-300">
     </div>
   </a>
   <div class="p-2">
-    <a href="{% url 'novels:detail' novel.id %}" class="block">
+    <a href="{% if static_mode %}{% novel_url novel.id %}{% else %}{% url 'novels:detail' novel.id %}{% endif %}"{% if static_mode %} target="_blank"{% endif %} class="block">
       <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">{{ novel.title }}</h3>
     </a>
     <p class="hidden md:block text-secondary mt-0.5 truncate">{{ novel.author|default:"未知" }}</p>

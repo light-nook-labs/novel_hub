@@ -12,7 +12,7 @@
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
   <div class="overflow-x-auto">
     <table class="w-full text-sm">
-      <thead>
+      <thead class="hidden md:table-header-group">
         <tr class="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
           <th class="hidden md:table-cell px-3 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider w-12">#</th>
           {% for col in columns %}
@@ -27,14 +27,14 @@
                 {% if current_sort == col.sort_key|default:col.key %}
                 <span class="text-amber-600 dark:text-amber-400">
                   {% if current_dir == "asc" %}
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                  {% include "icons/chevron-up-fill.html" %}
                   {% else %}
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"/></svg>
+                  {% include "icons/chevron-down-fill.html" %}
                   {% endif %}
                 </span>
                 {% else %}
                 <span class="text-gray-300 dark:text-gray-600">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                  {% include "icons/chevron-down-fill.html" %}
                 </span>
                 {% endif %}
               {% endif %}
