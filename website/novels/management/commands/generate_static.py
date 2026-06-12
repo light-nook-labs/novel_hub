@@ -249,15 +249,17 @@ class Command(BaseCommand):
         )
 
     @staticmethod
-    def _fix_paths(html, depth):
-        """Convert absolute paths to relative paths for subdirectory deploy."""
-        if depth <= 0:
-            return html
-        prefix = "../" * depth
+    def _fix_paths(html, base_path):
+        """Convert absolute paths to include base_path prefix."""
+        prefix = f"/{base_path}/"
+        # Replace /static/ first (more specific)
         html = html.replace('href="/static/', f'href="{prefix}static/')
         html = html.replace('src="/static/', f'src="{prefix}static/')
-        html = html.replace('href="/', f'href="{prefix}')
-        html = html.replace('src="/', f'src="{prefix}')
+        # Replace other absolute paths, but avoid doubling the prefix
+        # Only replace href="/ that is NOT followed by {base_path}/
+        import re
+        html = re.sub(r'href="/(?!' + re.escape(base_path) + r'/)', f'href="{prefix}', html)
+        html = re.sub(r'src="/(?!' + re.escape(base_path) + r'/)', f'src="{prefix}', html)
         return html
 
     @staticmethod
@@ -355,8 +357,7 @@ class Command(BaseCommand):
         t_write = time.time()
         for rel_path, content in pages:
             if base_path:
-                depth = self._page_depth(rel_path)
-                content = self._fix_paths(content, depth)
+                content = self._fix_paths(content, base_path)
             self._write(out / rel_path, content)
         write_time = time.time() - t_write
 
