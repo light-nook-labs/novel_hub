@@ -97,8 +97,12 @@ def _precompute_all(index_pages, rank_pages, authors_pages):
     data["authors"] = authors
     data["author_count"] = len(authors)
 
-    # Banners (filter from already-loaded novels)
-    banners = [n for n in novels if n.has_banner]
+    # Banners (filter from already-loaded novels, sorted by last_update)
+    banners = sorted(
+        [n for n in novels if n.has_banner],
+        key=lambda n: n.last_update or "",
+        reverse=True,
+    )
     data["banners"] = banners
     data["banner_count"] = len(banners)
 
