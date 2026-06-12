@@ -40,7 +40,7 @@ jobs:
         working-directory: website
         run: |
           uv run python manage.py generate_static \
-            --output ../static_build \
+            --output ../build \
             --index-pages 10 \
             --rank-pages 50 \
             --base-path novel_hub
@@ -55,12 +55,12 @@ jobs:
           DEBUG: "0"
 
       - name: Add .nojekyll
-        run: touch static_build/.nojekyll
+        run: touch build/.nojekyll
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./static_build
+          publish_dir: ./build
           publish_branch: gh-pages
           force_orphan: true

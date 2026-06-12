@@ -54,10 +54,17 @@
             {{ forloop.counter0|add:page_start }}
           </td>
           <td class="px-3 py-2 min-w-0">
+            {% if static_mode and author.top_novel_id %}
+            <a href="{% novel_url author.top_novel_id %}" target="_blank"
+               class="font-medium text-gray-900 dark:text-gray-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate block">
+              {{ author.name }}
+            </a>
+            {% else %}
             <a href="{% url 'novels:author_detail' author.id %}"
                class="font-medium text-gray-900 dark:text-gray-100 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate block">
               {{ author.name }}
             </a>
+            {% endif %}
             {% if author.top_novel_title %}
             <a href="{% if static_mode %}{% novel_url author.top_novel_id %}{% else %}{% url 'novels:detail' author.top_novel_id %}{% endif %}"{% if static_mode %} target="_blank"{% endif %}
                class="text-xs text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate block mt-0.5 md:hidden"

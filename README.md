@@ -157,7 +157,7 @@ release/
 
 Generate static HTML for GitHub Pages:
 ```bash
-uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50 --base-path novel_hub
+uv run python manage.py generate_static --output ../build --base-path novel_hub
 ```
 
 Preview locally:

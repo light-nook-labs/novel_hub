@@ -54,7 +54,7 @@ uv run python manage.py dump_jsonl release                 # Dump DB
 uv run python manage.py reset_psql --limit 100             # Reset PostgreSQL
 
 # Static site
-uv run python manage.py generate_static --output ../static_build --index-pages 10 --rank-pages 50 --base-path novel_hub
+uv run python manage.py generate_static --output ../build --base-path novel_hub
 
 # Tailwind
 pnpm build
@@ -73,7 +73,7 @@ novel_hub/
     meta_spider/            # Scrapy spider (see meta_spider/README.md)
     scraper/                # HTTP client (see scraper/README.md)
     release/                # Release data
-    static_build/           # Generated static site (gitignored)
+    build/                  # Generated static site (gitignored)
 ```
 
 ## Database

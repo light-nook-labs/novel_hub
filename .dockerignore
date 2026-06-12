@@ -5,7 +5,7 @@
 __pycache__/
 *.pyc
 db.sqlite3
-static_build/
+build/
 node_modules/
 release/
 dataset/

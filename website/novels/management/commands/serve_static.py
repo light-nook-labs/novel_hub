@@ -7,13 +7,13 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Serve static_build directory locally"
+    help = "Serve build directory locally"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--dir",
-            default="static_build",
-            help="Static build directory (default: static_build)",
+            default="build",
+            help="Static build directory (default: build)",
         )
         parser.add_argument(
             "--port",
