@@ -222,13 +222,9 @@ __marimo__/
 *.db-shm
 *.db-wal
 
-o.jsonl
-data.jsonl
-database.db
-test.db
-dev.db
-*.csv
+*.jsonl
 *.db
+*.csv
 
 # Dataset (>100MB, downloaded from GitHub release)
 dataset/
@@ -236,8 +232,6 @@ dataset/
 # Generated release data
 release/
 
-# Test data (DO NOT DELETE)
-list.csv
 
 # Node modules
 node_modules/

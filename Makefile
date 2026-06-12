@@ -50,10 +50,6 @@ clean:
 	rm -rf build
 	rm -f website/db.sqlite3
 
-# Reset PostgreSQL database
-reset-db:
-	cd website && uv run python manage.py reset_psql --limit 100
-
 # Load data to PostgreSQL
 load-data:
 	cd website && uv run python manage.py load_jsonl ../release/dataset/meta_13.jsonl

@@ -1,4 +1,8 @@
-"""Reset PostgreSQL database and load limited data for testing."""
+"""Reset PostgreSQL database and load limited data for testing.
+
+WARNING: This command will TRUNCATE all tables in PostgreSQL.
+DO NOT run without explicit approval.
+"""
 
 from pathlib import Path
 
