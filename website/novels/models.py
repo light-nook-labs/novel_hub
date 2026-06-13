@@ -118,7 +118,15 @@ class Task(models.Model):
     )
 
     class Meta:
-        ordering = ["-id"]
+        ordering = [
+            models.Case(
+                models.When(status="u", then=0),
+                models.When(status="d", then=1),
+                models.When(status="f", then=2),
+                default=3,
+            ),
+            "-novel_id",
+        ]
 
     def __str__(self):
         return f"Task #{self.id} → Novel {self.novel_id}"
