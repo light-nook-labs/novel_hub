@@ -3,7 +3,7 @@
 <div class="flex flex-wrap justify-center items-center mt-8 gap-3">
   <div class="flex rounded-lg border border-gray-300 dark:border-gray-600 overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
     {% if page_obj.has_previous %}
-    <a href="{% if page_obj.previous_page_number == 1 %}{% page_url 'index.html' %}{% else %}{% page_url '' %}page{{ page_obj.previous_page_number }}.html{% endif %}"
+    <a href="{% if page_obj.previous_page_number == 1 %}index.html{% else %}page{{ page_obj.previous_page_number }}.html{% endif %}"
        class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:text-amber-400 transition-colors">Prev</a>
     {% else %}
     <span class="px-3 py-2 text-sm border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Prev</span>
@@ -13,7 +13,7 @@
       {% if n == page_obj.number %}
       <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 bg-amber-600 text-white select-none">{{ n }}</span>
       {% elif n > page_obj.number|add:'-2' and n < page_obj.number|add:'2' %}
-      <a href="{% if n == 1 %}{% page_url 'index.html' %}{% else %}{% page_url '' %}page{{ n }}.html{% endif %}"
+      <a href="{% if n == 1 %}index.html{% else %}page{{ n }}.html{% endif %}"
          class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:text-amber-400 transition-colors">{{ n }}</a>
       {% elif n == page_obj.number|add:'-3' or n == page_obj.number|add:'3' %}
       <span class="px-3 py-2 text-sm border-r border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 select-none">&hellip;</span>
@@ -21,7 +21,7 @@
     {% endfor %}
 
     {% if page_obj.has_next %}
-    <a href="{% page_url '' %}page{{ page_obj.next_page_number }}.html"
+    <a href="page{{ page_obj.next_page_number }}.html"
        class="px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-amber-900 hover:text-amber-600 dark:text-amber-400 transition-colors">Next</a>
     {% else %}
     <span class="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed select-none">Next</span>

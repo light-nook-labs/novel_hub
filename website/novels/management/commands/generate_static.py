@@ -133,6 +133,9 @@ class Command(BaseCommand):
         # 5. Banner pages (all pages)
         pages.extend(self._collect_banner_pages(output_dir, base_path))
 
+        # 6. 404 page (1 page)
+        pages.extend(self._collect_404_pages(output_dir, base_path))
+
         logger.info("Generating %d static pages with %d workers...", len(pages), workers)
 
         # Generate pages using multiprocessing
@@ -175,7 +178,19 @@ class Command(BaseCommand):
         for source_dir in source_dirs:
             if source_dir.exists():
                 logger.info("Copying static files from %s", source_dir)
-                shutil.copytree(source_dir, static_output, dirs_exist_ok=True)
+                # Use follow_symlinks=True to resolve symlinks
+                shutil.copytree(source_dir, static_output, dirs_exist_ok=True, symlinks=False)
+
+        # Also copy node_modules from project root if it exists
+        project_root = Path(settings.BASE_DIR).parent
+        node_modules_src = project_root / "node_modules"
+        node_modules_dst = static_output / "node_modules"
+        if node_modules_src.exists() and not node_modules_dst.exists():
+            logger.info("Copying node_modules from %s", node_modules_src)
+            # Only copy htmx.org to reduce size
+            htmx_src = node_modules_src / "htmx.org"
+            if htmx_src.exists():
+                shutil.copytree(htmx_src, node_modules_dst / "htmx.org", symlinks=False)
 
         logger.info("Static files copied to %s", static_output)
 
@@ -392,5 +407,20 @@ class Command(BaseCommand):
                 output_path,
                 base_path,
             ))
+
+        return pages
+
+    def _collect_404_pages(self, output_dir, base_path):
+        """Collect 404 page generation task."""
+        pages = []
+
+        context = {}
+
+        pages.append((
+            "novels/404.html",
+            context,
+            str(output_dir / "404.html"),
+            base_path,
+        ))
 
         return pages

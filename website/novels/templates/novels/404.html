@@ -1,4 +1,5 @@
 {% extends "novels/base.html" %}
+{% load novel_tags %}
 
 {% block title %}404 - {{ TOML.site.name }}{% endblock %}
 
@@ -17,9 +18,16 @@
   <p class="text-sm text-gray-500 dark:text-gray-500 mb-8 max-w-md">
     该页面可能已被省略、移动或从未存在。请检查 URL 是否正确，或返回首页浏览。
   </p>
+  {% if static_mode %}
+  <a href="{% page_url 'index.html' %}"
+     class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors font-medium">
+    返回首页
+  </a>
+  {% else %}
   <a href="{% url 'novels:index' %}"
      class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow transition-colors font-medium">
     返回首页
   </a>
+  {% endif %}
 </div>
 {% endblock %}
