@@ -4,8 +4,8 @@ from django.core.management import call_command
 from django.db import connection
 from io import StringIO
 
-from .models import Novel, Author, Tag, Contest
-from .mappings import GENRE, STATUS, PTYPE
+from novels.models import Novel, Author, Tag, Contest
+from novels.mappings import GENRE, STATUS, PTYPE
 
 
 class ModelTests(TestCase):
@@ -431,3 +431,182 @@ class ManagementCommandTests(TestCase):
         with self.assertRaises(SystemExit) as cm:
             call_command("serve_static", "--help", stdout=out)
         self.assertEqual(cm.exception.code, 0)
+
+
+class TemplateTagTests(TestCase):
+    def test_truncate_cjk_ascii(self):
+        from novels.templatetags.novel_tags import truncate_cjk
+        self.assertEqual(truncate_cjk("hello", 10), "hello")
+
+    def test_truncate_cjk_cjk(self):
+        from novels.templatetags.novel_tags import truncate_cjk
+        result = truncate_cjk("你好世界test", 10)
+        self.assertEqual(result, "你好世界t…")
+
+    def test_truncate_cjk_none(self):
+        from novels.templatetags.novel_tags import truncate_cjk
+        self.assertEqual(truncate_cjk(None, 10), "")
+
+    def test_truncate_cjk_exact_width(self):
+        from novels.templatetags.novel_tags import truncate_cjk
+        self.assertEqual(truncate_cjk("你好", 4), "你好")
+
+    def test_cover_url_none(self):
+        from novels.templatetags.novel_tags import cover_url
+        result = cover_url(None)
+        self.assertIn("defaultNew.jpg", result)
+
+    def test_cover_url_suffix(self):
+        from novels.templatetags.novel_tags import cover_url
+        result = cover_url("test.jpg")
+        self.assertTrue(result.endswith("test.jpg"))
+
+    def test_cover_url_http_upgrade(self):
+        from novels.templatetags.novel_tags import cover_url
+        result = cover_url("http://example.com/img.jpg")
+        self.assertTrue(result.startswith("https://"))
+
+    def test_humanize_num_none(self):
+        from novels.templatetags.novel_tags import humanize_num
+        self.assertEqual(humanize_num(None), "-")
+
+    def test_humanize_num_small(self):
+        from novels.templatetags.novel_tags import humanize_num
+        self.assertEqual(humanize_num(999), "999")
+
+    def test_humanize_num_large(self):
+        from novels.templatetags.novel_tags import humanize_num
+        self.assertEqual(humanize_num(15000), "1.5w+")
+
+    def test_pill_bg_none(self):
+        from novels.templatetags.novel_tags import pill_bg
+        self.assertEqual(pill_bg(None, "tag"), "")
+
+    def test_pill_bg_valid(self):
+        from novels.templatetags.novel_tags import pill_bg
+        from novels.models import Tag
+        tag = Tag(id=1, name="test")
+        result = pill_bg(tag, "tag")
+        self.assertTrue(result.startswith("hsl("))
+
+    def test_detail_url_none(self):
+        from novels.templatetags.novel_tags import detail_url
+        self.assertEqual(detail_url(None, "novels:tag_detail"), "")
+
+    def test_detail_url_valid(self):
+        from novels.templatetags.novel_tags import detail_url
+        from novels.models import Tag
+        tag = Tag(id=1, name="test")
+        result = detail_url(tag, "novels:tag_detail")
+        self.assertIn("/tags/1/", result)
+
+    def test_get_attr_valid(self):
+        from novels.templatetags.novel_tags import get_attr
+        from novels.models import Author
+        author = Author(id=1, name="Test")
+        self.assertEqual(get_attr(author, "name"), "Test")
+
+    def test_get_attr_none(self):
+        from novels.templatetags.novel_tags import get_attr
+        self.assertEqual(get_attr(None, "name"), "")
+
+
+class SearchBoundaryTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = Author.objects.create(name="Test Author")
+        cls.novel = Novel.objects.create(
+            id=9001,
+            title="Search Test Novel",
+            author=cls.author,
+            genre=GENRE.enum.MAGIC.value,
+            status=STATUS.enum.FINISHED.value,
+            ptype=PTYPE.enum.FREE.value,
+        )
+
+    def test_search_empty_query(self):
+        response = self.client.get(reverse("novels:index"), {"q": ""})
+        self.assertEqual(response.status_code, 200)
+
+    def test_search_whitespace_only(self):
+        response = self.client.get(reverse("novels:index"), {"q": "   "})
+        self.assertEqual(response.status_code, 200)
+
+    def test_search_special_chars(self):
+        response = self.client.get(reverse("novels:index"), {"q": "<script>alert(1)</script>"})
+        self.assertEqual(response.status_code, 200)
+        # Django auto-escapes HTML, so check for escaped version
+        self.assertContains(response, "&lt;script&gt;")
+
+    def test_search_sql_injection(self):
+        response = self.client.get(reverse("novels:index"), {"q": "'; DROP TABLE novels;--"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_search_found(self):
+        response = self.client.get(reverse("novels:index"), {"q": "Search Test"})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Search Test Novel")
+
+    def test_search_not_found(self):
+        response = self.client.get(reverse("novels:index"), {"q": "nonexistent_xyz"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_author_search_empty(self):
+        response = self.client.get(reverse("novels:authors"), {"q": ""})
+        self.assertEqual(response.status_code, 200)
+
+    def test_filter_invalid_value(self):
+        response = self.client.get(reverse("novels:index"), {"genre": "abc"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_filter_negative_value(self):
+        response = self.client.get(reverse("novels:index"), {"genre": "-1"})
+        self.assertEqual(response.status_code, 200)
+
+
+class PaginationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.author = Author.objects.create(name="Pagination Author")
+        for i in range(50):
+            Novel.objects.create(
+                id=8000 + i,
+                title=f"Pagination Novel {i}",
+                author=cls.author,
+                genre=GENRE.enum.MAGIC.value,
+                status=STATUS.enum.FINISHED.value,
+                ptype=PTYPE.enum.FREE.value,
+                click_num=100 * i,
+            )
+
+    def test_first_page(self):
+        response = self.client.get(reverse("novels:index"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_second_page(self):
+        response = self.client.get(reverse("novels:index"), {"page": "2"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_last_page(self):
+        response = self.client.get(reverse("novels:index"), {"page": "3"})
+        self.assertEqual(response.status_code, 200)
+
+    def test_page_beyond_last(self):
+        response = self.client.get(reverse("novels:index"), {"page": "999"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_page_zero(self):
+        response = self.client.get(reverse("novels:index"), {"page": "0"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_page_negative(self):
+        response = self.client.get(reverse("novels:index"), {"page": "-1"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_page_not_a_number(self):
+        response = self.client.get(reverse("novels:index"), {"page": "abc"})
+        self.assertEqual(response.status_code, 404)
+
+    def test_rank_pagination(self):
+        response = self.client.get(reverse("novels:rank"), {"page": "1"})
+        self.assertEqual(response.status_code, 200)

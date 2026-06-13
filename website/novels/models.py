@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import F
 
 from .mappings import GENRE, STATUS, PTYPE
 
@@ -77,7 +78,7 @@ class Novel(models.Model):
     tags = models.ManyToManyField(Tag, blank=True, related_name="novels")
 
     class Meta:
-        ordering = ["-last_update"]
+        ordering = [F("last_update").desc(nulls_last=True)]
         indexes = [
             models.Index(fields=["genre", "status"]),
             models.Index(fields=["has_banner", "-last_update"]),
