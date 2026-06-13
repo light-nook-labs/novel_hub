@@ -110,6 +110,31 @@ novel_hub/
 - **Cover URL**: Stored as suffix, reconstructed via `cover_url` filter
 - **Cover compression**: `to_django_dict()` strips prefix (`http://rs.sfacg.com/web/novel/images/NovelCover/Big/`), default cover → `None`
 
+## Task System
+
+Task table tracks novels that need attention (duplicate covers, data issues).
+
+### Priority Logic
+
+| Priority | Condition |
+|----------|-----------|
+| `urgent` | Status is `断更A` / `完结A` |
+| `urgent` | Meets A-status criteria: `has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >= 1w` OR `praise >= 1w` |
+| `default` | Everything else |
+
+### Commands
+
+```bash
+uv run python manage.py fill_tasks              # Create tasks for duplicate covers
+uv run python manage.py fill_tasks --dry-run    # Preview without creating
+```
+
+### Workflow
+
+1. `fill_tasks` finds novels sharing the same cover (excluding None)
+2. Classifies each novel as urgent or default based on priority logic
+3. Creates Task entries with OneToOne link to Novel
+
 ## Spider Rules
 
 - CSS selectors/xpaths must NOT be modified
