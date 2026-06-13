@@ -683,12 +683,13 @@ class DashboardView(TemplateView):
         status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
         status_data = [status_stats.get(i, 0) for i in range(2, 8)]
 
-        fig = go.Figure(data=[go.Bar(
-            x=status_labels, y=status_data,
-            marker_color=colors[:len(status_labels)],
-            text=status_data, textposition="outside",
+        fig = go.Figure(data=[go.Pie(
+            labels=status_labels, values=status_data, hole=0.5,
+            marker_colors=colors,
+            textinfo="label+percent", textposition="outside",
+            textfont=dict(size=11),
         )])
-        fig.update_layout(**_layout(300), xaxis=dict(tickangle=-30))
+        fig.update_layout(**_layout(320), showlegend=False)
         ctx["chart_status"] = _to_html(fig)
 
         # 3. Top 15 tags (horizontal bar)
@@ -705,7 +706,10 @@ class DashboardView(TemplateView):
             marker_color=amber,
             text=tag_data[::-1], textposition="outside",
         )])
-        fig.update_layout(**_layout(380), yaxis=dict(autorange="reversed"))
+        fig.update_layout(**_layout(380),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
         ctx["chart_tags"] = _to_html(fig)
 
         # 4. Top 10 authors by total clicks
@@ -727,7 +731,10 @@ class DashboardView(TemplateView):
             marker_color=orange, name="总点击",
             text=[f"{c/10000:.0f}w" for c in author_clicks[::-1]], textposition="outside",
         ))
-        fig.update_layout(**_layout(380), yaxis=dict(autorange="reversed"), xaxis=dict(tickformat=".2s"))
+        fig.update_layout(**_layout(380),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", tickformat=".2s", gridcolor="rgba(128,128,128,0.2)"),
+        )
         ctx["chart_authors"] = _to_html(fig)
 
         # 5. Click vs Like scatter (sample for performance)
@@ -804,7 +811,10 @@ class DashboardView(TemplateView):
             marker_color=colors[:len(contest_labels)],
             text=contest_data, textposition="outside",
         )])
-        fig.update_layout(**_layout(280), xaxis=dict(tickangle=-30))
+        fig.update_layout(**_layout(280),
+            xaxis=dict(tickangle=-30),
+            yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
         ctx["chart_contests"] = _to_html(fig)
 
         return ctx
