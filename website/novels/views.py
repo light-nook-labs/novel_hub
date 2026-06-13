@@ -614,23 +614,45 @@ class AboutView(TemplateView):
 # ── Stats / Dashboard ────────────────────────────────────────────────
 
 
-from django.http import JsonResponse
+class DashboardView(TemplateView):
+    template_name = "novels/dashboard.html"
 
+    def get_context_data(self, **kwargs):
+        import plotly.graph_objects as go
+        from django.db.models import Count, Avg, Sum, Q, F
 
-class StatsAPIView(TemplateView):
-    """JSON API for chart data."""
+        ctx = super().get_context_data(**kwargs)
 
-    def get(self, request, *args, **kwargs):
-        data = cache.get("stats_api_data")
-        if data is None:
-            data = self._build_stats()
-            cache.set("stats_api_data", data, timeout=300)
-        return JsonResponse(data)
+        # Summary
+        ctx["novel_count"] = Novel.objects.count()
+        ctx["author_count"] = Author.objects.count()
+        ctx["tag_count"] = Tag.objects.count()
+        ctx["contest_count"] = Contest.objects.count()
 
-    def _build_stats(self):
-        from django.db.models import Count, Sum, Avg, Q
+        # Colors
+        amber = "#f59e0b"
+        orange = "#f97316"
+        rose = "#f43f5e"
+        colors = [
+            "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#8b5cf6",
+            "#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#84cc16",
+            "#fbbf24", "#fb923c", "#f87171", "#f472b6", "#a78bfa",
+        ]
 
-        # Genre distribution
+        def _layout(height=300, **kwargs):
+            return dict(
+                margin=dict(t=20, b=30, l=30, r=20),
+                height=height,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(size=12),
+                **kwargs,
+            )
+
+        def _to_html(fig):
+            return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+
+        # 1. Genre distribution (sunburst-like donut)
         genre_stats = dict(
             Novel.objects.values_list("genre")
             .annotate(c=Count("id"))
@@ -639,7 +661,16 @@ class StatsAPIView(TemplateView):
         genre_labels = [GENRE.get_zh(i) for i in range(2, 11)]
         genre_data = [genre_stats.get(i, 0) for i in range(2, 11)]
 
-        # Status distribution
+        fig = go.Figure(data=[go.Pie(
+            labels=genre_labels, values=genre_data, hole=0.5,
+            marker_colors=colors,
+            textinfo="label+percent", textposition="outside",
+            textfont=dict(size=11),
+        )])
+        fig.update_layout(**_layout(320), showlegend=False)
+        ctx["chart_genre"] = _to_html(fig)
+
+        # 2. Status distribution
         status_stats = dict(
             Novel.objects.values_list("status")
             .annotate(c=Count("id"))
@@ -648,7 +679,80 @@ class StatsAPIView(TemplateView):
         status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
         status_data = [status_stats.get(i, 0) for i in range(2, 8)]
 
-        # Ptype distribution
+        fig = go.Figure(data=[go.Bar(
+            x=status_labels, y=status_data,
+            marker_color=colors[:len(status_labels)],
+            text=status_data, textposition="outside",
+        )])
+        fig.update_layout(**_layout(300), xaxis=dict(tickangle=-30))
+        ctx["chart_status"] = _to_html(fig)
+
+        # 3. Top 15 tags (horizontal bar)
+        top_tags = (
+            Tag.objects.annotate(novel_count=Count("novels"))
+            .filter(novel_count__gt=0)
+            .order_by("-novel_count")[:15]
+        )
+        tag_labels = [t.name for t in top_tags]
+        tag_data = [t.novel_count for t in top_tags]
+
+        fig = go.Figure(data=[go.Bar(
+            y=tag_labels[::-1], x=tag_data[::-1], orientation="h",
+            marker_color=amber,
+            text=tag_data[::-1], textposition="outside",
+        )])
+        fig.update_layout(**_layout(380), yaxis=dict(autorange="reversed"))
+        ctx["chart_tags"] = _to_html(fig)
+
+        # 4. Top 10 authors by total clicks
+        top_authors = (
+            Author.objects.annotate(
+                novel_count=Count("novels"),
+                total_click=Sum("novels__click_num"),
+            )
+            .filter(novel_count__gt=0)
+            .order_by("-total_click")[:10]
+        )
+        author_labels = [a.name[:8] for a in top_authors]
+        author_clicks = [a.total_click or 0 for a in top_authors]
+        author_novels = [a.novel_count for a in top_authors]
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            y=author_labels[::-1], x=author_clicks[::-1], orientation="h",
+            marker_color=orange, name="总点击",
+            text=[f"{c/10000:.0f}w" for c in author_clicks[::-1]], textposition="outside",
+        ))
+        fig.update_layout(**_layout(380), yaxis=dict(autorange="reversed"), xaxis=dict(tickformat=".2s"))
+        ctx["chart_authors"] = _to_html(fig)
+
+        # 5. Click vs Like scatter (sample for performance)
+        from django.db.models.functions import Greatest
+        sample_novels = (
+            Novel.objects.filter(click_num__gt=0, like_num__gt=0)
+            .values("click_num", "like_num", "title", "genre")
+            [:2000]
+        )
+        scatter_x = [n["click_num"] for n in sample_novels]
+        scatter_y = [n["like_num"] for n in sample_novels]
+        scatter_text = [n["title"][:20] for n in sample_novels]
+        scatter_color = [n["genre"] for n in sample_novels]
+
+        fig = go.Figure(data=[go.Scatter(
+            x=scatter_x, y=scatter_y, mode="markers",
+            marker=dict(
+                size=5, color=scatter_color, colorscale="YlOrRd",
+                opacity=0.6, line=dict(width=0),
+            ),
+            text=scatter_text, hovertemplate="%{text}<br>点击: %{x}<br>收藏: %{y}",
+        )])
+        fig.update_layout(**_layout(350),
+            xaxis=dict(title="点击", type="log", gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(title="收藏", type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_scatter"] = _to_html(fig)
+
+        # 6. Ptype distribution
         ptype_stats = dict(
             Novel.objects.values_list("ptype")
             .annotate(c=Count("id"))
@@ -657,52 +761,46 @@ class StatsAPIView(TemplateView):
         ptype_labels = [PTYPE.get_zh(i) for i in range(2, 5)]
         ptype_data = [ptype_stats.get(i, 0) for i in range(2, 5)]
 
-        # Top 10 authors by novel count
-        top_authors = (
-            Author.objects.annotate(novel_count=Count("novels"))
-            .order_by("-novel_count")[:10]
+        fig = go.Figure(data=[go.Pie(
+            labels=ptype_labels, values=ptype_data,
+            marker_colors=[amber, rose, "#6366f1"],
+            textinfo="label+percent", textposition="outside",
+        )])
+        fig.update_layout(**_layout(300), showlegend=False)
+        ctx["chart_ptype"] = _to_html(fig)
+
+        # 7. Word count distribution (histogram)
+        word_stats = (
+            Novel.objects.filter(word_num__gt=0)
+            .values("word_num")
         )
-        author_labels = [a.name for a in top_authors]
-        author_data = [a.novel_count for a in top_authors]
+        word_data = [n["word_num"] for n in word_stats]
 
-        # Top 10 novels by clicks
-        top_novels = Novel.objects.order_by("-click_num")[:10]
-        novel_labels = [n.title[:15] for n in top_novels]
-        novel_data = [n.click_num or 0 for n in top_novels]
+        fig = go.Figure(data=[go.Histogram(
+            x=word_data, nbinsx=50,
+            marker_color=amber, opacity=0.8,
+        )])
+        fig.update_layout(**_layout(280),
+            xaxis=dict(title="字数", gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_word_dist"] = _to_html(fig)
 
-        # Task status distribution
-        task_stats = dict(
-            Novel.task.field.related_model.objects.values_list("status")
-            .annotate(c=Count("id"))
-            .values_list("status", "c")
-        ) if hasattr(Novel, "task") else {}
+        # 8. Top contests
+        top_contests = (
+            Contest.objects.annotate(novel_count=Count("novels"))
+            .filter(novel_count__gt=0)
+            .order_by("-novel_count")[:8]
+        )
+        contest_labels = [c.name[:15] for c in top_contests]
+        contest_data = [c.novel_count for c in top_contests]
 
-        # Summary
-        total_novels = Novel.objects.count()
-        total_authors = Author.objects.count()
-        total_tags = Tag.objects.count()
-        total_contests = Contest.objects.count()
-        total_tasks = sum(task_stats.values())
+        fig = go.Figure(data=[go.Bar(
+            x=contest_labels, y=contest_data,
+            marker_color=colors[:len(contest_labels)],
+            text=contest_data, textposition="outside",
+        )])
+        fig.update_layout(**_layout(280), xaxis=dict(tickangle=-30))
+        ctx["chart_contests"] = _to_html(fig)
 
-        return {
-            "summary": {
-                "novels": total_novels,
-                "authors": total_authors,
-                "tags": total_tags,
-                "contests": total_contests,
-                "tasks": total_tasks,
-            },
-            "genre": {"labels": genre_labels, "data": genre_data},
-            "status": {"labels": status_labels, "data": status_data},
-            "ptype": {"labels": ptype_labels, "data": ptype_data},
-            "top_authors": {"labels": author_labels, "data": author_data},
-            "top_novels": {"labels": novel_labels, "data": novel_data},
-            "tasks": {
-                "labels": ["urgent", "default"],
-                "data": [task_stats.get("u", 0), task_stats.get("d", 0)],
-            },
-        }
-
-
-class DashboardView(TemplateView):
-    template_name = "novels/dashboard.html"
+        return ctx
