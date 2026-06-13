@@ -649,10 +649,14 @@ class DashboardView(TemplateView):
                 **kwargs,
             )
 
-        def _to_html(fig):
-            return fig.to_html(full_html=False, include_plotlyjs=False, config={"displayModeBar": False})
+        def _to_html(fig, include_js=False):
+            return fig.to_html(
+                full_html=False,
+                include_plotlyjs=include_js,
+                config={"displayModeBar": False, "responsive": True},
+            )
 
-        # 1. Genre distribution (sunburst-like donut)
+        # 1. Genre distribution (sunburst-like donut) - include Plotly.js here
         genre_stats = dict(
             Novel.objects.values_list("genre")
             .annotate(c=Count("id"))
@@ -668,7 +672,7 @@ class DashboardView(TemplateView):
             textfont=dict(size=11),
         )])
         fig.update_layout(**_layout(320), showlegend=False)
-        ctx["chart_genre"] = _to_html(fig)
+        ctx["chart_genre"] = _to_html(fig, include_js=True)
 
         # 2. Status distribution
         status_stats = dict(
