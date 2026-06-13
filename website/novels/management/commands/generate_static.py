@@ -130,6 +130,9 @@ class Command(BaseCommand):
         # 4. Rank pages (100 pages)
         pages.extend(self._collect_rank_pages(output_dir, base_path))
 
+        # 5. Banner pages (all pages)
+        pages.extend(self._collect_banner_pages(output_dir, base_path))
+
         logger.info("Generating %d static pages with %d workers...", len(pages), workers)
 
         # Generate pages using multiprocessing
@@ -339,6 +342,52 @@ class Command(BaseCommand):
 
             pages.append((
                 "novels/rank.html",
+                context,
+                output_path,
+                base_path,
+            ))
+
+        return pages
+
+    def _collect_banner_pages(self, output_dir, base_path):
+        """Collect banner pages generation tasks (all pages)."""
+        pages = []
+        per_page = 12
+
+        # Get total banner count
+        total_banners = Novel.objects.filter(has_banner=True).count()
+        total_pages = (total_banners + per_page - 1) // per_page
+
+        for page_num in range(1, total_pages + 1):
+            start = (page_num - 1) * per_page
+            end = start + per_page
+
+            novels = (
+                Novel.objects.filter(has_banner=True)
+                .select_related("author", "contest")
+                .prefetch_related("tags")
+                .order_by("-last_update")
+            )
+
+            paginator = SimplePaginator(total_banners, per_page)
+            page_obj = SimplePage(page_num, paginator)
+
+            page_novels = list(novels[start:end])
+
+            context = {
+                "novels": page_novels,
+                "page_obj": page_obj,
+                "is_paginated": total_pages > 1,
+                "querystring": "",
+            }
+
+            if page_num == 1:
+                output_path = str(output_dir / "banners" / "index.html")
+            else:
+                output_path = str(output_dir / "banners" / f"page{page_num}.html")
+
+            pages.append((
+                "novels/banners.html",
                 context,
                 output_path,
                 base_path,

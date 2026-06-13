@@ -1,3 +1,4 @@
+{% load novel_tags %}
 {# Static mode: theme toggle + simplified mobile menu + GitHub #}
 <div class="flex items-center gap-2">
   <button id="theme-toggle" class="btn-icon" aria-label="切换主题">
@@ -9,9 +10,9 @@
       {% include "icons/menu.html" %}
     </button>
     <div id="menu-dropdown" onclick="event.stopPropagation()" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-      <a href="{% url 'novels:rank' %}" class="dropdown-item rounded-t-lg">排行榜</a>
-      <a href="{% url 'novels:authors' %}" class="dropdown-item">作者</a>
-      <a href="{% url 'novels:banners' %}" class="dropdown-item rounded-b-lg">背投</a>
+      <a href="{% page_url 'rank/index.html' %}" class="dropdown-item rounded-t-lg">排行榜</a>
+      <a href="{% page_url 'authors/index.html' %}" class="dropdown-item">作者</a>
+      <a href="{% page_url 'about/index.html' %}" class="dropdown-item rounded-b-lg">关于</a>
     </div>
   </div>
   <a href="{{ TOML.site.github_url }}" target="_blank" rel="noopener noreferrer"
