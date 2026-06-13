@@ -187,7 +187,8 @@ class Command(BaseCommand):
         # Get banner novels
         logger.info("Filtering banner novels...")
         banner_novels = [n for n in all_novels if n.has_banner]
-        banner_novels.sort(key=lambda n: n.last_update or "", reverse=True)
+        from datetime import datetime
+        banner_novels.sort(key=lambda n: n.last_update or datetime.min, reverse=True)
 
         # Get latest banner
         latest_banner = banner_novels[0] if banner_novels else None
@@ -203,10 +204,37 @@ class Command(BaseCommand):
                 total_praise=Sum("novels__praise_num"),
                 total_review=Sum("novels__review_num"),
                 total_comment=Sum("novels__comment_num"),
+                banner_count=Count("novels", filter=models.Q(novels__has_banner=True)),
                 latest_update=Max("novels__last_update"),
             )
             .order_by("-total_click", "-novel_count")
         )
+
+        # Fetch top novel for each author using ORM Window function
+        logger.info("Fetching top novels for authors...")
+        from django.db.models import Window, F
+        from django.db.models.functions import RowNumber
+
+        author_ids = [a.id for a in all_authors]
+        ranked = (
+            Novel.objects.filter(author_id__in=author_ids)
+            .annotate(
+                rn=Window(
+                    expression=RowNumber(),
+                    partition_by=[F("author_id")],
+                    order_by=F("click_num").desc(nulls_last=True),
+                )
+            )
+            .filter(rn=1)
+            .values("id", "title", "click_num", "author_id")
+        )
+        top_novels_map = {row["author_id"]: row for row in ranked}
+
+        for author in all_authors:
+            top = top_novels_map.get(author.id, {})
+            author.top_novel_id = top.get("id")
+            author.top_novel_title = top.get("title")
+            author.top_novel_click = top.get("click_num")
 
         # Get enum choices
         def _choices(mapping):

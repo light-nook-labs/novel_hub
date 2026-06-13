@@ -1,7 +1,7 @@
 from django.views.generic import ListView, DetailView, TemplateView
 from django.conf import settings
 from django.core.cache import cache
-from django.db import connection, models
+from django.db import models
 
 from .models import Novel, Author, Tag, Contest
 from .mappings import GENRE, STATUS, PTYPE
@@ -258,32 +258,28 @@ class AuthorListView(ListView):
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()
 
-        # Fetch top novel for each author on current page (single query)
+        # Fetch top novel for each author on current page
         authors = ctx.get("authors", [])
         if authors:
             author_ids = [a.id for a in authors]
             from django.db.models import Window, F
             from django.db.models.functions import RowNumber
 
-            # Get top novel per author using raw SQL (window function)
-            top_novels = {}
-            with connection.cursor() as cursor:
-                cursor.execute("""
-                    SELECT id, title, click_num, author_id
-                    FROM (
-                        SELECT id, title, click_num, author_id,
-                               ROW_NUMBER() OVER (PARTITION BY author_id ORDER BY click_num DESC NULLS LAST) as rn
-                        FROM novels_novel
-                        WHERE author_id = ANY(%s)
-                    ) ranked
-                    WHERE rn = 1
-                """, [author_ids])
-                for row in cursor.fetchall():
-                    top_novels[row[3]] = {
-                        "id": row[0],
-                        "title": row[1],
-                        "click_num": row[2],
-                    }
+            ranked = (
+                Novel.objects.filter(author_id__in=author_ids)
+                .annotate(
+                    rn=Window(
+                        expression=RowNumber(),
+                        partition_by=[F("author_id")],
+                        order_by=F("click_num").desc(nulls_last=True),
+                    )
+                )
+                .filter(rn=1)
+                .values("id", "title", "click_num", "author_id")
+            )
+            top_novels = {
+                row["author_id"]: row for row in ranked
+            }
 
             for author in authors:
                 top = top_novels.get(author.id, {})

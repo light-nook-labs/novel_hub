@@ -14,6 +14,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from novels.models import Author, Contest, Novel, Tag
 
@@ -56,23 +57,7 @@ class Command(BaseCommand):
         else:
             from utils.loader_sqlite import bulk_create_ignore, bulk_create_m2m
 
-        # Step 0: Delete ALL existing data (TRUNCATE for speed)
-        logger.info("Deleting all existing data...")
-        if is_postgres:
-            from django.db import connection
-
-            with connection.cursor() as cursor:
-                cursor.execute("TRUNCATE novels_novel_tags, novels_novel, novels_tag, novels_contest, novels_author CASCADE")
-        else:
-            # SQLite doesn't support TRUNCATE, use DELETE
-            Novel.tags.through.objects.all().delete()
-            Novel.objects.all().delete()
-            Tag.objects.all().delete()
-            Contest.objects.all().delete()
-            Author.objects.all().delete()
-        logger.info("All data deleted")
-
-        # Step 1: Load and validate data through Meta
+        # Step 1: Load and validate data BEFORE deleting anything
         logger.info("Loading data from %s", path)
         if path.suffix == ".csv":
             df = loader.load_csv(path)
@@ -80,83 +65,107 @@ class Command(BaseCommand):
             df = loader.load_jsonl(path)
         logger.info("Loaded %d records", len(df))
 
+        if df.empty:
+            raise CommandError("No records found in dataset")
+
         # Step 2: Validate through Meta model
         logger.info("Validating data through Meta model...")
         meta_list = loader.df_to_meta_list(df)
         logger.info("Validated %d records", len(meta_list))
 
-        # Step 3: Create related tables
-        logger.info("Creating authors...")
-        authors = list({m.author for m in meta_list if m.author})
-        author_count = bulk_create_ignore(
-            Author, [Author(name=a) for a in progress(authors, desc="Authors")], batch_size
-        )
-        logger.info("Created %d authors", author_count)
+        if not meta_list:
+            raise CommandError("No valid records after validation")
 
-        logger.info("Creating tags...")
-        tags = list({t for m in meta_list for t in m.tags})
-        tag_count = bulk_create_ignore(
-            Tag, [Tag(name=t) for t in progress(tags, desc="Tags")], batch_size
-        )
-        logger.info("Created %d tags", tag_count)
+        # Step 3: Delete ALL existing data and insert within a transaction
+        logger.info("Starting database initialization (transaction)...")
+        with transaction.atomic():
+            # Delete existing data
+            logger.info("Deleting all existing data...")
+            if is_postgres:
+                from django.db import connection
 
-        logger.info("Creating contests...")
-        contests = list({m.contest for m in meta_list if m.contest})
-        contest_count = bulk_create_ignore(
-            Contest, [Contest(name=c) for c in progress(contests, desc="Contests")], batch_size
-        )
-        logger.info("Created %d contests", contest_count)
+                with connection.cursor() as cursor:
+                    cursor.execute("TRUNCATE novels_novel_tags, novels_novel, novels_tag, novels_contest, novels_author CASCADE")
+            else:
+                Novel.tags.through.objects.all().delete()
+                Novel.objects.all().delete()
+                Tag.objects.all().delete()
+                Contest.objects.all().delete()
+                Author.objects.all().delete()
+            logger.info("All data deleted")
 
-        # Step 4: Build FK mapping dictionaries
-        logger.info("Building FK mappings...")
-        author_map = {a.name: a.id for a in Author.objects.all()}
-        contest_map = {c.name: c.id for c in Contest.objects.all()}
-
-        # Step 5: Create Novel objects
-        logger.info("Creating novels...")
-        novels = []
-        for meta in progress(meta_list, desc="Novels"):
-            django_data = meta.to_django_dict()
-            novels.append(
-                Novel(
-                    id=django_data["id"],
-                    title=django_data["title"],
-                    author_id=author_map.get(meta.author),
-                    contest_id=contest_map.get(meta.contest) if meta.contest else None,
-                    genre=django_data["genre"],
-                    status=django_data["status"],
-                    ptype=django_data["ptype"],
-                    has_banner=django_data["has_banner"],
-                    word_num=django_data["word_num"],
-                    click_num=django_data["click_num"],
-                    praise_num=django_data["praise_num"],
-                    like_num=django_data["like_num"],
-                    review_num=django_data["review_num"],
-                    comment_num=django_data["comment_num"],
-                    cover=django_data["cover"],
-                    last_update=django_data["last_update"],
-                )
+            # Step 4: Create related tables
+            logger.info("Creating authors...")
+            authors = list({m.author for m in meta_list if m.author})
+            author_count = bulk_create_ignore(
+                Author, [Author(name=a) for a in progress(authors, desc="Authors")], batch_size
             )
-        novel_count = bulk_create_ignore(Novel, novels, batch_size)
-        logger.info("Created %d novels", novel_count)
+            logger.info("Created %d authors", author_count)
 
-        # Step 6: Create M2M relationships (tags)
-        logger.info("Creating novel-tag relationships...")
-        tag_map = {t.name: t.id for t in Tag.objects.all()}
-        novel_tags = []
-        for meta in progress(meta_list, desc="Tag relations"):
-            for tag_name in meta.tags:
-                if tag_name in tag_map:
-                    novel_tags.append(
-                        Novel.tags.through(novel_id=meta.nid, tag_id=tag_map[tag_name])
+            logger.info("Creating tags...")
+            tags = list({t for m in meta_list for t in m.tags})
+            tag_count = bulk_create_ignore(
+                Tag, [Tag(name=t) for t in progress(tags, desc="Tags")], batch_size
+            )
+            logger.info("Created %d tags", tag_count)
+
+            logger.info("Creating contests...")
+            contests = list({m.contest for m in meta_list if m.contest})
+            contest_count = bulk_create_ignore(
+                Contest, [Contest(name=c) for c in progress(contests, desc="Contests")], batch_size
+            )
+            logger.info("Created %d contests", contest_count)
+
+            # Step 5: Build FK mapping dictionaries
+            logger.info("Building FK mappings...")
+            author_map = {a.name: a.id for a in Author.objects.all()}
+            contest_map = {c.name: c.id for c in Contest.objects.all()}
+
+            # Step 6: Create Novel objects
+            logger.info("Creating novels...")
+            novels = []
+            for meta in progress(meta_list, desc="Novels"):
+                django_data = meta.to_django_dict()
+                novels.append(
+                    Novel(
+                        id=django_data["id"],
+                        title=django_data["title"],
+                        author_id=author_map.get(meta.author),
+                        contest_id=contest_map.get(meta.contest) if meta.contest else None,
+                        genre=django_data["genre"],
+                        status=django_data["status"],
+                        ptype=django_data["ptype"],
+                        has_banner=django_data["has_banner"],
+                        word_num=django_data["word_num"],
+                        click_num=django_data["click_num"],
+                        praise_num=django_data["praise_num"],
+                        like_num=django_data["like_num"],
+                        review_num=django_data["review_num"],
+                        comment_num=django_data["comment_num"],
+                        cover=django_data["cover"],
+                        last_update=django_data["last_update"],
                     )
-        m2m_count = bulk_create_m2m(Novel.tags.through, novel_tags, batch_size)
-        logger.info("Created %d novel-tag relationships", m2m_count)
+                )
+            novel_count = bulk_create_ignore(Novel, novels, batch_size)
+            logger.info("Created %d novels", novel_count)
 
-        # Step 7: Load tasks if exists
-        tasks_path = path.parent / "tasks.csv" if path.is_dir() else None
-        if tasks_path and tasks_path.exists():
-            self._load_tasks(tasks_path)
+            # Step 7: Create M2M relationships (tags)
+            logger.info("Creating novel-tag relationships...")
+            tag_map = {t.name: t.id for t in Tag.objects.all()}
+            novel_tags = []
+            for meta in progress(meta_list, desc="Tag relations"):
+                for tag_name in meta.tags:
+                    if tag_name in tag_map:
+                        novel_tags.append(
+                            Novel.tags.through(novel_id=meta.nid, tag_id=tag_map[tag_name])
+                        )
+            m2m_count = bulk_create_m2m(Novel.tags.through, novel_tags, batch_size)
+            logger.info("Created %d novel-tag relationships", m2m_count)
+
+            # Step 8: Load tasks if exists
+            tasks_path = path.parent / "tasks.csv" if path.is_dir() else None
+            if tasks_path and tasks_path.exists():
+                self._load_tasks(tasks_path)
 
         logger.info("Database initialized successfully!")
 
