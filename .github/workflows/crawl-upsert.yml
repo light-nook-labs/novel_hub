@@ -1,0 +1,53 @@
+name: Crawl & Upsert
+
+on:
+  schedule:
+    # Run daily at 2:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      num_pages:
+        description: "Number of pages to crawl"
+        required: false
+        default: "3"
+
+jobs:
+  crawl-and-upsert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Crawl novels
+        working-directory: meta_spider
+        run: |
+          NUM_PAGES=${{ github.event.inputs.num_pages || '3' }}
+          uv run scrapy crawl meta_batch -o o.jsonl -a num=$NUM_PAGES
+
+      - name: Upsert to database
+        working-directory: website
+        run: uv run python manage.py upsert_dataset ../meta_spider/o.jsonl --batch-size 1000
+        env:
+          DB_TYPE: postgresql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: "0"
+
+      - name: Upload crawl output
+        uses: actions/upload-artifact@v4
+        with:
+          name: crawl-output
+          path: meta_spider/o.jsonl
