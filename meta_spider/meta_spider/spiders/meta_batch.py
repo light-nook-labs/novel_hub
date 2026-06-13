@@ -6,7 +6,7 @@ from urllib.parse import urlencode, urljoin
 from scrapy import Spider, Request
 from scrapy.http import HtmlResponse
 
-from models import Meta
+from utils.models import Meta
 
 
 class MetaBatchSpider(Spider):

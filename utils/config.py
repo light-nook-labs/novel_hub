@@ -1,4 +1,4 @@
-"""Shared scraper config — reads from site_config.toml."""
+"""Shared config — reads from site_config.toml."""
 
 import tomllib
 from pathlib import Path

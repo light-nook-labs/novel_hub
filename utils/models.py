@@ -22,8 +22,7 @@ class Meta(BaseModel):
     comment_num: int | None = None
     contest: str | None = None
     last_update: datetime | None = None
-    review_num: int | None
-    comment_num: int | None
+    review_num: int | None = None
     tags: list[str] = []
     cover: str | None = None
 

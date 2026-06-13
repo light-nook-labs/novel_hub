@@ -51,7 +51,7 @@ website/
         js/
             main.js         # Theme toggle, search, menu, hero bg
             banners.js      # Lightbox for banner page
-    task_runner.py          # Task table maintenance (imports scraper)
+    task_runner.py          # Task table maintenance (imports utils)
 ```
 
 ## Commands

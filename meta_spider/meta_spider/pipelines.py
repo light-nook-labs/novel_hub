@@ -3,7 +3,7 @@
 import csv
 import json
 
-from models import Meta
+from utils.models import Meta
 
 
 class CSVPipeline:

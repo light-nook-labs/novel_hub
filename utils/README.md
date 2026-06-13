@@ -1,11 +1,11 @@
-# scraper
+# utils
 
-requests-based HTTP client for sfacg.com. Shared by `meta_spider` and `website/task_runner.py`.
+Shared utilities for sfacg.com scraping and data processing. Used by `meta_spider` and `website`.
 
 ## Public API
 
 ```python
-from scraper import fetch_html, fetch_api
+from utils import fetch_html, fetch_api, Meta
 
 session = requests.Session()
 
@@ -20,10 +20,11 @@ comment = fetch_api(session, nid)
 
 | File | Purpose |
 |------|---------|
-| `__init__.py` | Exports `fetch_html`, `fetch_api` |
+| `__init__.py` | Exports `fetch_html`, `fetch_api`, `Meta` |
 | `config.py` | Reads `[scraper]` from `site_config.toml` |
 | `html.py` | `fetch_html` + lxml parsing helpers |
 | `api.py` | `fetch_api` (comment/review JSON) |
+| `models.py` | Shared Pydantic model (`Meta`) |
 
 ## Config
 

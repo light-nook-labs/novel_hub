@@ -10,7 +10,7 @@ Novel Hub — Django 6.0.5 + Tailwind CSS 4.x novel metadata website from sfacg.
 |--------|--------|---------|
 | `website/` | [website/README.md](website/README.md) | Django app, templates, data processing, SSG |
 | `meta_spider/` | [meta_spider/README.md](meta_spider/README.md) | Scrapy spider for sfacg.com |
-| `scraper/` | [scraper/README.md](scraper/README.md) | requests-based HTTP client |
+| `utils/` | [utils/README.md](utils/README.md) | Shared scraping client + Pydantic model |
 | `release/` | — | Release data (dataset/*.jsonl + tasks.csv) |
 
 ## Versioning
@@ -68,10 +68,9 @@ pnpm build
 novel_hub/
     .env                    # Environment variables (root)
     site_config.toml        # Shared config (site, pagination, scraper)
-    models.py               # Shared Pydantic model (Meta)
+    utils/                  # Shared scraping client + Pydantic model (see utils/README.md)
     website/                # Django project (see website/README.md)
     meta_spider/            # Scrapy spider (see meta_spider/README.md)
-    scraper/                # HTTP client (see scraper/README.md)
     release/                # Release data
     build/                  # Generated static site (gitignored)
 ```
@@ -102,8 +101,9 @@ novel_hub/
 
 - **Meta model is the standard**: `models.py` defines the canonical field names (`title`, `ptype`, `has_banner`). All datasets (JSONL), spider output, pandas processing, and dump/load pipelines MUST use these names. No renaming.
 - **Died status**: `连载中` + 3 months no update → `断更`
-- **Active status**: High-engagement upgrade to `断更D` / `完结F`
+- **Active status**: High-engagement upgrade to `断更A` / `完结A`
 - **Missing values**: `null`/`None` — never `0`
+- **Optional fields**: All optional fields in `models.py` MUST have default value `= None`
 - **Cover URL**: Stored as suffix, reconstructed via `cover_url` filter
 
 ## Spider Rules
