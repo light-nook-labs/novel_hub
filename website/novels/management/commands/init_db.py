@@ -156,10 +156,30 @@ class Command(BaseCommand):
             for meta in progress(meta_list, desc="Tag relations"):
                 for tag_name in meta.tags:
                     if tag_name in tag_map:
-                        novel_tags.append(
-                            Novel.tags.through(novel_id=meta.nid, tag_id=tag_map[tag_name])
-                        )
-            m2m_count = bulk_create_m2m(Novel.tags.through, novel_tags, batch_size)
+                        novel_tags.append((meta.nid, tag_map[tag_name]))
+
+            if novel_tags:
+                if is_postgres:
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        for i in range(0, len(novel_tags), batch_size):
+                            batch = novel_tags[i:i + batch_size]
+                            args_str = ",".join(
+                                cursor.mogrify("(%s,%s)", (nid, tid)).decode()
+                                for nid, tid in batch
+                            )
+                            cursor.execute(
+                                f"INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES {args_str} ON CONFLICT DO NOTHING"
+                            )
+                    m2m_count = len(novel_tags)
+                else:
+                    m2m_count = bulk_create_m2m(
+                        Novel.tags.through,
+                        [Novel.tags.through(novel_id=nid, tag_id=tid) for nid, tid in novel_tags],
+                        batch_size,
+                    )
+            else:
+                m2m_count = 0
             logger.info("Created %d novel-tag relationships", m2m_count)
 
             # Step 8: Load tasks if exists

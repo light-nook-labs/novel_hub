@@ -14,6 +14,7 @@ from pathlib import Path
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
 from novels.models import Author, Contest, Novel, Tag
 
@@ -159,20 +160,41 @@ class Command(BaseCommand):
         logger.info("Upserting novel-tag relationships...")
         tag_map = {t.name: t.id for t in Tag.objects.all()}
 
-        # Delete existing M2M relationships for affected novels
+        # Build M2M pairs
         novel_ids = [m.nid for m in meta_list]
-        deleted_count, _ = Novel.tags.through.objects.filter(novel_id__in=novel_ids).delete()
-        logger.info("Deleted %d stale novel-tag relationships", deleted_count)
-
-        # Insert new M2M relationships
         novel_tags = []
         for meta in progress(meta_list, desc="Tag relations"):
             for tag_name in meta.tags:
                 if tag_name in tag_map:
-                    novel_tags.append(
-                        Novel.tags.through(novel_id=meta.nid, tag_id=tag_map[tag_name])
+                    novel_tags.append((meta.nid, tag_map[tag_name]))
+
+        # Delete and re-insert M2M relationships in a transaction
+        with transaction.atomic():
+            deleted_count, _ = Novel.tags.through.objects.filter(novel_id__in=novel_ids).delete()
+            logger.info("Deleted %d stale novel-tag relationships", deleted_count)
+
+            if novel_tags:
+                if is_postgres:
+                    from django.db import connection
+                    with connection.cursor() as cursor:
+                        for i in range(0, len(novel_tags), batch_size):
+                            batch = novel_tags[i:i + batch_size]
+                            args_str = ",".join(
+                                cursor.mogrify("(%s,%s)", (nid, tid)).decode()
+                                for nid, tid in batch
+                            )
+                            cursor.execute(
+                                f"INSERT INTO novels_novel_tags (novel_id, tag_id) VALUES {args_str} ON CONFLICT DO NOTHING"
+                            )
+                    m2m_count = len(novel_tags)
+                else:
+                    m2m_count = bulk_create_ignore(
+                        Novel.tags.through,
+                        [Novel.tags.through(novel_id=nid, tag_id=tid) for nid, tid in novel_tags],
+                        batch_size,
                     )
-        m2m_count = bulk_create_ignore(Novel.tags.through, novel_tags, batch_size)
-        logger.info("Created %d new novel-tag relationships", m2m_count)
+            else:
+                m2m_count = 0
+            logger.info("Created %d new novel-tag relationships", m2m_count)
 
         logger.info("Dataset upserted successfully!")
