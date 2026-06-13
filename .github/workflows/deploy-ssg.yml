@@ -22,10 +22,13 @@ jobs:
           python-version: "3.13"
 
       - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: "pnpm"
 
       - name: Install pnpm
         run: npm install -g pnpm

@@ -155,3 +155,6 @@ class TaskAdmin(admin.ModelAdmin):
     search_fields = ["novel__title"]
     autocomplete_fields = ["novel"]
     readonly_fields = ["novel"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("novel")

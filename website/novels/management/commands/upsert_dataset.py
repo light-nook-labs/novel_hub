@@ -158,6 +158,13 @@ class Command(BaseCommand):
         # Step 6: Upsert M2M relationships (tags)
         logger.info("Upserting novel-tag relationships...")
         tag_map = {t.name: t.id for t in Tag.objects.all()}
+
+        # Delete existing M2M relationships for affected novels
+        novel_ids = [m.nid for m in meta_list]
+        deleted_count, _ = Novel.tags.through.objects.filter(novel_id__in=novel_ids).delete()
+        logger.info("Deleted %d stale novel-tag relationships", deleted_count)
+
+        # Insert new M2M relationships
         novel_tags = []
         for meta in progress(meta_list, desc="Tag relations"):
             for tag_name in meta.tags:

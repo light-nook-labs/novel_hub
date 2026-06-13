@@ -228,15 +228,19 @@ def df_to_meta_list(df: pd.DataFrame) -> list[Meta]:
     records = [{k: _to_python(v) for k, v in row.items()} for row in records]
 
     meta_list = []
-    errors = 0
+    failed = []
     for row in progress(records, desc="Validating Meta"):
         try:
             meta_list.append(Meta(**row))
         except Exception as e:
-            errors += 1
+            failed.append({"nid": row.get("nid"), "title": row.get("title"), "error": str(e)})
             logger.debug("Validation error for nid=%s: %s", row.get("nid"), e)
 
-    logger.info("Validated %d/%d records (%d errors)", len(meta_list), len(records), errors)
+    logger.info("Validated %d/%d records (%d errors)", len(meta_list), len(records), len(failed))
+    if failed:
+        failed_path = Path("failed_records.json")
+        pd.DataFrame(failed).to_json(failed_path, orient="records", force_ascii=False, indent=2)
+        logger.warning("Saved %d failed records to %s", len(failed), failed_path)
     return meta_list
 
 

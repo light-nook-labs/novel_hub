@@ -58,15 +58,13 @@ class NovelListView(ListView):
             from django.db.models import Q
 
             qs = qs.filter(Q(title__icontains=query) | Q(author__name__icontains=query))
-        genre = self.request.GET.get("genre")
-        status = self.request.GET.get("status")
-        ptype = self.request.GET.get("ptype")
-        if genre:
-            qs = qs.filter(genre=int(genre))
-        if status:
-            qs = qs.filter(status=int(status))
-        if ptype:
-            qs = qs.filter(ptype=int(ptype))
+        for field in ("genre", "status", "ptype"):
+            val = self.request.GET.get(field)
+            if val:
+                try:
+                    qs = qs.filter(**{field: int(val)})
+                except (ValueError, TypeError):
+                    pass
 
         sort = self.request.GET.get("sort", "")
         if sort in self.SORT_OPTIONS and sort:
@@ -127,28 +125,34 @@ class NovelDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         novel = self.object
 
-        from django.db.models import Q, Sum, Case, When, Value, IntegerField
+        # Cache rank calculation for 5 minutes
+        cache_key = f"novel_ranks_{novel.id}"
+        ranks = cache.get(cache_key)
+        if ranks is None:
+            from django.db.models import Q, Sum, Case, When, Value, IntegerField
 
-        stats = ["word_num", "click_num", "like_num", "praise_num", "review_num", "comment_num"]
-        q = Q()
-        for field in stats:
-            val = getattr(novel, field)
-            if val is not None:
-                q |= Q(**{f"{field}__gt": val})
+            stats = ["word_num", "click_num", "like_num", "praise_num", "review_num", "comment_num"]
+            q = Q()
+            for field in stats:
+                val = getattr(novel, field)
+                if val is not None:
+                    q |= Q(**{f"{field}__gt": val})
 
-        if q:
-            counts = Novel.objects.filter(q).aggregate(
-                **{f"{field}_gt": Sum(
-                    Case(
-                        When(**{f"{field}__gt": getattr(novel, field)}, then=Value(1)),
-                        default=Value(0),
-                        output_field=IntegerField(),
-                    )
-                ) for field in stats if getattr(novel, field) is not None}
-            )
-            ranks = {k.replace("_gt", ""): v + 1 for k, v in counts.items() if v is not None}
-        else:
-            ranks = {field: 1 for field in stats}
+            if q:
+                counts = Novel.objects.filter(q).aggregate(
+                    **{f"{field}_gt": Sum(
+                        Case(
+                            When(**{f"{field}__gt": getattr(novel, field)}, then=Value(1)),
+                            default=Value(0),
+                            output_field=IntegerField(),
+                        )
+                    ) for field in stats if getattr(novel, field) is not None}
+                )
+                ranks = {k.replace("_gt", ""): v + 1 for k, v in counts.items() if v is not None}
+            else:
+                ranks = {field: 1 for field in stats}
+
+            cache.set(cache_key, ranks, timeout=300)
 
         ctx["ranks"] = ranks
         return ctx

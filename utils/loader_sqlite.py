@@ -3,6 +3,8 @@
 Uses INSERT OR IGNORE for conflict handling and batch processing.
 """
 
+from django.db import transaction
+
 
 def bulk_create_ignore(model, objects: list, batch_size: int = 1000) -> int:
     """Bulk create with conflict ignoring for SQLite.
@@ -43,10 +45,7 @@ def bulk_create_m2m(through_model, objects: list, batch_size: int = 1000) -> int
 
 
 def bulk_upsert(model, objects: list, update_fields: list, batch_size: int = 1000) -> int:
-    """Bulk upsert (INSERT OR REPLACE) for SQLite.
-
-    Note: SQLite doesn't support ON CONFLICT UPDATE natively with bulk_create.
-    This uses a loop with update_or_create for correctness.
+    """Bulk upsert for SQLite using transaction.
 
     Args:
         model: Django model class.
@@ -58,11 +57,12 @@ def bulk_upsert(model, objects: list, update_fields: list, batch_size: int = 100
         Number of objects upserted.
     """
     count = 0
-    for obj in objects:
-        defaults = {f: getattr(obj, f) for f in update_fields}
-        model.objects.update_or_create(
-            id=obj.id,
-            defaults=defaults,
-        )
-        count += 1
+    with transaction.atomic():
+        for obj in objects:
+            defaults = {f: getattr(obj, f) for f in update_fields}
+            model.objects.update_or_create(
+                id=obj.id,
+                defaults=defaults,
+            )
+            count += 1
     return count
