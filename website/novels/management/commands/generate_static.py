@@ -50,10 +50,22 @@ def _precompute_all(index_pages, rank_pages, authors_pages):
     novels = list(
         Novel.objects.select_related("author", "contest")
         .only(
-            "id", "title", "ptype", "genre", "status",
-            "click_num", "word_num", "praise_num", "like_num",
-            "review_num", "comment_num", "has_banner", "cover",
-            "last_update", "author__name", "contest__name",
+            "id",
+            "title",
+            "ptype",
+            "genre",
+            "status",
+            "click_num",
+            "word_num",
+            "praise_num",
+            "like_num",
+            "review_num",
+            "comment_num",
+            "has_banner",
+            "cover",
+            "last_update",
+            "author__name",
+            "contest__name",
         )
         .order_by("-click_num")[:max_novels_needed]
     )
@@ -61,17 +73,22 @@ def _precompute_all(index_pages, rank_pages, authors_pages):
     # Prefetch tags using Django's built-in mechanism (batched)
     from django.db.models import Prefetch
     from novels.models import Tag
+
     Novel.objects.prefetch_related(
         Prefetch("tags", queryset=Tag.objects.only("id", "name"))
     ).filter(id__in=[n.id for n in novels]).all()
     # Actually use prefetch_related_objects on the already-loaded list
     from django.db.models import prefetch_related_objects
-    prefetch_related_objects(novels, Prefetch("tags", queryset=Tag.objects.only("id", "name")))
+
+    prefetch_related_objects(
+        novels, Prefetch("tags", queryset=Tag.objects.only("id", "name"))
+    )
 
     data["novels"] = novels
 
     # Authors with aggregations
     from novels.models import Author
+
     top_novel = (
         Novel.objects.filter(author=OuterRef("pk"))
         .order_by("-click_num")
@@ -91,8 +108,7 @@ def _precompute_all(index_pages, rank_pages, authors_pages):
             top_novel_id=Subquery(top_novel.values("id")),
             top_novel_title=Subquery(top_novel.values("title")),
             top_novel_click=Subquery(top_novel.values("click_num")),
-        )
-        .order_by("-total_click")[:authors_needed + 200]
+        ).order_by("-total_click")[: authors_needed + 200]
     )
     data["authors"] = authors
     data["author_count"] = len(authors)
@@ -170,7 +186,8 @@ def _render_page_static(view_cls, url, page, data):
             self.page_range = range(1, num_pages + 1)
 
     fake_page = FakePage(
-        page_num, total_pages,
+        page_num,
+        total_pages,
         page_num < total_pages,
         page_num > 1,
     )
@@ -208,6 +225,7 @@ def _render_page_static(view_cls, url, page, data):
         context["current_dir"] = "desc"
         context["page_start"] = start + 1
         from novels.views import COLUMNS
+
         context["columns"] = COLUMNS
         context["querystring"] = ""
     elif view_cls == AuthorListView:
@@ -266,8 +284,13 @@ class Command(BaseCommand):
         # Replace other absolute paths, but avoid doubling the prefix
         # Only replace href="/ that is NOT followed by {base_path}/
         import re
-        html = re.sub(r'href="/(?!' + re.escape(base_path) + r'/)', f'href="{prefix}', html)
-        html = re.sub(r'src="/(?!' + re.escape(base_path) + r'/)', f'src="{prefix}', html)
+
+        html = re.sub(
+            r'href="/(?!' + re.escape(base_path) + r"/)", f'href="{prefix}', html
+        )
+        html = re.sub(
+            r'src="/(?!' + re.escape(base_path) + r"/)", f'src="{prefix}', html
+        )
         return html
 
     @staticmethod
@@ -289,17 +312,13 @@ class Command(BaseCommand):
 
         for page in range(1, authors_pages + 1):
             fname = "index.html" if page == 1 else f"page{page}.html"
-            tasks.append(
-                (AuthorListView, "/authors/", page, Path("authors") / fname)
-            )
+            tasks.append((AuthorListView, "/authors/", page, Path("authors") / fname))
 
         banner_count = _SSG_DATA.get("banner_count", 0)
         banner_total = max(1, math.ceil(banner_count / 12))
         for page in range(1, banner_total + 1):
             fname = "index.html" if page == 1 else f"page{page}.html"
-            tasks.append(
-                (BannerListView, "/banners/", page, Path("banners") / fname)
-            )
+            tasks.append((BannerListView, "/banners/", page, Path("banners") / fname))
 
         tasks.append((AboutView, "/about/", None, Path("about") / "index.html"))
 
@@ -343,6 +362,7 @@ class Command(BaseCommand):
                 # 404 page - render directly
                 from django.template.loader import render_to_string
                 from django.test import RequestFactory
+
                 request = RequestFactory().get(url)
                 request.static_mode = True
                 html = render_to_string("novels/404.html", request=request)

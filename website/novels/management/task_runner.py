@@ -44,9 +44,7 @@ def run_tasks(limit=None, nid_min=None, nid_max=None, status=None):
     from novels.models import Author, Contest, Tag
 
     session = requests.Session()
-    tasks = Task.objects.select_related("novel").exclude(
-        status=Task.Status.FINISHED
-    )
+    tasks = Task.objects.select_related("novel").exclude(status=Task.Status.FINISHED)
     if status:
         tasks = tasks.filter(status=status)
     else:

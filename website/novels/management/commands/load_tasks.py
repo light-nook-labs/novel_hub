@@ -47,9 +47,7 @@ class Command(BaseCommand):
         with open(path) as f:
             reader = csv.DictReader(f)
             for row in reader:
-                batch.append(
-                    Task(novel_id=int(row["novel_id"]), status=row["status"])
-                )
+                batch.append(Task(novel_id=int(row["novel_id"]), status=row["status"]))
                 if len(batch) >= 5000:
                     Task.objects.bulk_create(batch, ignore_conflicts=True)
                     total += len(batch)
