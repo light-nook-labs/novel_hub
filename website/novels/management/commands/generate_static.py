@@ -170,27 +170,30 @@ class Command(BaseCommand):
         novel_count = Novel.objects.count()
         author_count = Author.objects.count()
 
-        # Get all novels with related data
+        # Get all novels with related data (only fetch needed fields)
+        logger.info("Fetching novels...")
         all_novels = list(
             Novel.objects.select_related("author", "contest")
             .prefetch_related("tags")
             .order_by("-click_num")
+            .only(
+                "id", "title", "has_banner", "word_num", "click_num",
+                "like_num", "praise_num", "review_num", "comment_num",
+                "last_update", "genre", "status", "ptype", "cover",
+                "author__name", "contest__name",
+            )
         )
 
         # Get banner novels
+        logger.info("Filtering banner novels...")
         banner_novels = [n for n in all_novels if n.has_banner]
         banner_novels.sort(key=lambda n: n.last_update or "", reverse=True)
 
         # Get latest banner
         latest_banner = banner_novels[0] if banner_novels else None
 
-        # Get all authors with annotations
-        top_novel = (
-            Novel.objects.filter(author=OuterRef("pk"))
-            .order_by("-click_num")
-            .values("id", "title", "click_num")[:1]
-        )
-
+        # Get all authors with annotations (simplified for performance)
+        logger.info("Fetching authors...")
         all_authors = list(
             Author.objects.annotate(
                 novel_count=Count("novels"),
@@ -200,11 +203,7 @@ class Command(BaseCommand):
                 total_praise=Sum("novels__praise_num"),
                 total_review=Sum("novels__review_num"),
                 total_comment=Sum("novels__comment_num"),
-                banner_count=Count("novels", filter=models.Q(novels__has_banner=True)),
                 latest_update=Max("novels__last_update"),
-                top_novel_id=Subquery(top_novel.values("id")),
-                top_novel_title=Subquery(top_novel.values("title")),
-                top_novel_click=Subquery(top_novel.values("click_num")),
             )
             .order_by("-total_click", "-novel_count")
         )

@@ -54,12 +54,19 @@ def cover_url(suffix):
     default = cfg.get("scraper", {}).get("default_cover", "defaultNew.jpg")
 
     if not suffix or suffix in ("nan", "<NA>", "None"):
-        return prefix + default
-    if suffix.startswith(prefix):
-        return suffix
-    if suffix.startswith("http"):
-        return suffix
-    return prefix + suffix
+        url = prefix + default
+    elif suffix.startswith(prefix):
+        url = suffix
+    elif suffix.startswith("http"):
+        url = suffix
+    else:
+        url = prefix + suffix
+
+    # Upgrade HTTP to HTTPS to avoid mixed content
+    if url.startswith("http://"):
+        url = "https://" + url[7:]
+
+    return url
 
 
 @register.filter
