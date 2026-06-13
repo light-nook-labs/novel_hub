@@ -52,7 +52,6 @@ class Meta(BaseModel):
     click_num: int | None
     praise_num: int | None
     like_num: int | None
-    score: float = 5.0
     ptype: str           # "免费" / "签约" / "VIP"
     contest: str
     last_update: datetime | None

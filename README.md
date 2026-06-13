@@ -97,8 +97,8 @@ uv run python manage.py migrate
 # Create superuser
 uv run python manage.py createsuperuser
 
-# Load sample data
-uv run python manage.py create_fake_data -n 1000
+# Load data (from release)
+uv run python manage.py init_db ../release/dataset/
 
 # Start development server
 uv run python manage.py runserver
@@ -124,11 +124,6 @@ docker compose down
 
 ## Data Loading
 
-For development with fake data:
-```bash
-uv run python manage.py create_fake_data -n 1000
-```
-
 For real data (from release):
 ```bash
 gh release download v1.1.0 --repo light-nook-labs/novel_hub --pattern '*.tar.gz'
@@ -136,13 +131,14 @@ tar -xzf release-v1.1.0.tar.gz
 uv run python manage.py init_db release/dataset/    # Init (deletes all data first)
 uv run python manage.py upsert_dataset release/dataset/  # Upsert (updates existing)
 uv run python manage.py dump_dataset release                 # Dump DB
+uv run python manage.py fix_m2m release/dataset/ --force    # Fix missing M2M relationships
 ```
 
 ## Data Dump
 
 Dump database to release format:
 ```bash
-uv run python manage.py dump_jsonl release
+uv run python manage.py dump_dataset release
 ```
 
 Output structure:
@@ -173,7 +169,7 @@ uv run python manage.py serve_static --port 8080
 uv run python manage.py test novels -v 2
 ```
 
-51 unit tests covering views, models, and mappings.
+97 unit tests covering views, models, mappings, template tags, commands, search, and pagination.
 
 ## License
 

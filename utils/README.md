@@ -25,6 +25,10 @@ comment = fetch_api(session, nid)
 | `html.py` | `fetch_html` + lxml parsing helpers |
 | `api.py` | `fetch_api` (comment/review JSON) |
 | `models.py` | Shared Pydantic model (`Meta`) |
+| `loader.py` | DataFrame ↔ Meta conversion, JSONL/CSV I/O |
+| `loader_postgres.py` | PostgreSQL bulk operations (raw SQL) |
+| `loader_sqlite.py` | SQLite bulk operations (ORM-based) |
+| `logger.py` | Logging utilities, `@log_time`, `progress()` |
 
 ## Config
 

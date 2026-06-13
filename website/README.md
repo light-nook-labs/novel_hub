@@ -13,19 +13,23 @@ website/
         models.py           # Novel, Author, Tag, Contest, Task
         views.py            # ListView, DetailView for all pages
         mappings.py         # GENRE/STATUS/PTYPE enum mappings
-        tests.py            # 51 unit tests
+        tests/              # 97 unit tests
+            test_models.py
+            test_views.py
+            test_tags.py
+            test_commands.py
+            test_search.py
+            test_pagination.py
         templatetags/
             novel_tags.py   # cover_url, humanize_num, pill_bg, etc.
         management/
             commands/
-                create_fake_data.py
                 init_db.py          # Init DB (deletes all data first)
                 upsert_dataset.py   # Upsert (updates existing records)
                 dump_dataset.py     # Dump DB → JSONL/CSV
+                fix_m2m.py          # Fix missing M2M tag relationships
                 generate_static.py  # SSG for GitHub Pages
                 serve_static.py     # Local preview server
-                fill_tasks.py       # Populate Task table
-                reset_psql.py       # Clear + reload PostgreSQL
         templates/novels/
             base.html
             index.html
@@ -63,9 +67,6 @@ uv run python manage.py migrate
 uv run python manage.py createsuperuser
 uv run python manage.py shell
 
-# Fake data
-uv run python manage.py create_fake_data -n 1000
-
 # Data init (deletes all data first)
 uv run python manage.py init_db ../release/dataset/                 # All files + tasks.csv
 uv run python manage.py init_db ../release/dataset/meta_01.jsonl    # Single file
@@ -76,8 +77,9 @@ uv run python manage.py upsert_dataset ../release/dataset/
 # Data dump
 uv run python manage.py dump_dataset release
 
-# PostgreSQL
-uv run python manage.py reset_psql --limit 100
+# Fix M2M relationships
+uv run python manage.py fix_m2m --check                    # Check M2M status
+uv run python manage.py fix_m2m ../release/dataset/ --force  # Rebuild M2M
 
 # Static site
 uv run python manage.py generate_static --output ../build --base-path novel_hub
