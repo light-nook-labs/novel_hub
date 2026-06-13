@@ -2,8 +2,8 @@ name: Crawl & Upsert
 
 on:
   schedule:
-    # Run daily at 2:00 UTC
-    - cron: "0 2 * * *"
+    # Run daily at 2:00 AM Shanghai (18:00 UTC)
+    - cron: "0 18 * * *"
   workflow_dispatch:
     inputs:
       num_pages:
