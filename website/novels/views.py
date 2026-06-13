@@ -609,3 +609,100 @@ class BannerListView(ListView):
 
 class AboutView(TemplateView):
     template_name = "novels/about.html"
+
+
+# ── Stats / Dashboard ────────────────────────────────────────────────
+
+
+from django.http import JsonResponse
+
+
+class StatsAPIView(TemplateView):
+    """JSON API for chart data."""
+
+    def get(self, request, *args, **kwargs):
+        data = cache.get("stats_api_data")
+        if data is None:
+            data = self._build_stats()
+            cache.set("stats_api_data", data, timeout=300)
+        return JsonResponse(data)
+
+    def _build_stats(self):
+        from django.db.models import Count, Sum, Avg, Q
+
+        # Genre distribution
+        genre_stats = dict(
+            Novel.objects.values_list("genre")
+            .annotate(c=Count("id"))
+            .values_list("genre", "c")
+        )
+        genre_labels = [GENRE.get_zh(i) for i in range(2, 11)]
+        genre_data = [genre_stats.get(i, 0) for i in range(2, 11)]
+
+        # Status distribution
+        status_stats = dict(
+            Novel.objects.values_list("status")
+            .annotate(c=Count("id"))
+            .values_list("status", "c")
+        )
+        status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
+        status_data = [status_stats.get(i, 0) for i in range(2, 8)]
+
+        # Ptype distribution
+        ptype_stats = dict(
+            Novel.objects.values_list("ptype")
+            .annotate(c=Count("id"))
+            .values_list("ptype", "c")
+        )
+        ptype_labels = [PTYPE.get_zh(i) for i in range(2, 5)]
+        ptype_data = [ptype_stats.get(i, 0) for i in range(2, 5)]
+
+        # Top 10 authors by novel count
+        top_authors = (
+            Author.objects.annotate(novel_count=Count("novels"))
+            .order_by("-novel_count")[:10]
+        )
+        author_labels = [a.name for a in top_authors]
+        author_data = [a.novel_count for a in top_authors]
+
+        # Top 10 novels by clicks
+        top_novels = Novel.objects.order_by("-click_num")[:10]
+        novel_labels = [n.title[:15] for n in top_novels]
+        novel_data = [n.click_num or 0 for n in top_novels]
+
+        # Task status distribution
+        task_stats = dict(
+            Novel.task.field.related_model.objects.values_list("status")
+            .annotate(c=Count("id"))
+            .values_list("status", "c")
+        ) if hasattr(Novel, "task") else {}
+
+        # Summary
+        total_novels = Novel.objects.count()
+        total_authors = Author.objects.count()
+        total_tags = Tag.objects.count()
+        total_contests = Contest.objects.count()
+        total_tasks = sum(task_stats.values())
+
+        return {
+            "summary": {
+                "novels": total_novels,
+                "authors": total_authors,
+                "tags": total_tags,
+                "contests": total_contests,
+                "tasks": total_tasks,
+            },
+            "genre": {"labels": genre_labels, "data": genre_data},
+            "status": {"labels": status_labels, "data": status_data},
+            "ptype": {"labels": ptype_labels, "data": ptype_data},
+            "top_authors": {"labels": author_labels, "data": author_data},
+            "top_novels": {"labels": novel_labels, "data": novel_data},
+            "tasks": {
+                "labels": ["urgent", "default"],
+                "data": [task_stats.get("u", 0), task_stats.get("d", 0)],
+            },
+        }
+
+
+class DashboardView(TemplateView):
+    template_name = "novels/dashboard.html"

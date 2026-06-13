@@ -1,0 +1,154 @@
+{% extends "novels/base.html" %}
+{% load novel_tags %}
+
+{% block title %}数据概览 - {{ TOML.site.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold">数据概览</h1>
+  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">数据可视化仪表盘</p>
+</div>
+
+<!-- Summary Cards -->
+<div id="summary-cards" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+    <div class="text-2xl font-bold text-amber-600 dark:text-amber-400" id="stat-novels">-</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">小说</div>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+    <div class="text-2xl font-bold text-amber-600 dark:text-amber-400" id="stat-authors">-</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">作者</div>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+    <div class="text-2xl font-bold text-amber-600 dark:text-amber-400" id="stat-tags">-</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">标签</div>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+    <div class="text-2xl font-bold text-amber-600 dark:text-amber-400" id="stat-contests">-</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">征文</div>
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+    <div class="text-2xl font-bold text-amber-600 dark:text-amber-400" id="stat-tasks">-</div>
+    <div class="text-sm text-gray-500 dark:text-gray-400">任务</div>
+  </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Genre Distribution -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">分类分布</h3>
+    <canvas id="chart-genre" height="200"></canvas>
+  </div>
+
+  <!-- Status Distribution -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">状态分布</h3>
+    <canvas id="chart-status" height="200"></canvas>
+  </div>
+
+  <!-- Ptype Distribution -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">类型分布</h3>
+    <canvas id="chart-ptype" height="200"></canvas>
+  </div>
+
+  <!-- Task Distribution -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">任务分布</h3>
+    <canvas id="chart-tasks" height="200"></canvas>
+  </div>
+
+  <!-- Top Authors -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top 10 作者</h3>
+    <canvas id="chart-authors" height="250"></canvas>
+  </div>
+
+  <!-- Top Novels -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Top 10 小说（点击）</h3>
+    <canvas id="chart-novels" height="250"></canvas>
+  </div>
+</div>
+{% endblock %}
+
+{% block body_js %}
+<script src="{% static 'node_modules/chart.js/dist/chart.umd.js' %}"></script>
+<script>
+const COLORS = [
+  '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#8b5cf6',
+  '#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#84cc16'
+];
+
+const DARK_TEXT = '#d1d5db';
+const LIGHT_TEXT = '#6b7280';
+
+function getTextColor() {
+  return document.documentElement.classList.contains('dark') ? DARK_TEXT : LIGHT_TEXT;
+}
+
+function createChart(id, type, labels, data, options = {}) {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type,
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: COLORS.slice(0, data.length),
+        borderColor: type === 'line' ? '#f59e0b' : undefined,
+        borderWidth: type === 'line' ? 2 : 0,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+      },
+      scales: type === 'bar' ? {
+        x: { ticks: { color: getTextColor(), font: { size: 11 } } },
+        y: { ticks: { color: getTextColor() }, beginAtZero: true }
+      } : undefined,
+      ...options,
+    }
+  });
+}
+
+async function loadDashboard() {
+  const resp = await fetch('{% url "novels:stats_api" %}');
+  const data = await resp.json();
+
+  // Summary
+  document.getElementById('stat-novels').textContent = data.summary.novels.toLocaleString();
+  document.getElementById('stat-authors').textContent = data.summary.authors.toLocaleString();
+  document.getElementById('stat-tags').textContent = data.summary.tags.toLocaleString();
+  document.getElementById('stat-contests').textContent = data.summary.contests.toLocaleString();
+  document.getElementById('stat-tasks').textContent = data.summary.tasks.toLocaleString();
+
+  // Charts
+  createChart('chart-genre', 'doughnut', data.genre.labels, data.genre.data);
+  createChart('chart-status', 'doughnut', data.status.labels, data.status.data);
+  createChart('chart-ptype', 'pie', data.ptype.labels, data.ptype.data);
+  createChart('chart-tasks', 'doughnut', data.tasks.labels, data.tasks.data);
+  createChart('chart-authors', 'bar', data.top_authors.labels, data.top_authors.data, {
+    indexAxis: 'y',
+    scales: {
+      x: { ticks: { color: getTextColor() }, beginAtZero: true },
+      y: { ticks: { color: getTextColor(), font: { size: 11 } } }
+    }
+  });
+  createChart('chart-novels', 'bar', data.top_novels.labels, data.top_novels.data, {
+    indexAxis: 'y',
+    scales: {
+      x: { ticks: { color: getTextColor(), callback: v => (v / 10000).toFixed(0) + 'w' } },
+      y: { ticks: { color: getTextColor(), font: { size: 11 } } }
+    }
+  });
+}
+
+loadDashboard();
+</script>
+{% endblock %}
