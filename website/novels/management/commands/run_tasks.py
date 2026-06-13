@@ -19,6 +19,8 @@ import requests
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
+from zoneinfo import ZoneInfo
 
 from novels.models import Novel, Task
 from novels.mappings import GENRE, STATUS, PTYPE
@@ -28,6 +30,8 @@ from utils.config import COVER_PREFIX, DEFAULT_COVER
 from utils.logger import get_logger, progress
 
 logger = get_logger(__name__)
+
+SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
 
 # Default cover suffix → None
 def _compress_cover(cover):
@@ -78,6 +82,11 @@ class Command(BaseCommand):
                 # Crawl comment/review API
                 api_data = fetch_api(session, nid)
 
+                # Make last_update timezone-aware (Shanghai)
+                last_update = html_data.get("last_update")
+                if last_update and timezone.is_naive(last_update):
+                    last_update = last_update.replace(tzinfo=SHANGHAI_TZ)
+
                 # Build Meta object for validation
                 meta = Meta(
                     nid=nid,
@@ -93,7 +102,7 @@ class Command(BaseCommand):
                     like_num=html_data.get("like_num"),
                     comment_num=api_data.get("comment_num"),
                     contest=html_data.get("contest") or "",
-                    last_update=html_data.get("last_update"),
+                    last_update=last_update,
                     review_num=api_data.get("review_num"),
                     tags=html_data.get("tags", []),
                     cover=novel.cover,  # Keep existing cover
