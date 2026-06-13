@@ -1,7 +1,7 @@
 from django.views.generic import ListView, DetailView, TemplateView
 from django.conf import settings
 from django.core.cache import cache
-from django.db import models
+from django.db import connection, models
 
 from .models import Novel, Author, Tag, Contest
 from .mappings import GENRE, STATUS, PTYPE
@@ -218,18 +218,10 @@ class AuthorListView(ListView):
     }
 
     def get_queryset(self):
-        from django.db.models import Subquery, OuterRef
-
         qs = super().get_queryset()
         q = self.request.GET.get("q", "").strip()
         if q:
             qs = qs.filter(name__icontains=q)
-
-        top_novel = (
-            Novel.objects.filter(author=OuterRef("pk"))
-            .order_by("-click_num")
-            .values("id", "title", "click_num")[:1]
-        )
 
         qs = qs.annotate(
             novel_count=models.Count("novels"),
@@ -241,9 +233,6 @@ class AuthorListView(ListView):
             total_comment=models.Sum("novels__comment_num"),
             banner_count=models.Count("novels", filter=models.Q(novels__has_banner=True)),
             latest_update=models.Max("novels__last_update"),
-            top_novel_id=Subquery(top_novel.values("id")),
-            top_novel_title=Subquery(top_novel.values("title")),
-            top_novel_click=Subquery(top_novel.values("click_num")),
         )
 
         sort = self.request.GET.get("sort", "total_click")
@@ -268,6 +257,40 @@ class AuthorListView(ListView):
         params = self.request.GET.copy()
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()
+
+        # Fetch top novel for each author on current page (single query)
+        authors = ctx.get("authors", [])
+        if authors:
+            author_ids = [a.id for a in authors]
+            from django.db.models import Window, F
+            from django.db.models.functions import RowNumber
+
+            # Get top novel per author using raw SQL (window function)
+            top_novels = {}
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT id, title, click_num, author_id
+                    FROM (
+                        SELECT id, title, click_num, author_id,
+                               ROW_NUMBER() OVER (PARTITION BY author_id ORDER BY click_num DESC NULLS LAST) as rn
+                        FROM novels_novel
+                        WHERE author_id = ANY(%s)
+                    ) ranked
+                    WHERE rn = 1
+                """, [author_ids])
+                for row in cursor.fetchall():
+                    top_novels[row[3]] = {
+                        "id": row[0],
+                        "title": row[1],
+                        "click_num": row[2],
+                    }
+
+            for author in authors:
+                top = top_novels.get(author.id, {})
+                author.top_novel_id = top.get("id")
+                author.top_novel_title = top.get("title")
+                author.top_novel_click = top.get("click_num")
+
         return ctx
 
 
