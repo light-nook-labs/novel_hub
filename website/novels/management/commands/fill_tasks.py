@@ -76,7 +76,7 @@ class Command(BaseCommand):
         default_novels = []
 
         def _is_active_candidate(n):
-            """Check if a died/finished novel meets A-status criteria."""
+            """Check if novel meets A-status criteria."""
             return (
                 n.has_banner or
                 (n.click_num or 0) >= 10_000_000 or
@@ -93,11 +93,11 @@ class Command(BaseCommand):
             # Determine priority
             is_urgent = False
 
-            if novel.has_banner:
+            # Already A-status → urgent
+            if novel.status in (ACTIVE_D, ACTIVE_F):
                 is_urgent = True
-            elif novel.status in (ACTIVE_D, ACTIVE_F):
-                is_urgent = True
-            elif novel.status in (DIED, FINISHED) and _is_active_candidate(novel):
+            # Meets A-status criteria → urgent (regardless of status)
+            elif _is_active_candidate(novel):
                 is_urgent = True
 
             if is_urgent:

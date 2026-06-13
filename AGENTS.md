@@ -53,6 +53,8 @@ uv run python manage.py test novels -v 2
 uv run python manage.py init_db ../release/dataset/    # Init (deletes all data first)
 uv run python manage.py upsert_dataset ../release/dataset/  # Upsert (updates existing)
 uv run python manage.py dump_dataset release                 # Dump DB
+uv run python manage.py fix_m2m ../release/dataset/ --force  # Fix missing M2M
+uv run python manage.py fill_tasks                           # Create tasks for duplicate covers
 
 # Static site
 uv run python manage.py generate_static --output ../build --base-path novel_hub
