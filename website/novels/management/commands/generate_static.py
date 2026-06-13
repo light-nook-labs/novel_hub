@@ -5,12 +5,14 @@ Generates:
 - about.html (1 page)
 - authors/ (10 pages)
 - rank/ (100 pages)
+- static/ (CSS, JS, images)
 
 Usage:
     uv run python manage.py generate_static --output ../build --base-path novel_hub
 """
 
 import os
+import shutil
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -110,6 +112,9 @@ class Command(BaseCommand):
         # Create output directory
         output_dir.mkdir(parents=True, exist_ok=True)
 
+        # Copy static files
+        self._copy_static_files(output_dir, base_path)
+
         # Collect all pages to generate
         pages = []
 
@@ -140,6 +145,36 @@ class Command(BaseCommand):
                     logger.error("Error generating page: %s", e)
 
         logger.info("Generated %d/%d pages", generated, len(pages))
+
+    def _copy_static_files(self, output_dir, base_path):
+        """Copy static files to output directory."""
+        # Find static root
+        static_root = Path(settings.STATIC_ROOT) if settings.STATIC_ROOT else None
+        staticfiles_dirs = settings.STATICFILES_DIRS
+
+        # Try STATIC_ROOT first, then STATICFILES_DIRS
+        source_dirs = []
+        if static_root and static_root.exists():
+            source_dirs.append(static_root)
+        for dir_path in staticfiles_dirs:
+            p = Path(dir_path)
+            if p.exists():
+                source_dirs.append(p)
+
+        if not source_dirs:
+            logger.warning("No static files directory found")
+            return
+
+        # Copy static files
+        static_output = output_dir / "static"
+        static_output.mkdir(parents=True, exist_ok=True)
+
+        for source_dir in source_dirs:
+            if source_dir.exists():
+                logger.info("Copying static files from %s", source_dir)
+                shutil.copytree(source_dir, static_output, dirs_exist_ok=True)
+
+        logger.info("Static files copied to %s", static_output)
 
     def _collect_index_pages(self, output_dir, base_path):
         """Collect index page generation tasks."""
