@@ -47,13 +47,13 @@ class Novel(models.Model):
     id = models.BigIntegerField(primary_key=True)
     title = models.CharField(max_length=500)
     ptype = models.SmallIntegerField(default=1, db_index=True)
-    genre = models.SmallIntegerField(default=1, db_index=True)
+    genre = models.SmallIntegerField(default=1)
     status = models.SmallIntegerField(default=1, db_index=True)
     click_num = models.IntegerField(null=True, blank=True)
     word_num = models.IntegerField(null=True, blank=True)
     praise_num = models.IntegerField(null=True, blank=True)
     like_num = models.IntegerField(null=True, blank=True)
-    has_banner = models.BooleanField(default=False, db_index=True)
+    has_banner = models.BooleanField(default=False)
     review_num = models.IntegerField(null=True, blank=True)
     comment_num = models.IntegerField(null=True, blank=True)
     cover = models.CharField(max_length=500, blank=True, null=True)
@@ -83,6 +83,7 @@ class Novel(models.Model):
             models.Index(fields=["has_banner", "-last_update"]),
             models.Index(fields=["-click_num"]),
             models.Index(fields=["author"]),
+            models.Index(fields=["contest"]),
         ]
 
     def __str__(self):
