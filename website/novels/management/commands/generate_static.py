@@ -5,6 +5,8 @@ Generates:
 - about.html (1 page)
 - authors/ (10 pages)
 - rank/ (100 pages)
+- banners/ (all pages)
+- 404.html (1 page)
 - static/ (CSS, JS, images)
 
 Usage:
@@ -19,11 +21,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import models
+from django.db.models import Subquery, OuterRef, Count, Sum, Max
 from django.template.loader import render_to_string
-from django.test import RequestFactory
 
-from novels.models import Author, Novel
-from novels.views import AuthorListView, NovelRankView, NovelListView, COLUMNS
+from novels.models import Author, Novel, Tag, Contest
+from novels.views import AuthorListView, COLUMNS
+from novels.mappings import GENRE, STATUS, PTYPE
 
 from utils.logger import get_logger, progress
 
@@ -59,6 +62,10 @@ class SimplePaginator:
         self.count = count
         self.per_page = per_page
         self.num_pages = (count + per_page - 1) // per_page
+
+    @property
+    def page_range(self):
+        return range(1, self.num_pages + 1)
 
 
 def _generate_page(args):
@@ -115,23 +122,28 @@ class Command(BaseCommand):
         # Copy static files
         self._copy_static_files(output_dir, base_path)
 
+        # Pre-fetch all data
+        logger.info("Pre-fetching data...")
+        data = self._prefetch_data()
+        logger.info("Data fetched: %d novels, %d authors", data["novel_count"], data["author_count"])
+
         # Collect all pages to generate
         pages = []
 
         # 1. Index page (1 page)
-        pages.extend(self._collect_index_pages(output_dir, base_path))
+        pages.extend(self._collect_index_pages(output_dir, base_path, data))
 
         # 2. About page (1 page)
-        pages.extend(self._collect_about_pages(output_dir, base_path))
+        pages.extend(self._collect_about_pages(output_dir, base_path, data))
 
         # 3. Authors pages (10 pages)
-        pages.extend(self._collect_author_pages(output_dir, base_path))
+        pages.extend(self._collect_author_pages(output_dir, base_path, data))
 
         # 4. Rank pages (100 pages)
-        pages.extend(self._collect_rank_pages(output_dir, base_path))
+        pages.extend(self._collect_rank_pages(output_dir, base_path, data))
 
         # 5. Banner pages (all pages)
-        pages.extend(self._collect_banner_pages(output_dir, base_path))
+        pages.extend(self._collect_banner_pages(output_dir, base_path, data))
 
         # 6. 404 page (1 page)
         pages.extend(self._collect_404_pages(output_dir, base_path))
@@ -152,13 +164,77 @@ class Command(BaseCommand):
 
         logger.info("Generated %d/%d pages", generated, len(pages))
 
+    def _prefetch_data(self):
+        """Pre-fetch all data for SSG generation."""
+        # Common context for all pages
+        novel_count = Novel.objects.count()
+        author_count = Author.objects.count()
+
+        # Get all novels with related data
+        all_novels = list(
+            Novel.objects.select_related("author", "contest")
+            .prefetch_related("tags")
+            .order_by("-click_num")
+        )
+
+        # Get banner novels
+        banner_novels = [n for n in all_novels if n.has_banner]
+        banner_novels.sort(key=lambda n: n.last_update or "", reverse=True)
+
+        # Get latest banner
+        latest_banner = banner_novels[0] if banner_novels else None
+
+        # Get all authors with annotations
+        top_novel = (
+            Novel.objects.filter(author=OuterRef("pk"))
+            .order_by("-click_num")
+            .values("id", "title", "click_num")[:1]
+        )
+
+        all_authors = list(
+            Author.objects.annotate(
+                novel_count=Count("novels"),
+                total_click=Sum("novels__click_num"),
+                total_word=Sum("novels__word_num"),
+                total_like=Sum("novels__like_num"),
+                total_praise=Sum("novels__praise_num"),
+                total_review=Sum("novels__review_num"),
+                total_comment=Sum("novels__comment_num"),
+                banner_count=Count("novels", filter=models.Q(novels__has_banner=True)),
+                latest_update=Max("novels__last_update"),
+                top_novel_id=Subquery(top_novel.values("id")),
+                top_novel_title=Subquery(top_novel.values("title")),
+                top_novel_click=Subquery(top_novel.values("click_num")),
+            )
+            .order_by("-total_click", "-novel_count")
+        )
+
+        # Get enum choices
+        def _choices(mapping):
+            return [
+                {"value": m.value, "label": mapping.get_zh(m.value)}
+                for m in mapping.enum
+                if m.name != "OTHER"
+            ]
+
+        return {
+            "novel_count": novel_count,
+            "author_count": author_count,
+            "all_novels": all_novels,
+            "banner_novels": banner_novels,
+            "latest_banner": latest_banner,
+            "all_authors": all_authors,
+            "genres": _choices(GENRE),
+            "statuses": _choices(STATUS),
+            "ptypes": _choices(PTYPE),
+            "sort_options": AuthorListView.SORT_OPTIONS,
+        }
+
     def _copy_static_files(self, output_dir, base_path):
         """Copy static files to output directory."""
-        # Find static root
         static_root = Path(settings.STATIC_ROOT) if settings.STATIC_ROOT else None
         staticfiles_dirs = settings.STATICFILES_DIRS
 
-        # Try STATIC_ROOT first, then STATICFILES_DIRS
         source_dirs = []
         if static_root and static_root.exists():
             source_dirs.append(static_root)
@@ -171,48 +247,56 @@ class Command(BaseCommand):
             logger.warning("No static files directory found")
             return
 
-        # Copy static files
         static_output = output_dir / "static"
         static_output.mkdir(parents=True, exist_ok=True)
 
         for source_dir in source_dirs:
             if source_dir.exists():
                 logger.info("Copying static files from %s", source_dir)
-                # Use follow_symlinks=True to resolve symlinks
                 shutil.copytree(source_dir, static_output, dirs_exist_ok=True, symlinks=False)
 
-        # Also copy node_modules from project root if it exists
+        # Copy node_modules from project root if it exists
         project_root = Path(settings.BASE_DIR).parent
         node_modules_src = project_root / "node_modules"
         node_modules_dst = static_output / "node_modules"
         if node_modules_src.exists() and not node_modules_dst.exists():
             logger.info("Copying node_modules from %s", node_modules_src)
-            # Only copy htmx.org to reduce size
             htmx_src = node_modules_src / "htmx.org"
             if htmx_src.exists():
                 shutil.copytree(htmx_src, node_modules_dst / "htmx.org", symlinks=False)
 
         logger.info("Static files copied to %s", static_output)
 
-    def _collect_index_pages(self, output_dir, base_path):
+    def _collect_index_pages(self, output_dir, base_path, data):
         """Collect index page generation tasks."""
         pages = []
 
-        # Get novels for index (default sort: -click_num)
-        novels = (
-            Novel.objects.select_related("author", "contest")
-            .prefetch_related("tags")
-            .order_by("-click_num")[:24]
-        )
-
-        # Get latest banner
-        latest_banner = Novel.objects.filter(has_banner=True).order_by("-last_update").first()
+        # Get first 24 novels for index
+        index_novels = data["all_novels"][:24]
 
         context = {
-            "novels": novels,
-            "latest_banner": latest_banner,
+            "novels": index_novels,
+            "latest_banner": data["latest_banner"],
             "page_obj": None,
             "is_paginated": False,
+            "query": "",
+            "genres": data["genres"],
+            "statuses": data["statuses"],
+            "ptypes": data["ptypes"],
+            "current_genre": "",
+            "current_status": "",
+            "current_ptype": "",
+            "current_sort": "",
+            "sort_options": {
+                "": "综合排序",
+                "click_num": "点击排序",
+                "word_num": "字数排序",
+                "like_num": "收藏排序",
+                "praise_num": "点赞排序",
+                "last_update": "最近更新",
+                "db_update": "最近同步",
+            },
+            "querystring": "",
         }
 
         pages.append((
@@ -224,13 +308,13 @@ class Command(BaseCommand):
 
         return pages
 
-    def _collect_about_pages(self, output_dir, base_path):
+    def _collect_about_pages(self, output_dir, base_path, data):
         """Collect about page generation tasks."""
         pages = []
 
         context = {
-            "novel_count": Novel.objects.count(),
-            "author_count": Author.objects.count(),
+            "novel_count": data["novel_count"],
+            "author_count": data["author_count"],
         }
 
         pages.append((
@@ -242,57 +326,29 @@ class Command(BaseCommand):
 
         return pages
 
-    def _collect_author_pages(self, output_dir, base_path):
+    def _collect_author_pages(self, output_dir, base_path, data):
         """Collect author pages generation tasks."""
         pages = []
         per_page = 100
 
-        # Get total author count
-        total_authors = Author.objects.count()
+        total_authors = data["author_count"]
         total_pages = min(AUTHORS_PAGES, (total_authors + per_page - 1) // per_page)
 
         for page_num in range(1, total_pages + 1):
-            # Get authors for this page (default sort: -total_click)
             start = (page_num - 1) * per_page
             end = start + per_page
-
-            from django.db.models import Subquery, OuterRef, Count, Sum, Max
-
-            top_novel = (
-                Novel.objects.filter(author=OuterRef("pk"))
-                .order_by("-click_num")
-                .values("id", "title", "click_num")[:1]
-            )
-
-            authors = (
-                Author.objects.annotate(
-                    novel_count=Count("novels"),
-                    total_click=Sum("novels__click_num"),
-                    total_word=Sum("novels__word_num"),
-                    total_like=Sum("novels__like_num"),
-                    total_praise=Sum("novels__praise_num"),
-                    total_review=Sum("novels__review_num"),
-                    total_comment=Sum("novels__comment_num"),
-                    banner_count=Count("novels", filter=models.Q(novels__has_banner=True)),
-                    latest_update=Max("novels__last_update"),
-                    top_novel_id=Subquery(top_novel.values("id")),
-                    top_novel_title=Subquery(top_novel.values("title")),
-                    top_novel_click=Subquery(top_novel.values("click_num")),
-                )
-                .order_by("-total_click", "-novel_count")
-            )
 
             paginator = SimplePaginator(total_authors, per_page)
             page_obj = SimplePage(page_num, paginator)
 
-            # Get authors for this page
-            page_authors = list(authors[start:end])
+            page_authors = data["all_authors"][start:end]
 
             context = {
                 "authors": page_authors,
                 "page_obj": page_obj,
+                "paginator": paginator,
                 "is_paginated": total_pages > 1,
-                "sort_options": AuthorListView.SORT_OPTIONS,
+                "sort_options": data["sort_options"],
                 "current_sort": "total_click",
                 "current_dir": "desc",
                 "page_start": start + 1,
@@ -313,35 +369,27 @@ class Command(BaseCommand):
 
         return pages
 
-    def _collect_rank_pages(self, output_dir, base_path):
+    def _collect_rank_pages(self, output_dir, base_path, data):
         """Collect rank pages generation tasks."""
         pages = []
         per_page = 100
 
-        # Get total novel count
-        total_novels = Novel.objects.count()
+        total_novels = data["novel_count"]
         total_pages = min(RANK_PAGES, (total_novels + per_page - 1) // per_page)
 
         for page_num in range(1, total_pages + 1):
-            # Get novels for this page (default sort: -click_num)
             start = (page_num - 1) * per_page
             end = start + per_page
-
-            novels = (
-                Novel.objects.select_related("author", "contest")
-                .prefetch_related("tags")
-                .order_by("-click_num")
-            )
 
             paginator = SimplePaginator(total_novels, per_page)
             page_obj = SimplePage(page_num, paginator)
 
-            # Get novels for this page
-            page_novels = list(novels[start:end])
+            page_novels = data["all_novels"][start:end]
 
             context = {
                 "novels": page_novels,
                 "page_obj": page_obj,
+                "paginator": paginator,
                 "is_paginated": total_pages > 1,
                 "columns": COLUMNS,
                 "current_sort": "click_num",
@@ -364,34 +412,28 @@ class Command(BaseCommand):
 
         return pages
 
-    def _collect_banner_pages(self, output_dir, base_path):
+    def _collect_banner_pages(self, output_dir, base_path, data):
         """Collect banner pages generation tasks (all pages)."""
         pages = []
         per_page = 12
 
-        # Get total banner count
-        total_banners = Novel.objects.filter(has_banner=True).count()
+        banner_novels = data["banner_novels"]
+        total_banners = len(banner_novels)
         total_pages = (total_banners + per_page - 1) // per_page
 
         for page_num in range(1, total_pages + 1):
             start = (page_num - 1) * per_page
             end = start + per_page
 
-            novels = (
-                Novel.objects.filter(has_banner=True)
-                .select_related("author", "contest")
-                .prefetch_related("tags")
-                .order_by("-last_update")
-            )
-
             paginator = SimplePaginator(total_banners, per_page)
             page_obj = SimplePage(page_num, paginator)
 
-            page_novels = list(novels[start:end])
+            page_novels = banner_novels[start:end]
 
             context = {
                 "novels": page_novels,
                 "page_obj": page_obj,
+                "paginator": paginator,
                 "is_paginated": total_pages > 1,
                 "querystring": "",
             }

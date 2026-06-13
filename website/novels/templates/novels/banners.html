@@ -44,5 +44,9 @@
 
 {% block body_js %}
 {{ block.super }}
+{% if static_mode %}
+<script src="{% static_url 'static/js/banners.js' %}"></script>
+{% else %}
 <script src="{% static 'js/banners.js' %}"></script>
+{% endif %}
 {% endblock %}
