@@ -275,7 +275,7 @@ class AuthorDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         novels_qs = (
-            self.object.novels.select_related("contest")
+            self.object.novels.select_related("author", "contest")
             .prefetch_related("tags")
             .order_by("-click_num")
         )
@@ -341,7 +341,7 @@ class ContestDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         novels_qs = (
-            self.object.novels.select_related("author")
+            self.object.novels.select_related("author", "contest")
             .prefetch_related("tags")
             .order_by("-click_num")
         )
