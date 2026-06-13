@@ -137,3 +137,21 @@ def novel_url(nid):
     cfg = settings.TOML
     pattern = cfg.get("scraper", {}).get("novel_url", "https://book.sfacg.com/Novel/{nid}/")
     return pattern.format(nid=nid)
+
+
+@register.simple_tag(takes_context=True)
+def static_url(context, path):
+    """Generate static file URL with base_path prefix in static mode."""
+    base_path = context.get("base_path", "")
+    if base_path:
+        return f"/{base_path}/{path}"
+    return f"/{path}"
+
+
+@register.simple_tag(takes_context=True)
+def page_url(context, path):
+    """Generate page URL with base_path prefix in static mode."""
+    base_path = context.get("base_path", "")
+    if base_path:
+        return f"/{base_path}/{path}"
+    return f"/{path}"

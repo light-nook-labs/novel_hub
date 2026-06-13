@@ -1,6 +1,7 @@
+{% load novel_tags %}
 {# Static mode: nav with authors #}
 <nav class="hidden md:flex items-center gap-6 text-sm">
-  <a href="{% url 'novels:rank' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">排行榜</a>
-  <a href="{% url 'novels:authors' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">作者</a>
-  <a href="{% url 'novels:banners' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">背投</a>
+  <a href="{% page_url 'rank/index.html' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">排行榜</a>
+  <a href="{% page_url 'authors/index.html' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">作者</a>
+  <a href="{% page_url 'about/index.html' %}" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">关于</a>
 </nav>

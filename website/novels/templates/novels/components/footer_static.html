@@ -1,3 +1,4 @@
+{% load novel_tags %}
 {# Static mode footer #}
 <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -6,8 +7,8 @@
         &copy; {% now "Y" %} {{ TOML.site.author|default:TOML.site.name }} &mdash; {{ TOML.site.name }} (static preview)
       </div>
       <nav class="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-        <a href="{% url 'novels:index' %}" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">首页</a>
-        <a href="{% url 'novels:about' %}" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">关于</a>
+        <a href="{% page_url 'index.html' %}" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">首页</a>
+        <a href="{% page_url 'about/index.html' %}" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">关于</a>
       </nav>
     </div>
   </div>

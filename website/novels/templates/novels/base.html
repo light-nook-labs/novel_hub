@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static novel_tags %}
 
 {% block header %}
 {% if static_mode %}
@@ -26,5 +26,9 @@
 {% endblock %}
 
 {% block body_js %}
+{% if static_mode %}
+<script src="{% static_url 'static/js/main.js' %}"></script>
+{% else %}
 <script src="{% static 'js/main.js' %}"></script>
+{% endif %}
 {% endblock %}
