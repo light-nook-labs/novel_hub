@@ -2,7 +2,7 @@ name: Deploy SSG to GitHub Pages
 
 on:
   workflow_run:
-    workflows: ["Tests"]
+    workflows: ["Tests", "Crawl & Upsert"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
