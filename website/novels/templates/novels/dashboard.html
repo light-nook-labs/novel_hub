@@ -30,51 +30,69 @@
 
 <!-- Charts Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <!-- Genre Distribution -->
+  <!-- Row 1: Distribution -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类分布</h3>
     {{ chart_genre|safe }}
   </div>
-
-  <!-- Status Distribution -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">状态分布</h3>
     {{ chart_status|safe }}
   </div>
 
-  <!-- Top Tags -->
+  <!-- Row 2: Rankings -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">热门标签 Top 15</h3>
     {{ chart_tags|safe }}
   </div>
-
-  <!-- Top Authors -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">高人气作者 Top 10</h3>
     {{ chart_authors|safe }}
   </div>
 
-  <!-- Click vs Like Scatter -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:col-span-2">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 vs 收藏（采样 2000 部）</h3>
-    {{ chart_scatter|safe }}
+  <!-- Row 3: Novel Rankings -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 Top 10</h3>
+    {{ chart_top_click|safe }}
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">收藏 Top 10</h3>
+    {{ chart_top_like|safe }}
   </div>
 
-  <!-- Ptype Distribution -->
+  <!-- Row 4: Scatter + Heatmap -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 vs 收藏（采样 3000 部）</h3>
+    {{ chart_scatter|safe }}
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类 × 状态 热力图</h3>
+    {{ chart_heatmap|safe }}
+  </div>
+
+  <!-- Row 5: Ptype + Word dist -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">类型分布</h3>
     {{ chart_ptype|safe }}
   </div>
-
-  <!-- Word Count Distribution -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字数分布</h3>
     {{ chart_word_dist|safe }}
   </div>
 
-  <!-- Top Contests -->
+  <!-- Row 6: Banner + A-status -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner 效果对比（人均）</h3>
+    {{ chart_banner|safe }}
+  </div>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">A 状态分布</h3>
+    {{ chart_a_status|safe }}
+  </div>
+
+  <!-- Row 7: Contests -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:col-span-2">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">征文活动</h3>
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">征文活动 Top 10</h3>
     {{ chart_contests|safe }}
   </div>
 </div>
