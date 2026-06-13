@@ -1,21 +1,19 @@
-"""SQLite-only: Update database from JSONL files (INSERT + UPDATE).
+"""SQLite-only: Update database from a JSONL file (INSERT + UPDATE).
 
 Uses ORM with WAL mode and optimized PRAGMAs.
 
 Usage:
     uv run python manage.py load_sqlite /tmp/spider_data.jsonl
     uv run python manage.py load_sqlite /tmp/spider_data.jsonl --limit 1000
-    uv run python manage.py load_sqlite ../release/dataset/ --force
+    uv run python manage.py load_sqlite /tmp/spider_data.jsonl --force
 """
 
-import csv
 import time
 from pathlib import Path
 
 from django.db import connection
 from django.core.management.base import BaseCommand
 
-from novels.models import Task
 from novels.management.utils import get_cover_prefix
 from novels.management.utils.logging import log_timing
 from novels.management.utils.pandas_utils import (
@@ -31,15 +29,14 @@ from novels.management.utils.sqlite_utils import (
     bulk_create_novels,
     bulk_insert_tags,
 )
+from novels.management.utils.tasks_utils import load_tasks_from_csv
 
 
 class Command(BaseCommand):
-    help = "SQLite-only: Update database from JSONL files (ORM)"
+    help = "SQLite-only: Update database from a JSONL file (ORM)"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "path", nargs="?", default="dataset/data", help="JSONL file or directory"
-        )
+        parser.add_argument("path", help="JSONL file path")
         parser.add_argument(
             "--limit", type=int, default=0, help="Limit records (0 = all)"
         )
@@ -56,31 +53,27 @@ class Command(BaseCommand):
             )
             return
 
+        path = Path(options["path"])
+        if not path.is_file():
+            self.stderr.write(self.style.ERROR(f"File not found: {path}"))
+            return
+
         self.stdout.write("Starting SQLite update")
         t0 = time.perf_counter()
 
-        path = Path(options["path"])
         limit = options["limit"]
-
-        if path.is_dir():
-            files = sorted(path.glob("*.jsonl"))
-        else:
-            files = [path]
-
-        if not files:
-            self.stderr.write(self.style.ERROR(f"No JSONL files found at {path}"))
-            return
+        files = [path]
 
         cover_prefix = get_cover_prefix()
         self.stdout.write("Mode: UPDATE (ORM bulk_create)")
         self.stdout.write(f"Cover prefix: {cover_prefix}")
-        self.stdout.write(f"Loading {len(files)} files from {path}")
+        self.stdout.write(f"Loading {path}")
 
         enable_wal_mode()
         novel_count, tag_count = self._sqlite_update(files, cover_prefix, limit)
         optimize()
 
-        self._load_tasks(path, force=options["force"])
+        load_tasks_from_csv(path.parent, self.stdout, force=options["force"])
 
         elapsed = time.perf_counter() - t0
         self.stdout.write(
@@ -91,7 +84,6 @@ class Command(BaseCommand):
 
     def _sqlite_update(self, files, cover_prefix, limit):
         """SQLite 2-phase update with ORM."""
-        # Phase 1: Extract entities
         self.stdout.write("  Phase 1: Extracting entities")
         t_phase = time.perf_counter()
 
@@ -103,7 +95,6 @@ class Command(BaseCommand):
         phase1_time = time.perf_counter() - t_phase
         self.stdout.write(f"  Phase 1 completed ({phase1_time:.2f}s)")
 
-        # Phase 2: Load novels
         self.stdout.write("  Phase 2: Loading novels")
         t_phase = time.perf_counter()
 
@@ -147,38 +138,3 @@ class Command(BaseCommand):
     @log_timing("Bulk insert tags")
     def _bulk_insert_tags(self, tag_rows):
         bulk_insert_tags(tag_rows)
-
-    def _load_tasks(self, path, force=False):
-        """Load tasks.csv if exists."""
-        if not path.is_dir():
-            return
-        if not force:
-            self.stdout.write("  Tasks: skipped (use --force)")
-            return
-
-        tasks_file = path / "tasks.csv"
-        if not tasks_file.exists():
-            tasks_file = path.parent / "tasks.csv"
-        if not tasks_file.exists():
-            self.stdout.write("  tasks.csv not found")
-            return
-
-        t_step = time.perf_counter()
-        batch = []
-        total = 0
-        Task.objects.all().delete()
-
-        with open(tasks_file) as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                batch.append(Task(novel_id=int(row["novel_id"]), status=row["status"]))
-                if len(batch) >= 5000:
-                    Task.objects.bulk_create(batch, ignore_conflicts=True)
-                    total += len(batch)
-                    batch = []
-        if batch:
-            Task.objects.bulk_create(batch, ignore_conflicts=True)
-            total += len(batch)
-
-        elapsed = time.perf_counter() - t_step
-        self.stdout.write(f"  Tasks loaded: {total} records ({elapsed:.2f}s)")

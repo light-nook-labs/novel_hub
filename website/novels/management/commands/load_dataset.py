@@ -1,12 +1,15 @@
-"""Update database from JSONL files (INSERT + UPDATE).
+"""Update database from a dataset file (INSERT + UPDATE).
 
-Auto-detects database type and delegates to load_psql or load_sqlite.
+Supports CSV and JSONL input. Auto-detects database type
+and delegates to load_psql or load_sqlite.
 
 Usage:
-    uv run python manage.py load_jsonl /tmp/spider_data.jsonl
-    uv run python manage.py load_jsonl /tmp/spider_data.jsonl --limit 1000
-    uv run python manage.py load_jsonl ../release/dataset/ --force
+    uv run python manage.py load_dataset o.csv
+    uv run python manage.py load_dataset data.jsonl --limit 1000
+    uv run python manage.py load_dataset data.csv --force
 """
+
+from pathlib import Path
 
 from django.db import connection
 from django.core.management import call_command
@@ -14,12 +17,10 @@ from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
-    help = "Update database from JSONL files (auto-detect DB type)"
+    help = "Update database from a dataset file (CSV or JSONL)"
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "path", nargs="?", default="dataset/data", help="JSONL file or directory"
-        )
+        parser.add_argument("path", help="Dataset file (CSV or JSONL)")
         parser.add_argument(
             "--limit", type=int, default=0, help="Limit records (0 = all)"
         )
@@ -28,12 +29,17 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        path = Path(options["path"])
+        if not path.is_file():
+            self.stderr.write(self.style.ERROR(f"File not found: {path}"))
+            return
+
         is_psql = connection.vendor == "postgresql"
         cmd = "load_psql" if is_psql else "load_sqlite"
         self.stdout.write(f"Delegating to {cmd} ...")
         call_command(
             cmd,
-            path=options["path"],
+            str(path),
             limit=options["limit"],
             force=options["force"],
         )

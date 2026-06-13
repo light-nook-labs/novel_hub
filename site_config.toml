@@ -18,6 +18,7 @@ mobile_url = "https://m.sfacg.com/b/{nid}/"
 banner_url = "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
 cover_prefix = "http://rs.sfacg.com/web/novel/images/NovelCover/Big/"
 default_cover = "defaultNew.jpg"
+timezone = "Asia/Shanghai"
 
 [thresholds]
 died_days = 90

@@ -1,24 +1,34 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
+"""Scrapy pipelines for meta_spider."""
 
+import csv
 import json
 
-# useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
+from models import Meta
 
 
-class MetaSpiderPipeline:
-    def process_item(self, item):
-        field = ["nid", "tags"]
-        line = {key: item[key] for key in field}
-        line = json.dumps(line, ensure_ascii=False) + "\n"
-        self.file.write(line)
-        return item
+class CSVPipeline:
+    """Write Meta items to CSV file.
 
-    def open_spider(self):
-        self.file = open("tag.jsonl", "a", encoding="utf-8")
+    Enabled via -o output.csv or FEEDS config.
+    Field names follow Meta model (the standard format).
+    """
 
-    def close_spider(self):
+    def open_spider(self, spider):
+        self.file = open("o.csv", "w", newline="", encoding="utf-8")
+        self.writer = csv.DictWriter(
+            self.file, fieldnames=list(Meta.model_fields.keys())
+        )
+        self.writer.writeheader()
+
+    def close_spider(self, spider):
         self.file.close()
+
+    def process_item(self, item, spider):
+        if isinstance(item, Meta):
+            row = item.model_dump()
+            row["tags"] = json.dumps(row["tags"], ensure_ascii=False)
+            row["last_update"] = (
+                row["last_update"].isoformat() if row["last_update"] else ""
+            )
+            self.writer.writerow(row)
+        return item

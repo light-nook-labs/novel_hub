@@ -52,9 +52,13 @@ class Mapping:
         """Return all English keys (excluding 'other')."""
         return [k for k in self._en_zh if k != "other"]
 
-    def zh_to_value(self, zh_label: str) -> int:
-        """Chinese label → enum int value. Falls back to OTHER."""
-        return self.get_value(zh_label)
+    def zh_to_value_dict(self) -> dict[str, int]:
+        """Return {zh_label: value} mapping for pandas .map()."""
+        return {zh: self.get_value(zh) for zh in self._zh_en}
+
+    def fallback(self) -> int:
+        """Return OTHER enum value."""
+        return self._enum.OTHER.value
 
 
 GENRE = Mapping(

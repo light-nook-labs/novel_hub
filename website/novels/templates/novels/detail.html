@@ -57,7 +57,7 @@
       <a href="{% url 'novels:ptype_detail' novel.ptype %}" class="badge badge-ptype">
         {{ novel.get_ptype_display }}
       </a>
-      {% if novel.contest %}
+      {% if novel.contest and novel.contest.name %}
       <a href="{% url 'novels:contest_detail' novel.contest.id %}" class="badge badge-contest">
         {{ novel.contest.name|truncatechars:20 }}
       </a>

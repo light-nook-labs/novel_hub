@@ -87,7 +87,7 @@ class MetaBatchSpider(Spider):
             # ptype, contest
             **self._ptype_contest(ptype_contest),
             tags=stags,
-            # nid, cover, title, author, score, genre
+            # nid, cover, title, author, genre
             **meta_info,
         )
         comment_url = self._get_comment_url(data["nid"])

@@ -20,28 +20,3 @@ def log_timing(message=None):
         return wrapper
 
     return decorator
-
-
-class TimingMixin:
-    """Mixin for management commands with timing support."""
-
-    def start_timer(self, name):
-        """Start a named timer."""
-        if not hasattr(self, "_timers"):
-            self._timers = {}
-        self._timers[name] = time.perf_counter()
-
-    def stop_timer(self, name):
-        """Stop a named timer and return elapsed time."""
-        if not hasattr(self, "_timers") or name not in self._timers:
-            return 0.0
-        elapsed = time.perf_counter() - self._timers.pop(name)
-        return elapsed
-
-    def log_step(self, name, func, *args, **kwargs):
-        """Execute function with timing and logging."""
-        t0 = time.perf_counter()
-        result = func(*args, **kwargs)
-        elapsed = time.perf_counter() - t0
-        self.stdout.write(f"    {name}: {elapsed:.2f}s")
-        return result

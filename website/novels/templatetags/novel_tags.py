@@ -53,7 +53,7 @@ def cover_url(suffix):
     prefix = cfg.get("scraper", {}).get("cover_prefix", "")
     default = cfg.get("scraper", {}).get("default_cover", "defaultNew.jpg")
 
-    if not suffix or suffix == "nan":
+    if not suffix or suffix in ("nan", "<NA>", "None"):
         return prefix + default
     if suffix.startswith(prefix):
         return suffix

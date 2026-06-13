@@ -18,13 +18,16 @@ class Command(BaseCommand):
         parser.add_argument(
             "--port",
             type=int,
-            default=8080,
-            help="Port (default: 8080)",
+            default=3000,
+            help="Port (default: 3000)",
         )
         parser.add_argument(
             "--base-path",
             default="",
-            help="Base path prefix used during generate_static (e.g. novel_hub)",
+            help=(
+                "Base path prefix for subdirectory deploy (e.g. 'novel_hub' for GitHub Pages). "
+                "NOT needed for local preview — only use when testing GH Pages routing."
+            ),
         )
 
     def handle(self, *args, **options):
@@ -37,24 +40,24 @@ class Command(BaseCommand):
             self.stderr.write("Run: uv run python manage.py generate_static")
             return
 
+        # Without --base-path: serve build/ directly at /
+        # With --base-path: serve build's parent at /{base_path}/ (mimics GH Pages)
         if base_path:
             serve_dir = directory.parent
             url_prefix = f"/{base_path}/"
-            self.stdout.write(
-                f"Serving {serve_dir} at http://127.0.0.1:{port}{url_prefix}"
-            )
         else:
             serve_dir = directory
             url_prefix = "/"
-            self.stdout.write(
-                f"Serving {serve_dir} at http://127.0.0.1:{port}{url_prefix}"
-            )
+
+        self.stdout.write(f"Serving at http://127.0.0.1:{port}{url_prefix}")
 
         from http.server import HTTPServer, SimpleHTTPRequestHandler
 
         if base_path:
 
             class PrefixedHandler(SimpleHTTPRequestHandler):
+                """Strip base_path prefix so files are found on disk."""
+
                 def __init__(self, *args, **kwargs):
                     super().__init__(*args, directory=str(serve_dir), **kwargs)
 

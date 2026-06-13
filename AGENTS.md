@@ -49,8 +49,8 @@ uv run python manage.py runserver
 uv run python manage.py test novels -v 2
 
 # Data
-uv run python manage.py load_jsonl ../release/dataset/    # Load all
-uv run python manage.py dump_jsonl release                 # Dump DB
+uv run python manage.py load_dataset ../release/dataset/    # Load all
+uv run python manage.py dump_dataset release                 # Dump DB
 uv run python manage.py reset_psql --limit 100             # Reset PostgreSQL
 
 # Static site
@@ -81,6 +81,7 @@ novel_hub/
 - **SQLite** for development (default)
 - **PostgreSQL** (Supabase) for production — uncomment in `.env`
 - **Env vars**: `.env` at project root. Required: `SECRET_KEY`, `DEBUG`, `DB_TYPE`
+- **⚠️ WARNING**: All PostgreSQL operations (`reset_psql`, `load_dataset` with PostgreSQL, etc.) MUST receive explicit user approval before execution. Never run PostgreSQL commands without asking first.
 
 ## Code Style
 
@@ -99,6 +100,7 @@ novel_hub/
 
 ## Data Rules
 
+- **Meta model is the standard**: `models.py` defines the canonical field names (`title`, `ptype`, `has_banner`). All datasets (JSONL), spider output, pandas processing, and dump/load pipelines MUST use these names. No renaming.
 - **Died status**: `连载中` + 3 months no update → `断更`
 - **Active status**: High-engagement upgrade to `断更D` / `完结F`
 - **Missing values**: `null`/`None` — never `0`

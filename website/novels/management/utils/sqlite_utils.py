@@ -66,7 +66,7 @@ def bulk_create_novels(df, author_map, contest_map, batch_size):
         novel_objs.append(
             Novel(
                 id=int(row.nid),
-                title=row.novel_title if not is_na(row.novel_title) else "",
+                title=row.title if not is_na(row.title) else "",
                 ptype=int(row.ptype),
                 genre=int(row.genre),
                 status=int(row.status),
@@ -76,8 +76,8 @@ def bulk_create_novels(df, author_map, contest_map, batch_size):
                 like_num=int_or_none(row.like_num),
                 review_num=int_or_none(getattr(row, "review_num", 0)),
                 comment_num=int_or_none(getattr(row, "comment_num", 0)),
-                has_banner=bool(row.banner),
-                cover=row.cover,
+                has_banner=bool(row.has_banner),
+                cover=row.cover if not is_na(row.cover) else None,
                 last_update=row.last_update if not is_na(row.last_update) else None,
                 author_id=int(row.author_id) if not is_na(row.author_id) else None,
                 contest_id=int(row.contest_id) if not is_na(row.contest_id) else None,

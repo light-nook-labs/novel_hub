@@ -40,8 +40,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--path",
-            default="../release/dataset",
-            help="JSONL directory (default: ../release/dataset)",
+            default="../release/jsonl",
+            help="JSONL directory (default: ../release/jsonl)",
         )
         parser.add_argument(
             "--limit", type=int, default=0, help="Limit records (0 = all)"

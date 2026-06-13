@@ -38,15 +38,27 @@ class Command(BaseCommand):
         self.stdout.write(f"  {len(novel_ids)} novels to insert into Task")
 
         self.stdout.write("Bulk creating tasks ...")
-        with connection.cursor() as cursor:
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.execute("PRAGMA synchronous=NORMAL")
-            for i in range(0, len(novel_ids), BATCH):
-                batch = novel_ids[i : i + BATCH]
-                cursor.executemany(
-                    "INSERT OR IGNORE INTO novels_task (novel_id, status) VALUES (?, ?)",
-                    [(nid, Task.Status.DEFAULT) for nid in batch],
-                )
+        is_psql = connection.vendor == "postgresql"
+
+        if is_psql:
+            # PostgreSQL: use execute_values for batched insert
+            from psycopg2.extras import execute_values
+
+            with connection.cursor() as cursor:
+                sql = "INSERT INTO novels_task (novel_id, status) VALUES %s ON CONFLICT DO NOTHING"
+                rows = [(nid, Task.Status.DEFAULT) for nid in novel_ids]
+                execute_values(cursor, sql, rows, page_size=5000)
+        else:
+            # SQLite: use executemany with PRAGMA tuning
+            with connection.cursor() as cursor:
+                cursor.execute("PRAGMA journal_mode=WAL")
+                cursor.execute("PRAGMA synchronous=NORMAL")
+                for i in range(0, len(novel_ids), BATCH):
+                    batch = novel_ids[i : i + BATCH]
+                    cursor.executemany(
+                        "INSERT OR IGNORE INTO novels_task (novel_id, status) VALUES (?, ?)",
+                        [(nid, Task.Status.DEFAULT) for nid in batch],
+                    )
 
         total = Task.objects.count()
         self.stdout.write(self.style.SUCCESS(f"Done. {total} tasks in table."))

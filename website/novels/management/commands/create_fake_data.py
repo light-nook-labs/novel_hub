@@ -98,22 +98,33 @@ class Command(BaseCommand):
                 )
             )
 
-        Novel.objects.bulk_create(novels, batch_size=5000)
+        Novel.objects.bulk_create(novels, batch_size=5000, ignore_conflicts=True)
         novel_ids = list(Novel.objects.values_list("id", flat=True))
 
         self.stdout.write("Setting M2M tags ...")
-        tag_rows = []
+        # Bulk insert M2M through intermediary table
+        from django.db import connection
+
+        through = Novel.tags.rel.through
+        m2m_table = through._meta.db_table
+        m2m_fk = "novel_id"
+        tag_fk = "tag_id"
+        rows = []
         for nid in novel_ids:
             chosen = random.sample(tag_ids, k=random.randint(1, 5))
             for tid in chosen:
-                tag_rows.append((nid, tid))
-
-        from django.db import connection
+                rows.append((nid, tid))
 
         with connection.cursor() as cursor:
-            cursor.executemany(
-                "INSERT OR IGNORE INTO novels_novel_tags (novel_id, tag_id) VALUES (?, ?)",
-                tag_rows,
-            )
+            if connection.vendor == "postgresql":
+                from psycopg2.extras import execute_values
+
+                sql = f"INSERT INTO {m2m_table} ({m2m_fk}, {tag_fk}) VALUES %s ON CONFLICT DO NOTHING"
+                execute_values(cursor, sql, rows, page_size=5000)
+            else:
+                cursor.executemany(
+                    f"INSERT OR IGNORE INTO {m2m_table} ({m2m_fk}, {tag_fk}) VALUES (?, ?)",
+                    rows,
+                )
 
         self.stdout.write(self.style.SUCCESS(f"Done. {num} novels created."))

@@ -231,6 +231,7 @@ dataset/
 
 # Generated release data
 release/
+dataset*.tar.gz
 
 
 # Node modules

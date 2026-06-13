@@ -24,7 +24,7 @@
       <span class="badge badge-ptype">
         {{ novel.get_ptype_display }}
       </span>
-      {% if novel.contest %}
+      {% if novel.contest and novel.contest.name %}
       <span class="badge badge-contest">
         {{ novel.contest }}
       </span>

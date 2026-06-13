@@ -156,7 +156,9 @@ def set_session_tuning(cursor, work_mem="256MB", synchronous_commit="OFF"):
 
     - synchronous_commit=OFF: skip fsync per transaction (safe for bulk loads)
     - work_mem: increase for sort/hash operations during bulk load
+    - statement_timeout: disable timeout for large COPY operations
     """
+    cursor.execute("SET LOCAL statement_timeout = 0")
     cursor.execute(f"SET LOCAL synchronous_commit = {synchronous_commit}")
     cursor.execute(f"SET LOCAL work_mem = '{work_mem}'")
 
@@ -191,9 +193,10 @@ def _clean_rows(rows):
     for row in rows:
         clean = []
         for v in row:
-            # Fast path: native Python types are never NA
             if type(v) is int or type(v) is str:
                 clean.append(v)
+            elif isinstance(v, bool):
+                clean.append(int(v))
             elif v is None:
                 clean.append(v)
             else:
@@ -205,8 +208,7 @@ def _clean_rows(rows):
 def _copy_from(cursor, table, columns, rows):
     """COPY rows into table using fast buffer construction.
 
-    For 2-column tables, uses f-string (fastest). For others, uses
-    direct string concatenation.
+    Escapes backslashes for PostgreSQL COPY protocol.
     """
     if len(columns) == 2:
         lines = [f"{r[0]}\t{r[1]}" for r in rows]
@@ -218,7 +220,12 @@ def _copy_from(cursor, table, columns, rows):
             for i, v in enumerate(row):
                 if i > 0:
                     w("\t")
-                w(str(v) if v is not None else "\\N")
+                if v is None:
+                    w("\\N")
+                else:
+                    s = str(v)
+                    # Escape backslashes for COPY protocol
+                    w(s.replace("\\", "\\\\"))
             w("\n")
     buf.seek(0)
     cursor.copy_from(buf, table, columns=columns, null="\\N", size=65536)
