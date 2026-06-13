@@ -241,6 +241,10 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("novels:authors"))
         self.assertEqual(response.status_code, 200)
 
+    def test_author_list_queries(self):
+        with self.assertNumQueries(3):
+            self.client.get(reverse("novels:authors"))
+
     def test_author_search(self):
         response = self.client.get(reverse("novels:authors"), {"q": "Test"})
         self.assertEqual(response.status_code, 200)
