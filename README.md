@@ -78,7 +78,7 @@ Enum fields `ptype`, `genre`, `status` store integer values mapped via `Mapping`
 | Field   | Values (en → zh)                              |
 |---------|-----------------------------------------------|
 | genre   | magic→魔幻, eastern→玄幻, ancient→古风, sci_fi→科幻, school→校园, urban→都市, game→游戏, doujin→同人, mystery→悬疑 |
-| status  | finished→已完结, on_going→连载中, died→断更, active_d→断更D, active_f→完结F |
+| status  | finished→已完结, on_going→连载中, died→断更, active_d→断更A, active_f→完结A, removed→下架 |
 | ptype   | free→免费, sign→签约, vip→VIP                 |
 
 Unknown values fall back to `OTHER` (index 1).
@@ -133,7 +133,9 @@ For real data (from release):
 ```bash
 gh release download v1.1.0 --repo light-nook-labs/novel_hub --pattern '*.tar.gz'
 tar -xzf release-v1.1.0.tar.gz
-uv run python manage.py load_jsonl release/dataset/meta_01.jsonl
+uv run python manage.py init_db release/dataset/    # Init (deletes all data first)
+uv run python manage.py upsert_dataset release/dataset/  # Upsert (updates existing)
+uv run python manage.py dump_dataset release                 # Dump DB
 ```
 
 ## Data Dump

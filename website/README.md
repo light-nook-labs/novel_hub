@@ -19,9 +19,9 @@ website/
         management/
             commands/
                 create_fake_data.py
-                load_jsonl.py       # Load JSONL → DB (psql/sqlite optimized)
-                load_tasks.py       # Load tasks.csv separately
-                dump_jsonl.py       # Dump DB → JSONL
+                init_db.py          # Init DB (deletes all data first)
+                upsert_dataset.py   # Upsert (updates existing records)
+                dump_dataset.py     # Dump DB → JSONL/CSV
                 generate_static.py  # SSG for GitHub Pages
                 serve_static.py     # Local preview server
                 fill_tasks.py       # Populate Task table
@@ -66,13 +66,15 @@ uv run python manage.py shell
 # Fake data
 uv run python manage.py create_fake_data -n 1000
 
-# Data loading
-uv run python manage.py load_jsonl ../release/dataset/meta_01.jsonl    # Single file
-uv run python manage.py load_jsonl ../release/dataset/                 # All files + tasks.csv
-uv run python manage.py load_tasks                                     # Tasks only
+# Data init (deletes all data first)
+uv run python manage.py init_db ../release/dataset/                 # All files + tasks.csv
+uv run python manage.py init_db ../release/dataset/meta_01.jsonl    # Single file
+
+# Data upsert (updates existing)
+uv run python manage.py upsert_dataset ../release/dataset/
 
 # Data dump
-uv run python manage.py dump_jsonl release
+uv run python manage.py dump_dataset release
 
 # PostgreSQL
 uv run python manage.py reset_psql --limit 100
@@ -93,22 +95,26 @@ pnpm build    # Production build
 
 - **Scale**: ~250k novels, ~10k authors, ~500 tags, ~200 contests
 - **Strategy**: pandas cleaning → Django ORM bulk insert
-- **Idempotent**: `ignore_conflicts=True` makes re-running safe
-- **Dedup**: Keep latest `last_update` per `nid`
 - **Database-specific**: PostgreSQL uses `execute_values` for bulk ops; SQLite uses PRAGMA tuning
 
-### load_jsonl
+### init_db
 
+- Deletes ALL existing data before loading (clean initialization)
 - Reads cover prefix from `site_config.toml` (not hardcoded)
 - Strips URL prefix to save DB space
 - Converts `nan` strings to `NULL`
 - Timestamps in milliseconds (`unit='ms'`)
 - Auto-loads `tasks.csv` when loading from directory
 
+### upsert_dataset
+
+- Updates existing records, inserts new ones
+- Uses `ON CONFLICT UPDATE` (PostgreSQL) or `update_or_create` (SQLite)
+
 ## Data Rules
 
 - **Died status**: `status == 连载中` + `last_update` >= 3 months ago → `died`
-- **Active status**: High-engagement novels upgrade to `active_d` / `active_f`
+- **A status** (pseudo): `died` or `finished` + (`has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >= 1w` OR `praise >= 1w`) → `断更A` / `完结A`
 - **Missing values**: `null`/`None` — never fill with `0`
 - **Cover URL**: Stored as suffix, reconstructed via `cover_url` template filter
 

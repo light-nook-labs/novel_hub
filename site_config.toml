@@ -25,4 +25,4 @@ died_days = 90
 active_click = 10000000
 active_praise = 10000
 active_like = 10000
-active_review = 80
+active_review = 60

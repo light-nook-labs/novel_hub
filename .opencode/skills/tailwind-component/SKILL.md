@@ -46,9 +46,9 @@ description: Create Tailwind CSS components following project design system
 | Finished (已完结) | Green-100/700 | Green-900/300 | `bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300` |
 | Ongoing (连载中) | Red-100/700 | Red-900/300 | `bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300` |
 | Died (断更) | Gray-100/700 | Gray-700/300 | `bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300` |
-| Active Died (断更D) | Amber-100/700 | Amber-900/300 | `bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300` |
-| Active Finished (完结F) | Teal-100/700 | Teal-900/300 | `bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300` |
-| Other | Gray-100/700 | Gray-700/300 | same as died |
+| Active Died (断更A) | Amber-100/700 | Amber-900/300 | `bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300` |
+| Active Finished (完结A) | Teal-100/700 | Teal-900/300 | `bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300` |
+| Removed (下架) | Gray-100/700 | Gray-700/300 | same as died |
 
 ### Category Badges
 | Category | Light | Dark | Tailwind |

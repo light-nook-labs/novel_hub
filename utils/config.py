@@ -24,3 +24,4 @@ COVER_PREFIX = _cfg.get(
     "http://rs.sfacg.com/web/novel/images/NovelCover/Big/",
 )
 DEFAULT_COVER = _cfg.get("default_cover", "defaultNew.jpg")
+TIMEZONE = _cfg.get("timezone", "Asia/Shanghai")
