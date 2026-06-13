@@ -143,6 +143,10 @@ class NovelListViewTest(TestCase):
         response = self.client.get(reverse("novels:index"), {"sort": "invalid"})
         self.assertEqual(response.status_code, 200)
 
+    def test_index_queries(self):
+        with self.assertNumQueries(4):
+            self.client.get(reverse("novels:index"))
+
 
 class NovelDetailViewTest(TestCase):
     @classmethod
@@ -172,6 +176,10 @@ class NovelDetailViewTest(TestCase):
     def test_detail_contains_title(self):
         response = self.client.get(reverse("novels:detail", args=[1001]))
         self.assertContains(response, "Test Novel")
+
+    def test_detail_queries(self):
+        with self.assertNumQueries(2):
+            self.client.get(reverse("novels:detail", args=[1001]))
 
 
 class NovelRankViewTest(TestCase):
@@ -211,6 +219,10 @@ class NovelRankViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_rank_queries(self):
+        with self.assertNumQueries(3):
+            self.client.get(reverse("novels:rank"))
+
 
 class AuthorViewTest(TestCase):
     @classmethod
@@ -245,6 +257,10 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("novels:author_detail", args=[9999]))
         self.assertEqual(response.status_code, 404)
 
+    def test_author_detail_queries(self):
+        with self.assertNumQueries(4):
+            self.client.get(reverse("novels:author_detail", args=[self.author.id]))
+
 
 class TagViewTest(TestCase):
     @classmethod
@@ -272,6 +288,10 @@ class TagViewTest(TestCase):
     def test_tag_detail_404(self):
         response = self.client.get(reverse("novels:tag_detail", args=[9999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_tag_detail_queries(self):
+        with self.assertNumQueries(4):
+            self.client.get(reverse("novels:tag_detail", args=[self.tag.id]))
 
 
 class ContestViewTest(TestCase):
@@ -303,6 +323,10 @@ class ContestViewTest(TestCase):
         response = self.client.get(reverse("novels:contest_detail", args=[9999]))
         self.assertEqual(response.status_code, 404)
 
+    def test_contest_detail_queries(self):
+        with self.assertNumQueries(4):
+            self.client.get(reverse("novels:contest_detail", args=[self.contest.id]))
+
 
 class BannerViewTest(TestCase):
     @classmethod
@@ -321,6 +345,10 @@ class BannerViewTest(TestCase):
     def test_banner_list(self):
         response = self.client.get(reverse("novels:banners"))
         self.assertEqual(response.status_code, 200)
+
+    def test_banner_queries(self):
+        with self.assertNumQueries(3):
+            self.client.get(reverse("novels:banners"))
 
 
 class EnumViewTest(TestCase):
@@ -367,3 +395,35 @@ class AboutViewTest(TestCase):
     def test_about_template(self):
         response = self.client.get(reverse("novels:about"))
         self.assertTemplateUsed(response, "novels/about.html")
+
+
+class ManagementCommandTests(TestCase):
+    def test_init_db_help(self):
+        out = StringIO()
+        with self.assertRaises(SystemExit) as cm:
+            call_command("init_db", "--help", stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_upsert_dataset_help(self):
+        out = StringIO()
+        with self.assertRaises(SystemExit) as cm:
+            call_command("upsert_dataset", "--help", stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_dump_dataset_help(self):
+        out = StringIO()
+        with self.assertRaises(SystemExit) as cm:
+            call_command("dump_dataset", "--help", stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_generate_static_help(self):
+        out = StringIO()
+        with self.assertRaises(SystemExit) as cm:
+            call_command("generate_static", "--help", stdout=out)
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_serve_static_help(self):
+        out = StringIO()
+        with self.assertRaises(SystemExit) as cm:
+            call_command("serve_static", "--help", stdout=out)
+        self.assertEqual(cm.exception.code, 0)

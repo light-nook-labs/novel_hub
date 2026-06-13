@@ -123,6 +123,13 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    }
+}
+
 # Security headers (production only)
 if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True

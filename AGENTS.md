@@ -53,7 +53,6 @@ uv run python manage.py test novels -v 2
 uv run python manage.py init_db ../release/dataset/    # Init (deletes all data first)
 uv run python manage.py upsert_dataset ../release/dataset/  # Upsert (updates existing)
 uv run python manage.py dump_dataset release                 # Dump DB
-uv run python manage.py reset_psql --limit 100             # Reset PostgreSQL
 
 # Static site
 uv run python manage.py generate_static --output ../build --base-path novel_hub
@@ -82,7 +81,7 @@ novel_hub/
 - **SQLite** for development (default)
 - **PostgreSQL** (Supabase) for production — uncomment in `.env`
 - **Env vars**: `.env` at project root. Required: `SECRET_KEY`, `DEBUG`, `DB_TYPE`
-- **⚠️ WARNING**: All PostgreSQL operations (`reset_psql`, `init_db` with PostgreSQL, etc.) MUST receive explicit user approval before execution. Never run PostgreSQL commands without asking first.
+- **⚠️ WARNING**: All PostgreSQL operations (`init_db` with PostgreSQL, etc.) MUST receive explicit user approval before execution. Never run PostgreSQL commands without asking first.
 
 ## Code Style
 

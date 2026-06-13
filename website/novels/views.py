@@ -1,5 +1,6 @@
 from django.views.generic import ListView, DetailView, TemplateView
 from django.conf import settings
+from django.core.cache import cache
 from django.db import models
 
 from .models import Novel, Author, Tag, Contest
@@ -95,9 +96,12 @@ class NovelListView(ListView):
         ctx["current_sort"] = self.request.GET.get("sort", "")
         ctx["sort_options"] = self.SORT_OPTIONS
 
-        latest_banner = (
-            Novel.objects.filter(has_banner=True).order_by("-last_update").first()
-        )
+        latest_banner = cache.get("latest_banner")
+        if latest_banner is None:
+            latest_banner = (
+                Novel.objects.filter(has_banner=True).order_by("-last_update").first()
+            )
+            cache.set("latest_banner", latest_banner, timeout=300)
         ctx["latest_banner"] = latest_banner
 
         params = self.request.GET.copy()

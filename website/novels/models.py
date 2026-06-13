@@ -78,6 +78,12 @@ class Novel(models.Model):
 
     class Meta:
         ordering = ["-last_update"]
+        indexes = [
+            models.Index(fields=["genre", "status"]),
+            models.Index(fields=["has_banner", "-last_update"]),
+            models.Index(fields=["-click_num"]),
+            models.Index(fields=["author"]),
+        ]
 
     def __str__(self):
         return self.title
