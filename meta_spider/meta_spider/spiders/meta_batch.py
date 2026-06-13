@@ -4,7 +4,6 @@ from typing import Any
 from urllib.parse import urlencode, urljoin
 
 from scrapy import Spider, Request
-from scrapy.exceptions import CloseSpider
 from scrapy.http import HtmlResponse
 
 from models import Meta
@@ -48,7 +47,7 @@ class MetaBatchSpider(Spider):
     def parse(self, response: HtmlResponse):
         items = response.css(".Comic_Pic_List")
         if not items:
-            raise CloseSpider("No items.")
+            return
         for item in items:
             novel_url: str | None = item.css(".Conjunction a::attr(href)").get()
             cover: str | None = item.css(".Conjunction a img::attr(src)").get()
@@ -144,17 +143,22 @@ class MetaBatchSpider(Spider):
             like_num=like_num,
         )
 
-    def _ptype_contest(self, ptype_contest: list[str]) -> dict[str, str]:
+    def _ptype_contest(self, ptype_contest: list[str]) -> dict[str, str|None]:
         # ['VIP', '第九届冬季征文']
         # ['签约', '2026春季征文']
         # ['征文大赛长篇']
         # ['VIP']
         # []
         ptypes: set[str] = {"签约", "VIP"}
+        if not ptype_contest:
+            return dict(
+                ptype="下架",
+                contest=None,
+            )
         ptype_contest: set[str] = set(ptype_contest)
         ptype = ptypes & ptype_contest
         contest = ptype_contest - ptypes
         return dict(
             ptype=("免费" if not ptype else ptype.pop()),
-            contest=("" if not contest else contest.pop()),
+            contest=(None if not contest else contest.pop()),
         )

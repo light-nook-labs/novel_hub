@@ -77,12 +77,13 @@ STATUS = Mapping(
     finished="已完结",
     on_going="连载中",
     died="断更",
-    active_d="断更D",
-    active_f="完结F",
+    active_d="断更A",
+    active_f="完结A",
 )
 
 PTYPE = Mapping(
     free="免费",
     sign="签约",
     vip="VIP",
+    removed='下架',
 )
