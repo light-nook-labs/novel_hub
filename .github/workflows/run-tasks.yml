@@ -1,0 +1,45 @@
+name: Run Tasks
+
+on:
+  schedule:
+    # Run daily at 1:00 AM Shanghai (17:00 UTC)
+    - cron: "0 17 * * *"
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max tasks to process"
+        required: false
+        default: "50"
+
+jobs:
+  run-tasks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run tasks
+        working-directory: website
+        run: |
+          LIMIT=${{ github.event.inputs.limit || '500' }}
+          uv run python manage.py run_tasks --limit $LIMIT
+        env:
+          DB_TYPE: postgresql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: "0"
