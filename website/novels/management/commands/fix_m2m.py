@@ -48,9 +48,15 @@ class Command(BaseCommand):
             action="store_true",
             help="Only check M2M status, do not fix",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Skip confirmation prompt",
+        )
 
     def handle(self, *args, **options):
         check_only = options["check"]
+        force = options["force"]
         path = options.get("path")
         batch_size = options["batch_size"]
 
@@ -83,10 +89,11 @@ class Command(BaseCommand):
             return
 
         if m2m_count > 0 and not check_only:
-            confirm = input(f"M2M table has {m2m_count} entries. Rebuild? [y/N] ")
-            if confirm.lower() != "y":
-                self.stdout.write("Cancelled.")
-                return
+            if not force:
+                confirm = input(f"M2M table has {m2m_count} entries. Rebuild? [y/N] ")
+                if confirm.lower() != "y":
+                    self.stdout.write("Cancelled.")
+                    return
 
         if check_only:
             self.stdout.write(self.style.WARNING("M2M table is empty!"))
