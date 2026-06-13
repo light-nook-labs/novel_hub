@@ -22,8 +22,10 @@ TQDM_THRESHOLD = 30
 LOG_FORMAT = "[%(asctime)s] %(name)s %(levelname)s: %(message)s"
 LOG_DATE = "%H:%M:%S"
 
-# Configure root logger for utils
-logging.basicConfig(format=LOG_FORMAT, datefmt=LOG_DATE, level=logging.INFO)
+# Configure root logger only if no handlers are set yet
+# (avoids race condition with Django's logging setup)
+if not logging.getLogger().handlers:
+    logging.basicConfig(format=LOG_FORMAT, datefmt=LOG_DATE, level=logging.INFO)
 
 
 def get_logger(name: str) -> logging.Logger:
