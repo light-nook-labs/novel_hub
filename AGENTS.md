@@ -55,6 +55,7 @@ uv run python manage.py upsert_dataset ../release/dataset/  # Upsert (updates ex
 uv run python manage.py dump_dataset release                 # Dump DB
 uv run python manage.py fix_m2m ../release/dataset/ --force  # Fix missing M2M
 uv run python manage.py fill_tasks                           # Create tasks for duplicate covers
+uv run python manage.py run_tasks                            # Process tasks (crawl + update)
 
 # Static site
 uv run python manage.py generate_static --output ../build --base-path novel_hub
@@ -127,6 +128,8 @@ Task table tracks novels that need attention (duplicate covers, data issues).
 ```bash
 uv run python manage.py fill_tasks              # Create tasks for duplicate covers
 uv run python manage.py fill_tasks --dry-run    # Preview without creating
+uv run python manage.py run_tasks               # Process tasks (crawl + update)
+uv run python manage.py run_tasks --limit 100   # Process limited tasks
 ```
 
 ### Workflow
@@ -134,6 +137,12 @@ uv run python manage.py fill_tasks --dry-run    # Preview without creating
 1. `fill_tasks` finds novels sharing the same cover (excluding None)
 2. Classifies each novel as urgent or default based on priority logic
 3. Creates Task entries with OneToOne link to Novel
+4. `run_tasks` processes tasks: crawls novel details, updates DB, marks finished
+5. Finished tasks are deleted after processing
+
+### Task Ordering
+
+Status priority: `urgent` > `default` > `finished`, then `novel_id` descending.
 
 ## Spider Rules
 
