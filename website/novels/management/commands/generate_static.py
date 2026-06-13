@@ -249,20 +249,27 @@ class Command(BaseCommand):
         static_output = output_dir / "static"
         static_output.mkdir(parents=True, exist_ok=True)
 
+        # Copy static files (exclude node_modules to avoid copying entire tree)
         for source_dir in source_dirs:
             if source_dir.exists():
                 logger.info("Copying static files from %s", source_dir)
-                shutil.copytree(source_dir, static_output, dirs_exist_ok=True, symlinks=False)
+                for item in source_dir.iterdir():
+                    if item.name == "node_modules":
+                        continue  # Skip node_modules, will copy htmx separately
+                    dest = static_output / item.name
+                    if item.is_dir():
+                        shutil.copytree(item, dest, dirs_exist_ok=True, symlinks=False)
+                    else:
+                        shutil.copy2(item, dest)
 
-        # Copy node_modules from project root if it exists
+        # Copy only htmx.org from node_modules
         project_root = Path(settings.BASE_DIR).parent
         node_modules_src = project_root / "node_modules"
-        node_modules_dst = static_output / "node_modules"
-        if node_modules_src.exists() and not node_modules_dst.exists():
-            logger.info("Copying node_modules from %s", node_modules_src)
-            htmx_src = node_modules_src / "htmx.org"
-            if htmx_src.exists():
-                shutil.copytree(htmx_src, node_modules_dst / "htmx.org", symlinks=False)
+        htmx_src = node_modules_src / "htmx.org"
+        htmx_dst = static_output / "node_modules" / "htmx.org"
+        if htmx_src.exists() and not htmx_dst.exists():
+            logger.info("Copying htmx.org from %s", htmx_src)
+            shutil.copytree(htmx_src, htmx_dst, symlinks=False)
 
         logger.info("Static files copied to %s", static_output)
 
