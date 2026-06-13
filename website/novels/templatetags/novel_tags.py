@@ -21,6 +21,8 @@ def _display_width(text):
 @register.filter
 def truncate_cjk(text, max_width=26):
     """Truncate text by display width (CJK=2, ASCII=1). Adds '…' if truncated."""
+    if text is None:
+        return ""
     max_width = int(max_width)
     if _display_width(text) <= max_width:
         return text
@@ -92,6 +94,8 @@ def _pill_hue(key):
 @register.filter
 def pill_bg(obj, model_name):
     """Generate deterministic background color from object ID + model name."""
+    if obj is None:
+        return ""
     h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 70%, 92%)"
 
@@ -99,6 +103,8 @@ def pill_bg(obj, model_name):
 @register.filter
 def pill_bg_dark(obj, model_name):
     """Generate deterministic dark-mode background color."""
+    if obj is None:
+        return ""
     h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 60%, 20%)"
 
@@ -106,6 +112,8 @@ def pill_bg_dark(obj, model_name):
 @register.filter
 def pill_text(obj, model_name):
     """Generate deterministic text color from object ID + model name."""
+    if obj is None:
+        return ""
     h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 70%, 35%)"
 
@@ -113,6 +121,8 @@ def pill_text(obj, model_name):
 @register.filter
 def pill_text_dark(obj, model_name):
     """Generate deterministic dark-mode text color."""
+    if obj is None:
+        return ""
     h = _pill_hue(f"{model_name}_{obj.id}")
     return f"hsl({h}, 70%, 70%)"
 
@@ -124,7 +134,7 @@ def detail_url(obj, url_name):
 
     try:
         return reverse(url_name, args=[obj.id])
-    except NoReverseMatch:
+    except (NoReverseMatch, AttributeError):
         return ""
 
 

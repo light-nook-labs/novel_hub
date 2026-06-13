@@ -1,13 +1,20 @@
 """Shared config — reads from site_config.toml."""
 
+import logging
 import tomllib
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 _ROOT = Path(__file__).resolve().parent.parent
 _config_path = _ROOT / "site_config.toml"
 
-with open(_config_path, "rb") as f:
-    TOML = tomllib.load(f)
+if _config_path.exists():
+    with open(_config_path, "rb") as f:
+        TOML = tomllib.load(f)
+else:
+    TOML = {}
+    logger.warning("site_config.toml not found at %s, using defaults", _config_path)
 
 _cfg = TOML.get("scraper", {})
 

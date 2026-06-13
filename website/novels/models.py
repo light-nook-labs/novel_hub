@@ -116,7 +116,7 @@ class Task(models.Model):
     )
 
     class Meta:
-        ordering = ["-novel__last_update"]
+        ordering = ["-id"]
 
     def __str__(self):
         return f"Task #{self.id} → Novel {self.novel_id}"

@@ -30,8 +30,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--bind",
             type=str,
-            default="0.0.0.0",
-            help="Address to bind to (default: 0.0.0.0)",
+            default="127.0.0.1",
+            help="Address to bind to (default: 127.0.0.1)",
         )
 
     def handle(self, *args, **options):

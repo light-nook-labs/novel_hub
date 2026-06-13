@@ -47,61 +47,44 @@ class Command(BaseCommand):
         # Create output directory
         output_path.mkdir(parents=True, exist_ok=True)
 
-        # Step 1: Query novels with related data
-        logger.info("Querying novels...")
-        novels = Novel.objects.values(
-            "id",
-            "title",
-            "author__name",
-            "genre",
-            "status",
-            "ptype",
-            "has_banner",
-            "word_num",
-            "click_num",
-            "praise_num",
-            "like_num",
-            "review_num",
-            "comment_num",
-            "contest__name",
-            "last_update",
-            "cover",
-        )
+        # Step 1: Load all tags into memory (small dataset)
+        logger.info("Loading tags...")
+        novel_tags = Novel.tags.through.objects.values("novel_id", "tag__name")
+        tags_dict = {}
+        for nt in novel_tags:
+            tags_dict.setdefault(nt["novel_id"], []).append(nt["tag__name"])
+        logger.info("Loaded tags for %d novels", len(tags_dict))
 
-        # Step 2: Convert to Meta objects for validation
-        logger.info("Converting to Meta objects...")
+        # Step 2: Query novels in batches and convert to Meta objects
+        logger.info("Querying novels...")
+        novel_qs = Novel.objects.values(
+            "id", "title", "author__name", "genre", "status", "ptype",
+            "has_banner", "word_num", "click_num", "praise_num", "like_num",
+            "review_num", "comment_num", "contest__name", "last_update", "cover",
+        )
+        total = novel_qs.count()
+        logger.info("Total novels: %d", total)
+
         meta_list = []
-        for row in progress(novels, desc="Converting"):
-            try:
-                meta = Meta.from_django_dict(row)
-                meta_list.append(meta)
-            except Exception as e:
-                logger.debug("Validation error for id=%s: %s", row.get("id"), e)
+        batch_size = 10000
+        for start in progress(range(0, total, batch_size), desc="Converting"):
+            for row in novel_qs[start:start + batch_size]:
+                try:
+                    meta = Meta.from_django_dict(row)
+                    meta.tags = tags_dict.get(meta.nid, [])
+                    meta_list.append(meta)
+                except Exception as e:
+                    logger.debug("Validation error for id=%s: %s", row.get("id"), e)
 
         logger.info("Converted %d novels", len(meta_list))
 
-        # Step 3: Add tags
-        logger.info("Loading tags...")
-        novel_tags = Novel.tags.through.objects.values(
-            "novel_id", "tag__name"
-        )
-        tags_dict = {}
-        for nt in novel_tags:
-            nid = nt["novel_id"]
-            tag = nt["tag__name"]
-            tags_dict.setdefault(nid, []).append(tag)
-
-        # Update Meta objects with tags
-        for meta in meta_list:
-            meta.tags = tags_dict.get(meta.nid, [])
-
-        # Step 4: Output files
+        # Step 3: Output files
         if output_format == "jsonl":
             self._dump_jsonl(meta_list, output_path, chunk_size)
         else:
             self._dump_csv(meta_list, output_path)
 
-        # Step 5: Dump tasks
+        # Step 4: Dump tasks
         self._dump_tasks(output_path)
 
         logger.info("Dataset dumped successfully!")

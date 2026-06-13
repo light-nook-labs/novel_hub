@@ -122,10 +122,14 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cache
+# Note: LocMemCache is per-process. For multi-worker deployments (e.g. gunicorn),
+# use Redis or Memcached instead to share cache across workers.
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
