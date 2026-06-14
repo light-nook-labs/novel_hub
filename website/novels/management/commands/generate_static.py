@@ -145,7 +145,13 @@ class Command(BaseCommand):
         # 5. Banner pages (all pages)
         pages.extend(self._collect_banner_pages(output_dir, base_path, data))
 
-        # 6. 404 page (1 page)
+        # 6. Comments page (1 page)
+        pages.extend(self._collect_comments_pages(output_dir, base_path, data))
+
+        # 7. Dashboard page (1 page)
+        pages.extend(self._collect_dashboard_pages(output_dir, base_path, data))
+
+        # 8. 404 page (1 page)
         pages.extend(self._collect_404_pages(output_dir, base_path))
 
         logger.info("Generating %d static pages with %d workers...", len(pages), workers)
@@ -483,6 +489,337 @@ class Command(BaseCommand):
                 output_path,
                 base_path,
             ))
+
+        return pages
+
+    def _collect_comments_pages(self, output_dir, base_path, data):
+        """Collect comments page generation task."""
+        pages = []
+
+        context = {}
+
+        pages.append((
+            "novels/comments.html",
+            context,
+            str(output_dir / "comments" / "index.html"),
+            base_path,
+        ))
+
+        return pages
+
+    def _collect_dashboard_pages(self, output_dir, base_path, data):
+        """Collect dashboard page generation task."""
+        pages = []
+
+        # Import plotly for chart generation
+        import plotly.graph_objects as go
+        from novels.mappings import GENRE, STATUS, PTYPE
+
+        def _layout(height=300):
+            return dict(
+                height=height,
+                margin=dict(l=40, r=20, t=30, b=30),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                font=dict(size=11),
+            )
+
+        def _to_html(fig):
+            return fig.to_html(full_html=False, include_plotlyjs=False)
+
+        def _w(val):
+            """Format number as X.Xw"""
+            if val >= 10000:
+                return f"{val/10000:.1f}w"
+            return str(val)
+
+        def _w_axis(val):
+            """Format axis tick as Xw"""
+            if val >= 10000:
+                return f"{val//10000}w"
+            return str(val)
+
+        amber = "#f59e0b"
+        orange = "#f97316"
+        rose = "#f43f5e"
+        colors = [amber, orange, rose, "#8b5cf6", "#06b6d4", "#10b981", "#3b82f6", "#ec4899", "#14b8a6"]
+
+        ctx = {
+            "novel_count": data["novel_count"],
+            "author_count": data["author_count"],
+            "tag_count": Tag.objects.count(),
+            "contest_count": Contest.objects.count(),
+        }
+
+        # 1. Genre distribution (donut)
+        genre_stats = dict(
+            Novel.objects.values_list("genre")
+            .annotate(c=Count("id"))
+            .values_list("genre", "c")
+        )
+        genre_labels = [GENRE.get_zh(i) for i in range(2, 11)]
+        genre_data = [genre_stats.get(i, 0) for i in range(2, 11)]
+
+        fig = go.Figure(data=[go.Pie(
+            labels=genre_labels, values=genre_data, hole=0.5,
+            marker_colors=colors,
+            textinfo="label+percent", textposition="outside",
+            textfont=dict(size=11),
+        )])
+        fig.update_layout(**_layout(320), showlegend=False)
+        ctx["chart_genre"] = _to_html(fig)
+
+        # 2. Status distribution (donut)
+        status_stats = dict(
+            Novel.objects.values_list("status")
+            .annotate(c=Count("id"))
+            .values_list("status", "c")
+        )
+        status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
+        status_data = [status_stats.get(i, 0) for i in range(2, 8)]
+
+        fig = go.Figure(data=[go.Pie(
+            labels=status_labels, values=status_data, hole=0.5,
+            marker_colors=colors,
+            textinfo="label+percent", textposition="outside",
+            textfont=dict(size=11),
+        )])
+        fig.update_layout(**_layout(320), showlegend=False)
+        ctx["chart_status"] = _to_html(fig)
+
+        # 3. Top 15 tags (horizontal bar, log scale)
+        top_tags = (
+            Tag.objects.annotate(novel_count=Count("novels"))
+            .filter(novel_count__gt=0)
+            .order_by("-novel_count")[:15]
+        )
+        tag_labels = [t.name for t in top_tags]
+        tag_data = [t.novel_count for t in top_tags]
+
+        fig = go.Figure(data=[go.Bar(
+            y=tag_labels[::-1], x=tag_data[::-1], orientation="h",
+            marker_color=amber,
+            text=[_w(d) for d in tag_data[::-1]], textposition="outside",
+        )])
+        fig.update_layout(**_layout(380),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]], tickvals=[10, 100, 1000, 10000, 100000]),
+        )
+        ctx["chart_tags"] = _to_html(fig)
+
+        # 4. Top 10 authors by total clicks (horizontal bar, log scale)
+        top_authors = (
+            Author.objects.annotate(
+                novel_count=Count("novels"),
+                total_click=Sum("novels__click_num"),
+            )
+            .filter(novel_count__gt=0)
+            .order_by("-total_click")[:10]
+        )
+        author_labels = [a.name[:8] for a in top_authors]
+        author_clicks = [a.total_click or 0 for a in top_authors]
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(
+            y=author_labels[::-1], x=author_clicks[::-1], orientation="h",
+            marker_color=orange,
+            text=[_w(c) for c in author_clicks[::-1]], textposition="outside",
+        ))
+        fig.update_layout(**_layout(380),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]], tickvals=[100000, 1000000, 10000000, 100000000]),
+        )
+        ctx["chart_authors"] = _to_html(fig)
+
+        # 5. Ptype distribution (donut)
+        ptype_stats = dict(
+            Novel.objects.values_list("ptype")
+            .annotate(c=Count("id"))
+            .values_list("ptype", "c")
+        )
+        ptype_labels = [PTYPE.get_zh(i) for i in range(2, 5)]
+        ptype_data = [ptype_stats.get(i, 0) for i in range(2, 5)]
+
+        fig = go.Figure(data=[go.Pie(
+            labels=ptype_labels, values=ptype_data, hole=0.5,
+            marker_colors=[amber, rose, "#6366f1"],
+            textinfo="label+percent", textposition="outside",
+        )])
+        fig.update_layout(**_layout(300), showlegend=False)
+        ctx["chart_ptype"] = _to_html(fig)
+
+        # 6. Word count distribution (histogram, log x-axis)
+        word_data = list(
+            Novel.objects.filter(word_num__gt=0)
+            .values_list("word_num", flat=True)[:50000]
+        )
+
+        fig = go.Figure(data=[go.Histogram(
+            x=word_data, nbinsx=40,
+            marker_color=amber, opacity=0.8,
+        )])
+        fig.update_layout(**_layout(280),
+            xaxis=dict(title="字数", type="log", gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_word_dist"] = _to_html(fig)
+
+        # 7. Top contests (horizontal bar, log scale)
+        top_contests = (
+            Contest.objects.annotate(novel_count=Count("novels"))
+            .filter(novel_count__gt=0)
+            .order_by("-novel_count")[:10]
+        )
+        contest_labels = [c.name[:12] for c in top_contests]
+        contest_data = [c.novel_count for c in top_contests]
+
+        fig = go.Figure(data=[go.Bar(
+            y=contest_labels[::-1], x=contest_data[::-1], orientation="h",
+            marker_color=colors[:len(contest_labels)],
+            text=[_w(d) for d in contest_data[::-1]], textposition="outside",
+        )])
+        fig.update_layout(**_layout(320),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_contests"] = _to_html(fig)
+
+        # 8. Genre x Status heatmap
+        heatmap_data = (
+            Novel.objects.values("genre", "status")
+            .annotate(c=Count("id"))
+        )
+        genre_range = list(range(2, 11))
+        status_range = list(range(2, 8))
+        heat_matrix = []
+        for g in genre_range:
+            row = []
+            for s in status_range:
+                val = next((h["c"] for h in heatmap_data if h["genre"] == g and h["status"] == s), 0)
+                row.append(val)
+            heat_matrix.append(row)
+
+        fig = go.Figure(data=[go.Heatmap(
+            z=heat_matrix,
+            x=[STATUS.get_zh(s) for s in status_range],
+            y=[GENRE.get_zh(g) for g in genre_range],
+            colorscale="YlOrRd",
+        )])
+        fig.update_layout(**_layout(350))
+        ctx["chart_heatmap"] = _to_html(fig)
+
+        # 9. Top 10 novels by click
+        top_click = data["all_novels"][:10]
+        fig = go.Figure(data=[go.Bar(
+            y=[n.title[:12] for n in top_click[::-1]],
+            x=[n.click_num or 0 for n in top_click[::-1]],
+            orientation="h",
+            marker_color=amber,
+            text=[_w(n.click_num or 0) for n in top_click[::-1]],
+            textposition="outside",
+        )])
+        fig.update_layout(**_layout(380),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_top_click"] = _to_html(fig)
+
+        # 10. Top 10 novels by like
+        top_like_novels = sorted(data["all_novels"], key=lambda n: n.like_num or 0, reverse=True)[:10]
+        fig = go.Figure(data=[go.Bar(
+            y=[n.title[:12] for n in top_like_novels[::-1]],
+            x=[n.like_num or 0 for n in top_like_novels[::-1]],
+            orientation="h",
+            marker_color=orange,
+            text=[_w(n.like_num or 0) for n in top_like_novels[::-1]],
+            textposition="outside",
+        )])
+        fig.update_layout(**_layout(380),
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_top_like"] = _to_html(fig)
+
+        # 11. Scatter: click vs like
+        sample_novels = (
+            Novel.objects.filter(click_num__gt=0, like_num__gt=0)
+            .values("click_num", "like_num", "title", "genre")
+            [:3000]
+        )
+        scatter_x = [n["click_num"] for n in sample_novels]
+        scatter_y = [n["like_num"] for n in sample_novels]
+        scatter_text = [n["title"][:20] for n in sample_novels]
+        scatter_color = [GENRE.get_zh(n["genre"]) for n in sample_novels]
+
+        fig = go.Figure(data=[go.Scatter(
+            x=scatter_x, y=scatter_y, mode="markers",
+            marker=dict(size=4, opacity=0.5, line=dict(width=0)),
+            text=scatter_text, customdata=scatter_color,
+            hovertemplate="%{text}<br>分类: %{customdata}<br>点击: %{x}<br>收藏: %{y}",
+        )])
+        fig.update_layout(**_layout(350),
+            xaxis=dict(title="点击", type="log", gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(title="收藏", type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
+        ctx["chart_scatter"] = _to_html(fig)
+
+        # 12. Banner comparison
+        from django.db.models import Q
+        banner_stats = Novel.objects.aggregate(
+            banner_count=Count("id", filter=Q(has_banner=True)),
+            nonbanner_count=Count("id", filter=Q(has_banner=False)),
+            banner_click=Sum("click_num", filter=Q(has_banner=True)),
+            nonbanner_click=Sum("click_num", filter=Q(has_banner=False)),
+            banner_like=Sum("like_num", filter=Q(has_banner=True)),
+            nonbanner_like=Sum("like_num", filter=Q(has_banner=False)),
+            banner_praise=Sum("praise_num", filter=Q(has_banner=True)),
+            nonbanner_praise=Sum("praise_num", filter=Q(has_banner=False)),
+        )
+
+        metrics = ["点击", "收藏", "点赞"]
+        banner_vals = [
+            banner_stats["banner_click"] or 0,
+            banner_stats["banner_like"] or 0,
+            banner_stats["banner_praise"] or 0,
+        ]
+        nonbanner_vals = [
+            banner_stats["nonbanner_click"] or 0,
+            banner_stats["nonbanner_like"] or 0,
+            banner_stats["nonbanner_praise"] or 0,
+        ]
+        bc = banner_stats["banner_count"] or 1
+        nc = banner_stats["nonbanner_count"] or 1
+        banner_per = [v / bc for v in banner_vals]
+        nonbanner_per = [v / nc for v in nonbanner_vals]
+
+        fig = go.Figure()
+        fig.add_trace(go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber))
+        fig.add_trace(go.Bar(x=metrics, y=nonbanner_per, name=f"非Banner ({nc}部)", marker_color="#94a3b8"))
+        fig.update_layout(**_layout(300), barmode="group", yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"))
+        ctx["chart_banner"] = _to_html(fig)
+
+        # 13. A-status candidates
+        a_criteria = Q(has_banner=True) | Q(click_num__gte=10000000) | Q(review_num__gte=60) | Q(like_num__gte=10000) | Q(praise_num__gte=10000)
+        a_count = Novel.objects.filter(a_criteria, status__in=[3, 2]).count()
+        not_a_count = Novel.objects.filter(~a_criteria, status__in=[3, 2]).count()
+        already_a = Novel.objects.filter(status__in=[4, 5]).count()
+
+        fig = go.Figure(data=[go.Pie(
+            labels=["已是A状态", "符合A条件(待升级)", "不符合A条件"],
+            values=[already_a, a_count, not_a_count],
+            hole=0.5,
+            marker_colors=[amber, orange, "#94a3b8"],
+            textinfo="label+value", textposition="outside",
+        )])
+        fig.update_layout(**_layout(300), showlegend=False)
+        ctx["chart_a_status"] = _to_html(fig)
+
+        pages.append((
+            "novels/dashboard.html",
+            ctx,
+            str(output_dir / "dashboard" / "index.html"),
+            base_path,
+        ))
 
         return pages
 

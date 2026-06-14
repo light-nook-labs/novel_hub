@@ -2,6 +2,10 @@
 
 {% block title %}数据概览 - {{ TOML.site.name }}{% endblock %}
 
+{% block head_js %}
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
+{% endblock %}
+
 {% block content %}
 <div class="mb-6">
   <h1 class="text-2xl font-bold">数据概览</h1>
