@@ -2,6 +2,7 @@
 name = "Novel Hub"
 author = "light-nook-labs"
 github_url = "https://github.com/light-nook-labs/novel_hub"
+timezone = "Asia/Shanghai"
 
 [pagination]
 style = "traditional"
@@ -10,24 +11,21 @@ rank_per_page = 100
 banner_per_page = 12
 detail_novel_limit = 50
 
-[scraper]
-user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
-list_url = "https://book.sfacg.com/List/default.aspx"
-common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
-novel_url = "https://book.sfacg.com/Novel/{nid}/"
-mobile_url = "https://m.sfacg.com/b/{nid}/"
-banner_url = "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
-cover_prefix = "https://rs.sfacg.com/web/novel/images/NovelCover/Big/"
-default_cover = "defaultNew.jpg"
-timezone = "Asia/Shanghai"
-
 [thresholds]
 died_days = 90
 active_click = 10000000
 active_praise = 10000
 active_like = 10000
 active_review = 60
-
-[snapshot]
 snapshot_days = 7
 retention_days = 30
+
+[urls]
+user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+list = "https://book.sfacg.com/List/default.aspx"
+common = "https://book.sfacg.com/ajax/ashx/Common.ashx"
+novel = "https://book.sfacg.com/Novel/{nid}/"
+mobile = "https://m.sfacg.com/b/{nid}/"
+banner = "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
+cover_prefix = "https://rs.sfacg.com/web/novel/images/NovelCover/Big/"
+default_cover = "defaultNew.jpg"
