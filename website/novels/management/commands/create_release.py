@@ -82,12 +82,20 @@ class Command(BaseCommand):
 
     def _novel_to_dict(self, novel):
         """Convert Novel instance to dict for export."""
-        # Compress cover URL
+        # Reconstruct full cover URL
         cover = novel.cover
-        if cover and cover.startswith(COVER_PREFIX):
-            cover = cover[len(COVER_PREFIX) :]
-            if cover == DEFAULT_COVER:
-                cover = None
+        if cover:
+            if not cover.startswith("http"):
+                cover = COVER_PREFIX + cover
+        else:
+            cover = COVER_PREFIX + DEFAULT_COVER
+
+        # Format last_update with timezone
+        last_update = None
+        if novel.last_update:
+            last_update = novel.last_update.isoformat()
+            if not last_update.endswith("+00:00"):
+                last_update += "+00:00"
 
         return {
             "nid": novel.id,
@@ -102,9 +110,7 @@ class Command(BaseCommand):
             "like_num": novel.like_num,
             "ptype": novel.get_ptype_display(),
             "contest": novel.contest.name if novel.contest else None,
-            "last_update": (
-                novel.last_update.isoformat() if novel.last_update else None
-            ),
+            "last_update": last_update,
             "review_num": novel.review_num,
             "comment_num": novel.comment_num,
             "tags": [tag.name for tag in novel.tags.all()],
