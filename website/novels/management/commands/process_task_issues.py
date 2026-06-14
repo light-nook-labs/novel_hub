@@ -16,7 +16,8 @@ import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from novels.models import Novel, Task
+from novels.models import Author, Novel, Task
+from utils import fetch_html
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -91,6 +92,13 @@ class Command(BaseCommand):
                         f"**小说 ID**: {nid}\n\n"
                         f"任务已加入队列，将在下次 Run Tasks 时处理。"
                     )
+                elif result == "created_pending":
+                    created_tasks += 1
+                    comment = (
+                        f"✅ 已收到任务提交\n\n"
+                        f"**小说 ID**: {nid}\n\n"
+                        f"小说不在数据库中，已创建待处理条目并加入爬取队列。"
+                    )
                 elif result == "exists":
                     comment = (
                         f"⚠️ 任务已存在\n\n"
@@ -101,7 +109,7 @@ class Command(BaseCommand):
                     comment = (
                         f"❌ 小说不存在\n\n"
                         f"**小说 ID**: {nid}\n\n"
-                        f"数据库中未找到该小说，请检查 ID 是否正确。"
+                        f"sfacg.com 上未找到该小说，请检查 ID 是否正确。"
                     )
 
                 self._close_issue(headers, repo, issue_number, comment)
@@ -139,23 +147,59 @@ class Command(BaseCommand):
         return None
 
     def _add_task(self, nid):
-        """Add task for novel ID. Returns 'created', 'exists', or 'not_found'."""
+        """Add task for novel ID.
+
+        Returns:
+            'created': task created for existing novel
+            'created_pending': novel not in DB, created minimal entry + task
+            'exists': task already exists
+            'not_found': novel doesn't exist anywhere
+        """
         nid = int(nid)
 
-        # Check if novel exists
-        if not Novel.objects.filter(id=nid).exists():
-            logger.warning("Novel %d not found, skipping", nid)
+        # Check if novel exists in DB
+        if Novel.objects.filter(id=nid).exists():
+            # Check if task already exists
+            if Task.objects.filter(novel_id=nid).exists():
+                logger.info("Task for novel %d already exists, skipping", nid)
+                return "exists"
+
+            with transaction.atomic():
+                Task.objects.create(novel_id=nid, status=Task.Status.URGENT)
+            return "created"
+
+        # Novel not in DB, try to fetch from sfacg.com
+        logger.info("Novel %d not in DB, checking sfacg.com...", nid)
+        try:
+            session = requests.Session()
+            html_data = fetch_html(session, nid)
+            title = html_data.get("title", "")
+            author_name = html_data.get("author", "")
+
+            if not title:
+                logger.warning("Novel %d: no title found, skipping", nid)
+                return "not_found"
+
+            # Create minimal novel entry
+            with transaction.atomic():
+                author = None
+                if author_name:
+                    author, _ = Author.objects.get_or_create(name=author_name)
+
+                Novel.objects.create(
+                    id=nid,
+                    title=title,
+                    author=author,
+                    status=1,  # Default status
+                )
+                Task.objects.create(novel_id=nid, status=Task.Status.DEFAULT)
+
+            logger.info("Created pending novel %d: %s", nid, title)
+            return "created_pending"
+
+        except Exception as e:
+            logger.warning("Novel %d not found on sfacg.com: %s", nid, e)
             return "not_found"
-
-        # Check if task already exists
-        if Task.objects.filter(novel_id=nid).exists():
-            logger.info("Task for novel %d already exists, skipping", nid)
-            return "exists"
-
-        with transaction.atomic():
-            Task.objects.create(novel_id=nid, status=Task.Status.URGENT)
-
-        return "created"
 
     def _close_issue(self, headers, repo, issue_number, comment):
         """Add comment and close issue."""
