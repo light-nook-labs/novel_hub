@@ -14,7 +14,8 @@ on:
 jobs:
   crawl-and-upsert:
     runs-on: ubuntu-latest
-
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +24,8 @@ jobs:
           python-version: "3.13"
 
       - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
 
       - name: Install dependencies
         run: uv sync
