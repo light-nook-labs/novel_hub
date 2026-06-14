@@ -12,6 +12,9 @@
       <a href="https://giscus.app" target="_blank" class="text-amber-600 dark:text-amber-400 hover:underline">GISCUS</a>，
       使用 GitHub Discussions 作为后端。
     </p>
+    <p class="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-4 py-2 inline-block">
+      ⚠️ 此页面切换配色方案会强制刷新页面
+    </p>
   </div>
 
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -41,6 +44,14 @@ document.addEventListener('DOMContentLoaded', function() {
   script.setAttribute('crossorigin', 'anonymous');
   script.async = true;
   container.appendChild(script);
+
+  // Force page reload when theme toggle is clicked
+  var toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', function() {
+      location.reload();
+    });
+  }
 });
 </script>
 {% endblock %}

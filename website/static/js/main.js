@@ -17,11 +17,6 @@
     const isDark = document.documentElement.classList.contains('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     updateIcons();
-
-    // Reload page if on comments page to refresh GISCUS
-    if (document.getElementById('giscus-container')) {
-      location.reload();
-    }
   });
 })();
 
