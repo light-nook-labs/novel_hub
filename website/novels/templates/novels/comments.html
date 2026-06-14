@@ -15,9 +15,9 @@
   </div>
 
   <!-- Task Collection Section -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-    <h2 class="text-lg font-semibold mb-4">提交任务</h2>
-    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+  <div class="mb-8">
+    <h2 class="text-lg font-semibold mb-3">提交任务</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
       提交一个小说 ID 以修复数据问题（如重复封面、缺失信息等）。系统会自动处理并更新。
     </p>
     <form id="task-form" class="flex gap-3">
@@ -43,6 +43,12 @@
     </form>
     <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">仅支持 5-7 位纯数字的小说 ID（10000-9999999）</p>
     <div id="task-result" class="mt-3 text-sm hidden"></div>
+  </div>
+
+  <!-- GISCUS Comments Section -->
+  <div>
+    <h2 class="text-lg font-semibold mb-3">评论区</h2>
+    <div id="giscus-container"></div>
   </div>
 
   <!-- GISCUS Comments Section -->
