@@ -39,8 +39,11 @@ class Meta(BaseModel):
         - contest → contest_name (for FK lookup)
         - genre/status/ptype → integer enum values
         - cover → compressed suffix (default cover → None)
+        - last_update → timezone-aware datetime
         """
-        from .config import COVER_PREFIX, DEFAULT_COVER
+        from zoneinfo import ZoneInfo
+
+        from .config import COVER_PREFIX, DEFAULT_COVER, TIMEZONE
         from .mappings import GENRE, STATUS, PTYPE
 
         # Compress cover URL
@@ -48,6 +51,11 @@ class Meta(BaseModel):
         if cover and cover.startswith(COVER_PREFIX):
             suffix = cover[len(COVER_PREFIX) :]
             cover = None if suffix == DEFAULT_COVER else suffix
+
+        # Make last_update timezone-aware
+        last_update = self.last_update
+        if last_update and last_update.tzinfo is None:
+            last_update = last_update.replace(tzinfo=ZoneInfo(TIMEZONE))
 
         return {
             "id": self.nid,
@@ -63,7 +71,7 @@ class Meta(BaseModel):
             "praise_num": self.praise_num,
             "like_num": self.like_num,
             "comment_num": self.comment_num,
-            "last_update": self.last_update,
+            "last_update": last_update,
             "review_num": self.review_num,
             "tags": self.tags,
             "cover": cover,
