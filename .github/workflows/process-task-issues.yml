@@ -2,8 +2,8 @@ name: Process Task Issues
 
 on:
   schedule:
-    # Run every 30 minutes
-    - cron: "*/30 * * * *"
+    # Run daily at 3:00 AM Shanghai (19:00 UTC)
+    - cron: "0 19 * * *"
   workflow_dispatch:
 
 jobs:
@@ -57,23 +57,28 @@ jobs:
               const body = issue.body || '';
               const title = issue.title;
 
-              // Extract novel IDs (5-7 digit numbers)
-              const nidPattern = /\b\d{5,7}\b/g;
-              const nids = [...new Set(body.match(nidPattern) || title.match(nidPattern) || [])];
+              // Extract single novel ID from title (format: [Task] 小说 ID: 123456)
+              const titleMatch = title.match(/\[Task\]\s*小说\s*ID:\s*(\d{5,7})/);
+              // Fallback: extract from body
+              const bodyMatch = body.match(/\*\*小说\s*ID\*\*:\s*(\d{5,7})/);
+              // Last resort: any 5-7 digit number
+              const fallbackMatch = (body + ' ' + title).match(/\b(\d{5,7})\b/);
 
-              if (nids.length === 0) {
-                core.warning(`No novel IDs found in issue #${issue.number}`);
-                await closeIssue(github, owner, repo, issue.number, '❌ 未找到有效的小说 ID（需要5-7位数字）');
+              const nid = titleMatch?.[1] || bodyMatch?.[1] || fallbackMatch?.[1];
+
+              if (!nid) {
+                core.warning(`No novel ID found in issue #${issue.number}`);
+                await closeIssue(github, owner, repo, issue.number, '❌ 未找到有效的小说 ID（需要5-7位纯数字）');
                 continue;
               }
 
-              allNids.push(...nids);
+              allNids.push(nid);
 
-              // Add comment with extracted IDs
-              const comment = `✅ 已收到任务提交\n\n**小说 ID**: ${nids.join(', ')}\n**数量**: ${nids.length}\n\n任务已加入队列，将在下次 Run Tasks 时处理。`;
+              // Add comment with extracted ID
+              const comment = `✅ 已收到任务提交\n\n**小说 ID**: ${nid}\n\n任务已加入队列，将在下次 Run Tasks 时处理。`;
               await closeIssue(github, owner, repo, issue.number, comment);
 
-              core.info(`Processed issue #${issue.number}: ${nids.join(', ')}`);
+              core.info(`Processed issue #${issue.number}: ${nid}`);
             }
 
             // Output unique NIDs
