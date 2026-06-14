@@ -818,7 +818,6 @@ class Command(BaseCommand):
                 gridcolor="rgba(128,128,128,0.2)",
                 tickformat=",d",
             ),
-            margin=dict(t=40, b=40, l=60, r=20),
         )
         ctx["chart_word_dist_json"] = _to_json(fig)
 
