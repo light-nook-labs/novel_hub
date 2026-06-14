@@ -12,7 +12,8 @@
 
   function reloadGiscus() {
     if (typeof loadGiscus === 'function') {
-      loadGiscus();
+      // Small delay to ensure DOM is updated
+      setTimeout(loadGiscus, 100);
     }
   }
 

@@ -20,36 +20,34 @@
 </div>
 
 <script>
-(function() {
-  function loadGiscus() {
-    var container = document.getElementById('giscus-container');
-    container.innerHTML = '';
-    var isDark = document.documentElement.classList.contains('dark');
-    var script = document.createElement('script');
-    script.src = 'https://giscus.app/client.js';
-    script.setAttribute('data-repo', 'light-nook-labs/novel_hub');
-    script.setAttribute('data-repo-id', 'R_kgDOSQm3uQ');
-    script.setAttribute('data-category', 'General');
-    script.setAttribute('data-category-id', 'DIC_kwDOSQm3uc4C_Hbp');
-    script.setAttribute('data-mapping', 'pathname');
-    script.setAttribute('data-strict', '0');
-    script.setAttribute('data-reactions-enabled', '1');
-    script.setAttribute('data-emit-metadata', '0');
-    script.setAttribute('data-input-position', 'bottom');
-    script.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    script.setAttribute('data-lang', 'zh-CN');
-    script.setAttribute('crossorigin', 'anonymous');
-    script.async = true;
-    container.appendChild(script);
+function loadGiscus() {
+  var container = document.getElementById('giscus-container');
+  if (!container) return;
+
+  // Remove all existing children including iframe
+  while (container.firstChild) {
+    container.removeChild(container.firstChild);
   }
 
-  loadGiscus();
+  var isDark = document.documentElement.classList.contains('dark');
+  var script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.setAttribute('data-repo', 'light-nook-labs/novel_hub');
+  script.setAttribute('data-repo-id', 'R_kgDOSQm3uQ');
+  script.setAttribute('data-category', 'General');
+  script.setAttribute('data-category-id', 'DIC_kwDOSQm3uc4C_Hbp');
+  script.setAttribute('data-mapping', 'pathname');
+  script.setAttribute('data-strict', '0');
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-emit-metadata', '0');
+  script.setAttribute('data-input-position', 'bottom');
+  script.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  script.setAttribute('data-lang', 'zh-CN');
+  script.setAttribute('crossorigin', 'anonymous');
+  script.async = true;
+  container.appendChild(script);
+}
 
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.giscus && e.data.giscus.theme) {
-      loadGiscus();
-    }
-  });
-})();
+loadGiscus();
 </script>
 {% endblock %}
