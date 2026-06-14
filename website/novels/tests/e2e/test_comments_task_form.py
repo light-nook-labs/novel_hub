@@ -2,7 +2,7 @@
 
 import re
 import urllib.parse
-from django.test import LiveServerTestCase
+from django.test import TestCase, LiveServerTestCase
 from playwright.sync_api import sync_playwright, expect
 
 
@@ -189,7 +189,7 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
         self.assertIn("novel-id=22222", second_url)
 
 
-class TaskFormIntegrationTest(LiveServerTestCase):
+class TaskFormIntegrationTest(TestCase):
     """Integration tests for task form functionality without browser."""
 
     def test_comments_view_returns_200(self):
