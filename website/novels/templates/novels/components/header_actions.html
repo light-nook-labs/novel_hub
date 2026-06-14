@@ -42,7 +42,9 @@
         <a href="{% url 'novels:contests' %}" class="block px-8 py-2 text-sm text-gray-600{% if not no_dark %} dark:text-gray-400{% endif %} hover:bg-gray-100{% if not no_dark %} dark:hover:bg-gray-700{% endif %}">征文</a>
       </div>
       <a href="{% url 'novels:authors' %}" class="dropdown-item">作者</a>
-      <a href="{% url 'novels:banners' %}" class="dropdown-item rounded-b-lg">背投</a>
+      <a href="{% url 'novels:banners' %}" class="dropdown-item">背投</a>
+      <a href="{% url 'novels:dashboard' %}" class="dropdown-item">数据</a>
+      <a href="{% url 'novels:comments' %}" class="dropdown-item rounded-b-lg">评论</a>
     </div>
   </div>
 
