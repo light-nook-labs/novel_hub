@@ -10,6 +10,10 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  var isDark = document.documentElement.classList.contains('dark');
+  var darkFont = isDark ? '#d1d5db' : '#374151';
+  var darkGrid = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(128,128,128,0.2)';
+
   var plotlyConfig = {
     responsive: true,
     displayModeBar: false,
@@ -22,6 +26,21 @@ document.addEventListener('DOMContentLoaded', function() {
       if (entry.isIntersecting) {
         var div = entry.target;
         var data = JSON.parse(div.dataset.plotly);
+
+        // Apply dark mode colors to layout
+        if (data.layout) {
+          data.layout.paper_bgcolor = 'rgba(0,0,0,0)';
+          data.layout.plot_bgcolor = 'rgba(0,0,0,0)';
+          if (data.layout.font) data.layout.font.color = darkFont;
+          if (data.layout.xaxis) data.layout.xaxis.gridcolor = darkGrid;
+          if (data.layout.xaxis) data.layout.xaxis.color = darkFont;
+          if (data.layout.yaxis) data.layout.yaxis.gridcolor = darkGrid;
+          if (data.layout.yaxis) data.layout.yaxis.color = darkFont;
+          if (data.layout.yaxis2) data.layout.yaxis2.gridcolor = darkGrid;
+          if (data.layout.yaxis2) data.layout.yaxis2.color = darkFont;
+          if (data.layout.legend) data.layout.legend.font = {color: darkFont};
+        }
+
         Plotly.newPlot(div, data.data, data.layout, plotlyConfig);
         observer.unobserve(div);
       }
@@ -98,16 +117,10 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- Genre x Status + Word dist -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类 × 状态</h3>
-    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_heatmap_json }}"></div>
-  </div>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字数分布</h3>
-    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_word_dist_json }}"></div>
-  </div>
+<!-- Word dist -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+  <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字数分布</h3>
+  <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_word_dist_json }}"></div>
 </div>
 
 <!-- Contests -->

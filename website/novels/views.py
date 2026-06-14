@@ -884,10 +884,24 @@ class DashboardView(TemplateView):
                 "word_num", flat=True
             )[:100000]
         )
-        # Bins: 10-50w, 50-100w, 100-200w, 200-500w, 500-1000w, 1000w+
-        bins = [100000, 500000, 1000000, 2000000, 5000000, 10000000, float("inf")]
+        # Bins: 10-15w, 15-20w, 20-30w, 30-50w, 50-100w, 100-200w, 200-500w, 500-1000w, 1000w+
+        bins = [
+            100000,
+            150000,
+            200000,
+            300000,
+            500000,
+            1000000,
+            2000000,
+            5000000,
+            10000000,
+            float("inf"),
+        ]
         bin_labels = [
-            "10-50w",
+            "10-15w",
+            "15-20w",
+            "20-30w",
+            "30-50w",
             "50-100w",
             "100-200w",
             "200-500w",
@@ -913,9 +927,14 @@ class DashboardView(TemplateView):
             ]
         )
         fig.update_layout(
-            **_layout(280),
+            **_layout(350),
             xaxis=dict(title="字数区间", gridcolor="rgba(128,128,128,0.2)"),
-            yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(
+                title="小说数",
+                gridcolor="rgba(128,128,128,0.2)",
+                tickformat=",d",
+            ),
+            margin=dict(t=40, b=40, l=60, r=20),
         )
         ctx["chart_word_dist_json"] = _to_json(fig)
 
