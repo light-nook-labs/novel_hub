@@ -240,3 +240,4 @@ node_modules/
 *.sqlite3-wal
 build/
 pwd.txt
+release.tar.gz

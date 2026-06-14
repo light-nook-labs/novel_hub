@@ -1,0 +1,74 @@
+name: Publish Release
+
+on:
+  schedule:
+    # Run on 1st of every month at 4:00 AM Shanghai (20:00 UTC)
+    - cron: "0 20 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Generate release archive
+        working-directory: website
+        run: uv run python manage.py create_release --output ../release.tar.gz
+        env:
+          DB_TYPE: postgresql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: "0"
+
+      - name: Get version and date
+        id: meta
+        run: |
+          VERSION=$(grep -oP 'version = "\K[^"]+' pyproject.toml)
+          DATE=$(date +%Y%m%d)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$DATE" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.meta.outputs.version }}
+          name: v${{ steps.meta.outputs.version }} (${{ steps.meta.outputs.date }})
+          body: |
+            ## Novel Hub Dataset v${{ steps.meta.outputs.version }}
+
+            自动发布的小说元数据数据集。
+
+            ### 内容
+            - `jsonl/` — JSONL 格式数据集（每文件 20k 条记录）
+            - `csv/` — CSV 格式数据集（每文件 20k 条记录）
+            - `tasks.csv` — 任务队列数据
+
+            ### 使用方法
+            ```bash
+            # 从 release 初始化数据库
+            uv run python manage.py init_from_release release.tar.gz
+            ```
+          files: release.tar.gz
+          draft: false
+          prerelease: false

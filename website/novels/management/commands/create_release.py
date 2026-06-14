@@ -44,19 +44,28 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         output_path = Path(options["output"])
 
-        # Fetch all novels
+        # Fetch all novels using iterator to avoid SQLite limits
         logger.info("Fetching novels...")
-        novels = list(
+        novels = []
+        for novel in (
             Novel.objects.select_related("author", "contest")
             .prefetch_related("tags")
             .order_by("id")
-        )
+            .iterator(chunk_size=2000)
+        ):
+            # Force prefetch by accessing tags
+            _ = list(novel.tags.all())
+            novels.append(novel)
         total_novels = len(novels)
         logger.info("Fetched %d novels", total_novels)
 
         # Fetch all tasks
         logger.info("Fetching tasks...")
-        tasks = list(Task.objects.select_related("novel").order_by("novel_id"))
+        tasks = list(
+            Task.objects.select_related("novel")
+            .order_by("novel_id")
+            .iterator(chunk_size=2000)
+        )
         total_tasks = len(tasks)
         logger.info("Fetched %d tasks", total_tasks)
 
