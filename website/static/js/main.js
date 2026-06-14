@@ -10,28 +10,20 @@
     moon.classList.toggle('hidden', isDark);
   }
 
-  function updateGiscusTheme() {
-    const isDark = document.documentElement.classList.contains('dark');
-    const theme = isDark ? 'dark_dimmed' : 'light';
-    const iframe = document.querySelector('iframe.giscus-frame');
-    if (iframe) {
-      iframe.contentWindow.postMessage({ giscus: { setConfig: { theme } } }, 'https://giscus.app');
+  function reloadGiscus() {
+    if (typeof loadGiscus === 'function') {
+      loadGiscus();
     }
   }
 
   updateIcons();
-
-  // Update GISCUS theme on page load
-  document.addEventListener('DOMContentLoaded', function() {
-    updateGiscusTheme();
-  });
 
   toggle.addEventListener('click', function() {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     updateIcons();
-    updateGiscusTheme();
+    reloadGiscus();
   });
 })();
 
