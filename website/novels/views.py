@@ -657,6 +657,14 @@ class DashboardView(TemplateView):
                 config={"displayModeBar": False, "responsive": True},
             )
 
+        def _to_json(fig):
+            import json
+            fig_dict = fig.to_dict()
+            return json.dumps({
+                "data": fig_dict["data"],
+                "layout": fig_dict["layout"],
+            }, ensure_ascii=False)
+
         def _w(val):
             """Format number as X.Xw (1w = 10000)"""
             if val is None or val == 0:
@@ -687,7 +695,7 @@ class DashboardView(TemplateView):
             textfont=dict(size=11),
         )])
         fig.update_layout(**_layout(320), showlegend=False)
-        ctx["chart_genre"] = _to_html(fig, include_js=True)
+        ctx["chart_genre_json"] = _to_json(fig)
 
         # 2. Status distribution (donut)
         status_stats = dict(
@@ -705,7 +713,7 @@ class DashboardView(TemplateView):
             textfont=dict(size=11),
         )])
         fig.update_layout(**_layout(320), showlegend=False)
-        ctx["chart_status"] = _to_html(fig)
+        ctx["chart_status_json"] = _to_json(fig)
 
         # 3. Top 15 tags (horizontal bar, log scale)
         top_tags = (
@@ -725,7 +733,7 @@ class DashboardView(TemplateView):
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]], tickvals=[10, 100, 1000, 10000, 100000]),
         )
-        ctx["chart_tags"] = _to_html(fig)
+        ctx["chart_tags_json"] = _to_json(fig)
 
         # 4. Top 10 authors by total clicks (horizontal bar, log scale)
         top_authors = (
@@ -749,7 +757,7 @@ class DashboardView(TemplateView):
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]], tickvals=[100000, 1000000, 10000000, 100000000]),
         )
-        ctx["chart_authors"] = _to_html(fig)
+        ctx["chart_authors_json"] = _to_json(fig)
 
         # 5. Click vs Like scatter (log scale, color by genre)
         sample_novels = (
@@ -772,7 +780,7 @@ class DashboardView(TemplateView):
             xaxis=dict(title="点击", type="log", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="收藏", type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
-        ctx["chart_scatter"] = _to_html(fig)
+        ctx["chart_scatter_json"] = _to_json(fig)
 
         # 6. Ptype distribution (donut)
         ptype_stats = dict(
@@ -789,7 +797,7 @@ class DashboardView(TemplateView):
             textinfo="label+percent", textposition="outside",
         )])
         fig.update_layout(**_layout(300), showlegend=False)
-        ctx["chart_ptype"] = _to_html(fig)
+        ctx["chart_ptype_json"] = _to_json(fig)
 
         # 7. Word count distribution (histogram, log x-axis)
         word_data = list(
@@ -805,7 +813,7 @@ class DashboardView(TemplateView):
             xaxis=dict(title="字数", type="log", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
         )
-        ctx["chart_word_dist"] = _to_html(fig)
+        ctx["chart_word_dist_json"] = _to_json(fig)
 
         # 8. Top contests (horizontal bar, log scale)
         top_contests = (
@@ -825,7 +833,7 @@ class DashboardView(TemplateView):
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
-        ctx["chart_contests"] = _to_html(fig)
+        ctx["chart_contests_json"] = _to_json(fig)
 
         # 9. Genre x Status heatmap
         heatmap_data = (
@@ -851,7 +859,7 @@ class DashboardView(TemplateView):
             textfont=dict(size=10),
         )])
         fig.update_layout(**_layout(350))
-        ctx["chart_heatmap"] = _to_html(fig)
+        ctx["chart_heatmap_json"] = _to_json(fig)
 
         # 10. Top 10 novels by click (horizontal bar)
         top_click = Novel.objects.order_by("-click_num")[:10]
@@ -865,7 +873,7 @@ class DashboardView(TemplateView):
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [1000000, 10000000, 100000000]], tickvals=[1000000, 10000000, 100000000]),
         )
-        ctx["chart_top_click"] = _to_html(fig)
+        ctx["chart_top_click_json"] = _to_json(fig)
 
         # 11. Top 10 novels by like (horizontal bar)
         top_like = Novel.objects.order_by("-like_num")[:10]
@@ -879,7 +887,7 @@ class DashboardView(TemplateView):
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [10000, 100000, 1000000]], tickvals=[10000, 100000, 1000000]),
         )
-        ctx["chart_top_like"] = _to_html(fig)
+        ctx["chart_top_like_json"] = _to_json(fig)
 
         # 12. Banner vs Non-Banner comparison (grouped bar)
         banner_stats = Novel.objects.aggregate(
@@ -913,7 +921,7 @@ class DashboardView(TemplateView):
         fig.add_trace(go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber))
         fig.add_trace(go.Bar(x=metrics, y=nonbanner_per, name=f"非Banner ({nc}部)", marker_color="#94a3b8"))
         fig.update_layout(**_layout(300), barmode="group", yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"))
-        ctx["chart_banner"] = _to_html(fig)
+        ctx["chart_banner_json"] = _to_json(fig)
 
         # 13. A-status candidates (novels close to A-status)
         a_criteria = Q(has_banner=True) | Q(click_num__gte=10000000) | Q(review_num__gte=60) | Q(like_num__gte=10000) | Q(praise_num__gte=10000)
@@ -929,7 +937,7 @@ class DashboardView(TemplateView):
             textinfo="label+value", textposition="outside",
         )])
         fig.update_layout(**_layout(300), showlegend=False)
-        ctx["chart_a_status"] = _to_html(fig)
+        ctx["chart_a_status_json"] = _to_json(fig)
 
         return ctx
 
