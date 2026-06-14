@@ -143,7 +143,7 @@ class MetaBatchSpider(Spider):
             like_num=like_num,
         )
 
-    def _ptype_contest(self, ptype_contest: list[str]) -> dict[str, str|None]:
+    def _ptype_contest(self, ptype_contest: list[str]) -> dict[str, str | None]:
         # ['VIP', '第九届冬季征文']
         # ['签约', '2026春季征文']
         # ['征文大赛长篇']

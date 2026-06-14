@@ -105,7 +105,7 @@ def compress_cover(url: str | None) -> str | None:
         return None
     url = str(url)
     if url.startswith(COVER_PREFIX):
-        suffix = url[len(COVER_PREFIX):]
+        suffix = url[len(COVER_PREFIX) :]
     else:
         suffix = url
     if suffix == DEFAULT_COVER:
@@ -176,7 +176,9 @@ def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
     # 5. Enum mapping → vectorized .map()
     if "genre" in df.columns:
         genre_map = GENRE.zh_to_value_dict()
-        df["genre"] = df["genre"].map(genre_map).fillna(GENRE.fallback()).astype("Int64")
+        df["genre"] = (
+            df["genre"].map(genre_map).fillna(GENRE.fallback()).astype("Int64")
+        )
 
     if "status" in df.columns:
         status_map = STATUS.zh_to_value_dict()
@@ -186,7 +188,9 @@ def normalize_df(df: pd.DataFrame) -> pd.DataFrame:
 
     if "ptype" in df.columns:
         ptype_map = PTYPE.zh_to_value_dict()
-        df["ptype"] = df["ptype"].map(ptype_map).fillna(PTYPE.fallback()).astype("Int64")
+        df["ptype"] = (
+            df["ptype"].map(ptype_map).fillna(PTYPE.fallback()).astype("Int64")
+        )
 
     # 6. Time column → datetime64[ns, Asia/Shanghai]
     if "last_update" in df.columns:
@@ -233,13 +237,19 @@ def df_to_meta_list(df: pd.DataFrame) -> list[Meta]:
         try:
             meta_list.append(Meta(**row))
         except Exception as e:
-            failed.append({"nid": row.get("nid"), "title": row.get("title"), "error": str(e)})
+            failed.append(
+                {"nid": row.get("nid"), "title": row.get("title"), "error": str(e)}
+            )
             logger.debug("Validation error for nid=%s: %s", row.get("nid"), e)
 
-    logger.info("Validated %d/%d records (%d errors)", len(meta_list), len(records), len(failed))
+    logger.info(
+        "Validated %d/%d records (%d errors)", len(meta_list), len(records), len(failed)
+    )
     if failed:
         failed_path = Path("failed_records.json")
-        pd.DataFrame(failed).to_json(failed_path, orient="records", force_ascii=False, indent=2)
+        pd.DataFrame(failed).to_json(
+            failed_path, orient="records", force_ascii=False, indent=2
+        )
         logger.warning("Saved %d failed records to %s", len(failed), failed_path)
     return meta_list
 

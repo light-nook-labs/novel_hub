@@ -26,7 +26,9 @@ logger = get_logger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Initialize database from JSONL/CSV dataset (deletes all existing data first)"
+    help = (
+        "Initialize database from JSONL/CSV dataset (deletes all existing data first)"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -85,7 +87,9 @@ class Command(BaseCommand):
                 from django.db import connection
 
                 with connection.cursor() as cursor:
-                    cursor.execute("TRUNCATE novels_novel_tags, novels_novel, novels_tag, novels_contest, novels_author CASCADE")
+                    cursor.execute(
+                        "TRUNCATE novels_novel_tags, novels_novel, novels_tag, novels_contest, novels_author CASCADE"
+                    )
             else:
                 Novel.tags.through.objects.all().delete()
                 Novel.objects.all().delete()
@@ -98,7 +102,9 @@ class Command(BaseCommand):
             logger.info("Creating authors...")
             authors = list({m.author for m in meta_list if m.author})
             author_count = bulk_create_ignore(
-                Author, [Author(name=a) for a in progress(authors, desc="Authors")], batch_size
+                Author,
+                [Author(name=a) for a in progress(authors, desc="Authors")],
+                batch_size,
             )
             logger.info("Created %d authors", author_count)
 
@@ -112,7 +118,9 @@ class Command(BaseCommand):
             logger.info("Creating contests...")
             contests = list({m.contest for m in meta_list if m.contest})
             contest_count = bulk_create_ignore(
-                Contest, [Contest(name=c) for c in progress(contests, desc="Contests")], batch_size
+                Contest,
+                [Contest(name=c) for c in progress(contests, desc="Contests")],
+                batch_size,
             )
             logger.info("Created %d contests", contest_count)
 
@@ -131,7 +139,9 @@ class Command(BaseCommand):
                         id=django_data["id"],
                         title=django_data["title"],
                         author_id=author_map.get(meta.author),
-                        contest_id=contest_map.get(meta.contest) if meta.contest else None,
+                        contest_id=(
+                            contest_map.get(meta.contest) if meta.contest else None
+                        ),
                         genre=django_data["genre"],
                         status=django_data["status"],
                         ptype=django_data["ptype"],
@@ -161,9 +171,10 @@ class Command(BaseCommand):
             if novel_tags:
                 if is_postgres:
                     from django.db import connection
+
                     with connection.cursor() as cursor:
                         for i in range(0, len(novel_tags), batch_size):
-                            batch = novel_tags[i:i + batch_size]
+                            batch = novel_tags[i : i + batch_size]
                             args_str = ",".join(
                                 cursor.mogrify("(%s,%s)", (nid, tid)).decode()
                                 for nid, tid in batch
@@ -175,7 +186,10 @@ class Command(BaseCommand):
                 else:
                     m2m_count = bulk_create_m2m(
                         Novel.tags.through,
-                        [Novel.tags.through(novel_id=nid, tag_id=tid) for nid, tid in novel_tags],
+                        [
+                            Novel.tags.through(novel_id=nid, tag_id=tid)
+                            for nid, tid in novel_tags
+                        ],
                         batch_size,
                     )
             else:

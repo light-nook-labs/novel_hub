@@ -131,7 +131,14 @@ class NovelDetailView(DetailView):
         if ranks is None:
             from django.db.models import Q, Sum, Case, When, Value, IntegerField
 
-            stats = ["word_num", "click_num", "like_num", "praise_num", "review_num", "comment_num"]
+            stats = [
+                "word_num",
+                "click_num",
+                "like_num",
+                "praise_num",
+                "review_num",
+                "comment_num",
+            ]
             q = Q()
             for field in stats:
                 val = getattr(novel, field)
@@ -140,15 +147,26 @@ class NovelDetailView(DetailView):
 
             if q:
                 counts = Novel.objects.filter(q).aggregate(
-                    **{f"{field}_gt": Sum(
-                        Case(
-                            When(**{f"{field}__gt": getattr(novel, field)}, then=Value(1)),
-                            default=Value(0),
-                            output_field=IntegerField(),
+                    **{
+                        f"{field}_gt": Sum(
+                            Case(
+                                When(
+                                    **{f"{field}__gt": getattr(novel, field)},
+                                    then=Value(1),
+                                ),
+                                default=Value(0),
+                                output_field=IntegerField(),
+                            )
                         )
-                    ) for field in stats if getattr(novel, field) is not None}
+                        for field in stats
+                        if getattr(novel, field) is not None
+                    }
                 )
-                ranks = {k.replace("_gt", ""): v + 1 for k, v in counts.items() if v is not None}
+                ranks = {
+                    k.replace("_gt", ""): v + 1
+                    for k, v in counts.items()
+                    if v is not None
+                }
             else:
                 ranks = {field: 1 for field in stats}
 
@@ -235,7 +253,9 @@ class AuthorListView(ListView):
             total_praise=models.Sum("novels__praise_num"),
             total_review=models.Sum("novels__review_num"),
             total_comment=models.Sum("novels__comment_num"),
-            banner_count=models.Count("novels", filter=models.Q(novels__has_banner=True)),
+            banner_count=models.Count(
+                "novels", filter=models.Q(novels__has_banner=True)
+            ),
             latest_update=models.Max("novels__last_update"),
         )
 
@@ -281,9 +301,7 @@ class AuthorListView(ListView):
                 .filter(rn=1)
                 .values("id", "title", "click_num", "author_id")
             )
-            top_novels = {
-                row["author_id"]: row for row in ranked
-            }
+            top_novels = {row["author_id"]: row for row in ranked}
 
             for author in authors:
                 top = top_novels.get(author.id, {})
@@ -620,7 +638,17 @@ class DashboardView(TemplateView):
     def get_context_data(self, **kwargs):
         import plotly.graph_objects as go
         import plotly.express as px
-        from django.db.models import Count, Avg, Sum, Q, F, Case, When, Value, IntegerField
+        from django.db.models import (
+            Count,
+            Avg,
+            Sum,
+            Q,
+            F,
+            Case,
+            When,
+            Value,
+            IntegerField,
+        )
 
         ctx = super().get_context_data(**kwargs)
 
@@ -635,9 +663,21 @@ class DashboardView(TemplateView):
         orange = "#f97316"
         rose = "#f43f5e"
         colors = [
-            "#f59e0b", "#f97316", "#ef4444", "#ec4899", "#8b5cf6",
-            "#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#84cc16",
-            "#fbbf24", "#fb923c", "#f87171", "#f472b6", "#a78bfa",
+            "#f59e0b",
+            "#f97316",
+            "#ef4444",
+            "#ec4899",
+            "#8b5cf6",
+            "#6366f1",
+            "#3b82f6",
+            "#06b6d4",
+            "#10b981",
+            "#84cc16",
+            "#fbbf24",
+            "#fb923c",
+            "#f87171",
+            "#f472b6",
+            "#a78bfa",
         ]
 
         def _layout(height=300, **kwargs):
@@ -659,11 +699,15 @@ class DashboardView(TemplateView):
 
         def _to_json(fig):
             import json
+
             fig_dict = fig.to_dict()
-            return json.dumps({
-                "data": fig_dict["data"],
-                "layout": fig_dict["layout"],
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "data": fig_dict["data"],
+                    "layout": fig_dict["layout"],
+                },
+                ensure_ascii=False,
+            )
 
         def _w(val):
             """Format number as X.Xw (1w = 10000)"""
@@ -688,12 +732,19 @@ class DashboardView(TemplateView):
         genre_labels = [GENRE.get_zh(i) for i in range(2, 11)]
         genre_data = [genre_stats.get(i, 0) for i in range(2, 11)]
 
-        fig = go.Figure(data=[go.Pie(
-            labels=genre_labels, values=genre_data, hole=0.5,
-            marker_colors=colors,
-            textinfo="label+percent", textposition="outside",
-            textfont=dict(size=11),
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=genre_labels,
+                    values=genre_data,
+                    hole=0.5,
+                    marker_colors=colors,
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
         fig.update_layout(**_layout(320), showlegend=False)
         ctx["chart_genre_json"] = _to_json(fig)
 
@@ -706,12 +757,19 @@ class DashboardView(TemplateView):
         status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
         status_data = [status_stats.get(i, 0) for i in range(2, 8)]
 
-        fig = go.Figure(data=[go.Pie(
-            labels=status_labels, values=status_data, hole=0.5,
-            marker_colors=colors,
-            textinfo="label+percent", textposition="outside",
-            textfont=dict(size=11),
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=status_labels,
+                    values=status_data,
+                    hole=0.5,
+                    marker_colors=colors,
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
         fig.update_layout(**_layout(320), showlegend=False)
         ctx["chart_status_json"] = _to_json(fig)
 
@@ -724,14 +782,27 @@ class DashboardView(TemplateView):
         tag_labels = [t.name for t in top_tags]
         tag_data = [t.novel_count for t in top_tags]
 
-        fig = go.Figure(data=[go.Bar(
-            y=tag_labels[::-1], x=tag_data[::-1], orientation="h",
-            marker_color=amber,
-            text=[_w(d) for d in tag_data[::-1]], textposition="outside",
-        )])
-        fig.update_layout(**_layout(380),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=tag_labels[::-1],
+                    x=tag_data[::-1],
+                    orientation="h",
+                    marker_color=amber,
+                    text=[_w(d) for d in tag_data[::-1]],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(380),
             yaxis=dict(autorange="reversed"),
-            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]], tickvals=[10, 100, 1000, 10000, 100000]),
+            xaxis=dict(
+                type="log",
+                gridcolor="rgba(128,128,128,0.2)",
+                ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]],
+                tickvals=[10, 100, 1000, 10000, 100000],
+            ),
         )
         ctx["chart_tags_json"] = _to_json(fig)
 
@@ -748,35 +819,52 @@ class DashboardView(TemplateView):
         author_clicks = [a.total_click or 0 for a in top_authors]
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            y=author_labels[::-1], x=author_clicks[::-1], orientation="h",
-            marker_color=orange,
-            text=[_w(c) for c in author_clicks[::-1]], textposition="outside",
-        ))
-        fig.update_layout(**_layout(380),
+        fig.add_trace(
+            go.Bar(
+                y=author_labels[::-1],
+                x=author_clicks[::-1],
+                orientation="h",
+                marker_color=orange,
+                text=[_w(c) for c in author_clicks[::-1]],
+                textposition="outside",
+            )
+        )
+        fig.update_layout(
+            **_layout(380),
             yaxis=dict(autorange="reversed"),
-            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]], tickvals=[100000, 1000000, 10000000, 100000000]),
+            xaxis=dict(
+                type="log",
+                gridcolor="rgba(128,128,128,0.2)",
+                ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]],
+                tickvals=[100000, 1000000, 10000000, 100000000],
+            ),
         )
         ctx["chart_authors_json"] = _to_json(fig)
 
         # 5. Click vs Like scatter (log scale, color by genre)
-        sample_novels = (
-            Novel.objects.filter(click_num__gt=0, like_num__gt=0)
-            .values("click_num", "like_num", "title", "genre")
-            [:3000]
-        )
+        sample_novels = Novel.objects.filter(click_num__gt=0, like_num__gt=0).values(
+            "click_num", "like_num", "title", "genre"
+        )[:3000]
         scatter_x = [n["click_num"] for n in sample_novels]
         scatter_y = [n["like_num"] for n in sample_novels]
         scatter_text = [n["title"][:20] for n in sample_novels]
         scatter_color = [GENRE.get_zh(n["genre"]) for n in sample_novels]
 
-        fig = go.Figure(data=[go.Scatter(
-            x=scatter_x, y=scatter_y, mode="markers",
-            marker=dict(size=4, opacity=0.5, line=dict(width=0)),
-            text=scatter_text, customdata=scatter_color,
-            hovertemplate="%{text}<br>分类: %{customdata}<br>点击: %{x}<br>收藏: %{y}",
-        )])
-        fig.update_layout(**_layout(350),
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=scatter_x,
+                    y=scatter_y,
+                    mode="markers",
+                    marker=dict(size=4, opacity=0.5, line=dict(width=0)),
+                    text=scatter_text,
+                    customdata=scatter_color,
+                    hovertemplate="%{text}<br>分类: %{customdata}<br>点击: %{x}<br>收藏: %{y}",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(350),
             xaxis=dict(title="点击", type="log", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="收藏", type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
@@ -791,25 +879,40 @@ class DashboardView(TemplateView):
         ptype_labels = [PTYPE.get_zh(i) for i in range(2, 5)]
         ptype_data = [ptype_stats.get(i, 0) for i in range(2, 5)]
 
-        fig = go.Figure(data=[go.Pie(
-            labels=ptype_labels, values=ptype_data, hole=0.5,
-            marker_colors=[amber, rose, "#6366f1"],
-            textinfo="label+percent", textposition="outside",
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=ptype_labels,
+                    values=ptype_data,
+                    hole=0.5,
+                    marker_colors=[amber, rose, "#6366f1"],
+                    textinfo="label+percent",
+                    textposition="outside",
+                )
+            ]
+        )
         fig.update_layout(**_layout(300), showlegend=False)
         ctx["chart_ptype_json"] = _to_json(fig)
 
         # 7. Word count distribution (histogram, log x-axis)
         word_data = list(
-            Novel.objects.filter(word_num__gt=0)
-            .values_list("word_num", flat=True)[:50000]
+            Novel.objects.filter(word_num__gt=0).values_list("word_num", flat=True)[
+                :50000
+            ]
         )
 
-        fig = go.Figure(data=[go.Histogram(
-            x=word_data, nbinsx=40,
-            marker_color=amber, opacity=0.8,
-        )])
-        fig.update_layout(**_layout(280),
+        fig = go.Figure(
+            data=[
+                go.Histogram(
+                    x=word_data,
+                    nbinsx=40,
+                    marker_color=amber,
+                    opacity=0.8,
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(280),
             xaxis=dict(title="字数", type="log", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
         )
@@ -824,68 +927,109 @@ class DashboardView(TemplateView):
         contest_labels = [c.name[:12] for c in top_contests]
         contest_data = [c.novel_count for c in top_contests]
 
-        fig = go.Figure(data=[go.Bar(
-            y=contest_labels[::-1], x=contest_data[::-1], orientation="h",
-            marker_color=colors[:len(contest_labels)],
-            text=[_w(d) for d in contest_data[::-1]], textposition="outside",
-        )])
-        fig.update_layout(**_layout(320),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=contest_labels[::-1],
+                    x=contest_data[::-1],
+                    orientation="h",
+                    marker_color=colors[: len(contest_labels)],
+                    text=[_w(d) for d in contest_data[::-1]],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(320),
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
         ctx["chart_contests_json"] = _to_json(fig)
 
         # 9. Genre x Status heatmap
-        heatmap_data = (
-            Novel.objects.values("genre", "status")
-            .annotate(c=Count("id"))
-        )
+        heatmap_data = Novel.objects.values("genre", "status").annotate(c=Count("id"))
         genre_range = list(range(2, 11))
         status_range = list(range(2, 8))
         heat_matrix = []
         for g in genre_range:
             row = []
             for s in status_range:
-                val = next((h["c"] for h in heatmap_data if h["genre"] == g and h["status"] == s), 0)
+                val = next(
+                    (
+                        h["c"]
+                        for h in heatmap_data
+                        if h["genre"] == g and h["status"] == s
+                    ),
+                    0,
+                )
                 row.append(val)
             heat_matrix.append(row)
 
-        fig = go.Figure(data=[go.Heatmap(
-            z=heat_matrix,
-            x=[STATUS.get_zh(s) for s in status_range],
-            y=[GENRE.get_zh(g) for g in genre_range],
-            colorscale="YlOrRd",
-            text=heat_matrix, texttemplate="%{text}",
-            textfont=dict(size=10),
-        )])
+        fig = go.Figure(
+            data=[
+                go.Heatmap(
+                    z=heat_matrix,
+                    x=[STATUS.get_zh(s) for s in status_range],
+                    y=[GENRE.get_zh(g) for g in genre_range],
+                    colorscale="YlOrRd",
+                    text=heat_matrix,
+                    texttemplate="%{text}",
+                    textfont=dict(size=10),
+                )
+            ]
+        )
         fig.update_layout(**_layout(350))
         ctx["chart_heatmap_json"] = _to_json(fig)
 
         # 10. Top 10 novels by click (horizontal bar)
         top_click = Novel.objects.order_by("-click_num")[:10]
-        fig = go.Figure(data=[go.Bar(
-            y=[n.title[:12] for n in top_click][::-1],
-            x=[n.click_num or 0 for n in top_click][::-1],
-            orientation="h", marker_color=amber,
-            text=[_w(n.click_num) for n in top_click][::-1], textposition="outside",
-        )])
-        fig.update_layout(**_layout(320),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=[n.title[:12] for n in top_click][::-1],
+                    x=[n.click_num or 0 for n in top_click][::-1],
+                    orientation="h",
+                    marker_color=amber,
+                    text=[_w(n.click_num) for n in top_click][::-1],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(320),
             yaxis=dict(autorange="reversed"),
-            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [1000000, 10000000, 100000000]], tickvals=[1000000, 10000000, 100000000]),
+            xaxis=dict(
+                type="log",
+                gridcolor="rgba(128,128,128,0.2)",
+                ticktext=[_w_axis(v) for v in [1000000, 10000000, 100000000]],
+                tickvals=[1000000, 10000000, 100000000],
+            ),
         )
         ctx["chart_top_click_json"] = _to_json(fig)
 
         # 11. Top 10 novels by like (horizontal bar)
         top_like = Novel.objects.order_by("-like_num")[:10]
-        fig = go.Figure(data=[go.Bar(
-            y=[n.title[:12] for n in top_like][::-1],
-            x=[n.like_num or 0 for n in top_like][::-1],
-            orientation="h", marker_color=orange,
-            text=[_w(n.like_num) for n in top_like][::-1], textposition="outside",
-        )])
-        fig.update_layout(**_layout(320),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=[n.title[:12] for n in top_like][::-1],
+                    x=[n.like_num or 0 for n in top_like][::-1],
+                    orientation="h",
+                    marker_color=orange,
+                    text=[_w(n.like_num) for n in top_like][::-1],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(320),
             yaxis=dict(autorange="reversed"),
-            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [10000, 100000, 1000000]], tickvals=[10000, 100000, 1000000]),
+            xaxis=dict(
+                type="log",
+                gridcolor="rgba(128,128,128,0.2)",
+                ticktext=[_w_axis(v) for v in [10000, 100000, 1000000]],
+                tickvals=[10000, 100000, 1000000],
+            ),
         )
         ctx["chart_top_like_json"] = _to_json(fig)
 
@@ -918,24 +1062,52 @@ class DashboardView(TemplateView):
         nonbanner_per = [v / nc for v in nonbanner_vals]
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber))
-        fig.add_trace(go.Bar(x=metrics, y=nonbanner_per, name=f"非Banner ({nc}部)", marker_color="#94a3b8"))
-        fig.update_layout(**_layout(300), barmode="group", yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"))
+        fig.add_trace(
+            go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber)
+        )
+        fig.add_trace(
+            go.Bar(
+                x=metrics,
+                y=nonbanner_per,
+                name=f"非Banner ({nc}部)",
+                marker_color="#94a3b8",
+            )
+        )
+        fig.update_layout(
+            **_layout(300),
+            barmode="group",
+            yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
         ctx["chart_banner_json"] = _to_json(fig)
 
         # 13. A-status candidates (novels close to A-status)
-        a_criteria = Q(has_banner=True) | Q(click_num__gte=10000000) | Q(review_num__gte=60) | Q(like_num__gte=10000) | Q(praise_num__gte=10000)
-        a_count = Novel.objects.filter(a_criteria, status__in=[3, 2]).count()  # died or finished
+        a_criteria = (
+            Q(has_banner=True)
+            | Q(click_num__gte=10000000)
+            | Q(review_num__gte=60)
+            | Q(like_num__gte=10000)
+            | Q(praise_num__gte=10000)
+        )
+        a_count = Novel.objects.filter(
+            a_criteria, status__in=[3, 2]
+        ).count()  # died or finished
         not_a_count = Novel.objects.filter(~a_criteria, status__in=[3, 2]).count()
-        already_a = Novel.objects.filter(status__in=[4, 5]).count()  # active_d or active_f
+        already_a = Novel.objects.filter(
+            status__in=[4, 5]
+        ).count()  # active_d or active_f
 
-        fig = go.Figure(data=[go.Pie(
-            labels=["已是A状态", "符合A条件(待升级)", "不符合A条件"],
-            values=[already_a, a_count, not_a_count],
-            hole=0.5,
-            marker_colors=[amber, orange, "#94a3b8"],
-            textinfo="label+value", textposition="outside",
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=["已是A状态", "符合A条件(待升级)", "不符合A条件"],
+                    values=[already_a, a_count, not_a_count],
+                    hole=0.5,
+                    marker_colors=[amber, orange, "#94a3b8"],
+                    textinfo="label+value",
+                    textposition="outside",
+                )
+            ]
+        )
         fig.update_layout(**_layout(300), showlegend=False)
         ctx["chart_a_status_json"] = _to_json(fig)
 

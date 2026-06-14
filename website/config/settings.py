@@ -19,7 +19,9 @@ DEBUG = os.environ.get("DEBUG", "false").lower() in ("true", "1", "yes")
 
 # Safe default: localhost only. Set ALLOWED_HOSTS in .env for production.
 _default_hosts = "localhost,127.0.0.1" if not DEBUG else "*"
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("ALLOWED_HOSTS", _default_hosts).split(",")]
+ALLOWED_HOSTS = [
+    h.strip() for h in os.environ.get("ALLOWED_HOSTS", _default_hosts).split(",")
+]
 
 # Database
 DB_TYPE = os.environ.get("DB_TYPE", "sqlite")

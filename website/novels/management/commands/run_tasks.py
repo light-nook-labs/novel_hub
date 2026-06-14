@@ -33,12 +33,13 @@ logger = get_logger(__name__)
 
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
 
+
 # Default cover suffix → None
 def _compress_cover(cover):
     if not cover:
         return None
     if cover.startswith(COVER_PREFIX):
-        suffix = cover[len(COVER_PREFIX):]
+        suffix = cover[len(COVER_PREFIX) :]
         return None if suffix == DEFAULT_COVER else suffix
     return cover
 
@@ -127,7 +128,9 @@ class Command(BaseCommand):
                 success += 1
 
             except Exception as e:
-                logger.error("Failed to process task %d (novel %d): %s", task.id, nid, e)
+                logger.error(
+                    "Failed to process task %d (novel %d): %s", task.id, nid, e
+                )
                 failed += 1
 
         # Delete finished tasks
@@ -136,7 +139,9 @@ class Command(BaseCommand):
 
         # Summary
         remaining = Task.objects.count()
-        self.stdout.write(self.style.SUCCESS(
-            f"Done! Processed: {success}, Failed: {failed}, "
-            f"Deleted: {deleted}, Remaining: {remaining}"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done! Processed: {success}, Failed: {failed}, "
+                f"Deleted: {deleted}, Remaining: {remaining}"
+            )
+        )

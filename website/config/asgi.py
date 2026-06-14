@@ -1,4 +1,5 @@
 """ASGI config for novel_hub project."""
+
 import os
 
 from django.core.asgi import get_asgi_application

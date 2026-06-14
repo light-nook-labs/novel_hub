@@ -39,6 +39,7 @@ RANK_PAGES = 100
 
 class SimplePage:
     """Simple page object for pagination in SSG."""
+
     def __init__(self, number, paginator):
         self.number = number
         self.paginator = paginator
@@ -58,6 +59,7 @@ class SimplePage:
 
 class SimplePaginator:
     """Simple paginator for SSG."""
+
     def __init__(self, count, per_page):
         self.count = count
         self.per_page = per_page
@@ -125,7 +127,11 @@ class Command(BaseCommand):
         # Pre-fetch all data
         logger.info("Pre-fetching data...")
         data = self._prefetch_data()
-        logger.info("Data fetched: %d novels, %d authors", data["novel_count"], data["author_count"])
+        logger.info(
+            "Data fetched: %d novels, %d authors",
+            data["novel_count"],
+            data["author_count"],
+        )
 
         # Collect all pages to generate
         pages = []
@@ -154,16 +160,20 @@ class Command(BaseCommand):
         # 8. 404 page (1 page)
         pages.extend(self._collect_404_pages(output_dir, base_path))
 
-        logger.info("Generating %d static pages with %d workers...", len(pages), workers)
+        logger.info(
+            "Generating %d static pages with %d workers...", len(pages), workers
+        )
 
         # Generate pages using multiprocessing
         generated = 0
         with ProcessPoolExecutor(max_workers=workers) as executor:
             futures = {executor.submit(_generate_page, page): page for page in pages}
 
-            for future in progress(as_completed(futures), desc="Generating", total=len(pages)):
+            for future in progress(
+                as_completed(futures), desc="Generating", total=len(pages)
+            ):
                 try:
-                    result = future.result()
+                    future.result()
                     generated += 1
                 except Exception as e:
                     logger.error("Error generating page: %s", e)
@@ -183,10 +193,22 @@ class Command(BaseCommand):
             .prefetch_related("tags")
             .order_by("-click_num")
             .only(
-                "id", "title", "has_banner", "word_num", "click_num",
-                "like_num", "praise_num", "review_num", "comment_num",
-                "last_update", "genre", "status", "ptype", "cover",
-                "author__name", "contest__name",
+                "id",
+                "title",
+                "has_banner",
+                "word_num",
+                "click_num",
+                "like_num",
+                "praise_num",
+                "review_num",
+                "comment_num",
+                "last_update",
+                "genre",
+                "status",
+                "ptype",
+                "cover",
+                "author__name",
+                "contest__name",
             )
         )
 
@@ -194,6 +216,7 @@ class Command(BaseCommand):
         logger.info("Filtering banner novels...")
         banner_novels = [n for n in all_novels if n.has_banner]
         from datetime import datetime
+
         banner_novels.sort(key=lambda n: n.last_update or datetime.min, reverse=True)
 
         # Get latest banner
@@ -212,8 +235,7 @@ class Command(BaseCommand):
                 total_comment=Sum("novels__comment_num"),
                 banner_count=Count("novels", filter=models.Q(novels__has_banner=True)),
                 latest_update=Max("novels__last_update"),
-            )
-            .order_by("-total_click", "-novel_count")
+            ).order_by("-total_click", "-novel_count")
         )
 
         # Fetch top novel for each author using ORM Window function
@@ -339,12 +361,14 @@ class Command(BaseCommand):
             "querystring": "",
         }
 
-        pages.append((
-            "novels/index.html",
-            context,
-            str(output_dir / "index.html"),
-            base_path,
-        ))
+        pages.append(
+            (
+                "novels/index.html",
+                context,
+                str(output_dir / "index.html"),
+                base_path,
+            )
+        )
 
         return pages
 
@@ -357,12 +381,14 @@ class Command(BaseCommand):
             "author_count": data["author_count"],
         }
 
-        pages.append((
-            "novels/about.html",
-            context,
-            str(output_dir / "about" / "index.html"),
-            base_path,
-        ))
+        pages.append(
+            (
+                "novels/about.html",
+                context,
+                str(output_dir / "about" / "index.html"),
+                base_path,
+            )
+        )
 
         return pages
 
@@ -400,12 +426,14 @@ class Command(BaseCommand):
             else:
                 output_path = str(output_dir / "authors" / f"page{page_num}.html")
 
-            pages.append((
-                "novels/authors.html",
-                context,
-                output_path,
-                base_path,
-            ))
+            pages.append(
+                (
+                    "novels/authors.html",
+                    context,
+                    output_path,
+                    base_path,
+                )
+            )
 
         return pages
 
@@ -443,12 +471,14 @@ class Command(BaseCommand):
             else:
                 output_path = str(output_dir / "rank" / f"page{page_num}.html")
 
-            pages.append((
-                "novels/rank.html",
-                context,
-                output_path,
-                base_path,
-            ))
+            pages.append(
+                (
+                    "novels/rank.html",
+                    context,
+                    output_path,
+                    base_path,
+                )
+            )
 
         return pages
 
@@ -483,12 +513,14 @@ class Command(BaseCommand):
             else:
                 output_path = str(output_dir / "banners" / f"page{page_num}.html")
 
-            pages.append((
-                "novels/banners.html",
-                context,
-                output_path,
-                base_path,
-            ))
+            pages.append(
+                (
+                    "novels/banners.html",
+                    context,
+                    output_path,
+                    base_path,
+                )
+            )
 
         return pages
 
@@ -498,12 +530,14 @@ class Command(BaseCommand):
 
         context = {}
 
-        pages.append((
-            "novels/comments.html",
-            context,
-            str(output_dir / "comments" / "index.html"),
-            base_path,
-        ))
+        pages.append(
+            (
+                "novels/comments.html",
+                context,
+                str(output_dir / "comments" / "index.html"),
+                base_path,
+            )
+        )
 
         return pages
 
@@ -529,11 +563,15 @@ class Command(BaseCommand):
 
         def _to_json(fig):
             import json
+
             fig_dict = fig.to_dict()
-            return json.dumps({
-                "data": fig_dict["data"],
-                "layout": fig_dict["layout"],
-            }, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "data": fig_dict["data"],
+                    "layout": fig_dict["layout"],
+                },
+                ensure_ascii=False,
+            )
 
         def _w(val):
             """Format number as X.Xw"""
@@ -550,7 +588,17 @@ class Command(BaseCommand):
         amber = "#f59e0b"
         orange = "#f97316"
         rose = "#f43f5e"
-        colors = [amber, orange, rose, "#8b5cf6", "#06b6d4", "#10b981", "#3b82f6", "#ec4899", "#14b8a6"]
+        colors = [
+            amber,
+            orange,
+            rose,
+            "#8b5cf6",
+            "#06b6d4",
+            "#10b981",
+            "#3b82f6",
+            "#ec4899",
+            "#14b8a6",
+        ]
 
         ctx = {
             "novel_count": data["novel_count"],
@@ -568,12 +616,19 @@ class Command(BaseCommand):
         genre_labels = [GENRE.get_zh(i) for i in range(2, 11)]
         genre_data = [genre_stats.get(i, 0) for i in range(2, 11)]
 
-        fig = go.Figure(data=[go.Pie(
-            labels=genre_labels, values=genre_data, hole=0.5,
-            marker_colors=colors,
-            textinfo="label+percent", textposition="outside",
-            textfont=dict(size=11),
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=genre_labels,
+                    values=genre_data,
+                    hole=0.5,
+                    marker_colors=colors,
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
         fig.update_layout(**_layout(320), showlegend=False)
         ctx["chart_genre_json"] = _to_json(fig)
 
@@ -586,12 +641,19 @@ class Command(BaseCommand):
         status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
         status_data = [status_stats.get(i, 0) for i in range(2, 8)]
 
-        fig = go.Figure(data=[go.Pie(
-            labels=status_labels, values=status_data, hole=0.5,
-            marker_colors=colors,
-            textinfo="label+percent", textposition="outside",
-            textfont=dict(size=11),
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=status_labels,
+                    values=status_data,
+                    hole=0.5,
+                    marker_colors=colors,
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
         fig.update_layout(**_layout(320), showlegend=False)
         ctx["chart_status_json"] = _to_json(fig)
 
@@ -604,14 +666,27 @@ class Command(BaseCommand):
         tag_labels = [t.name for t in top_tags]
         tag_data = [t.novel_count for t in top_tags]
 
-        fig = go.Figure(data=[go.Bar(
-            y=tag_labels[::-1], x=tag_data[::-1], orientation="h",
-            marker_color=amber,
-            text=[_w(d) for d in tag_data[::-1]], textposition="outside",
-        )])
-        fig.update_layout(**_layout(380),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=tag_labels[::-1],
+                    x=tag_data[::-1],
+                    orientation="h",
+                    marker_color=amber,
+                    text=[_w(d) for d in tag_data[::-1]],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(380),
             yaxis=dict(autorange="reversed"),
-            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]], tickvals=[10, 100, 1000, 10000, 100000]),
+            xaxis=dict(
+                type="log",
+                gridcolor="rgba(128,128,128,0.2)",
+                ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]],
+                tickvals=[10, 100, 1000, 10000, 100000],
+            ),
         )
         ctx["chart_tags_json"] = _to_json(fig)
 
@@ -628,14 +703,25 @@ class Command(BaseCommand):
         author_clicks = [a.total_click or 0 for a in top_authors]
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(
-            y=author_labels[::-1], x=author_clicks[::-1], orientation="h",
-            marker_color=orange,
-            text=[_w(c) for c in author_clicks[::-1]], textposition="outside",
-        ))
-        fig.update_layout(**_layout(380),
+        fig.add_trace(
+            go.Bar(
+                y=author_labels[::-1],
+                x=author_clicks[::-1],
+                orientation="h",
+                marker_color=orange,
+                text=[_w(c) for c in author_clicks[::-1]],
+                textposition="outside",
+            )
+        )
+        fig.update_layout(
+            **_layout(380),
             yaxis=dict(autorange="reversed"),
-            xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)", ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]], tickvals=[100000, 1000000, 10000000, 100000000]),
+            xaxis=dict(
+                type="log",
+                gridcolor="rgba(128,128,128,0.2)",
+                ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]],
+                tickvals=[100000, 1000000, 10000000, 100000000],
+            ),
         )
         ctx["chart_authors_json"] = _to_json(fig)
 
@@ -648,25 +734,40 @@ class Command(BaseCommand):
         ptype_labels = [PTYPE.get_zh(i) for i in range(2, 5)]
         ptype_data = [ptype_stats.get(i, 0) for i in range(2, 5)]
 
-        fig = go.Figure(data=[go.Pie(
-            labels=ptype_labels, values=ptype_data, hole=0.5,
-            marker_colors=[amber, rose, "#6366f1"],
-            textinfo="label+percent", textposition="outside",
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=ptype_labels,
+                    values=ptype_data,
+                    hole=0.5,
+                    marker_colors=[amber, rose, "#6366f1"],
+                    textinfo="label+percent",
+                    textposition="outside",
+                )
+            ]
+        )
         fig.update_layout(**_layout(300), showlegend=False)
         ctx["chart_ptype_json"] = _to_json(fig)
 
         # 6. Word count distribution (histogram, log x-axis)
         word_data = list(
-            Novel.objects.filter(word_num__gt=0)
-            .values_list("word_num", flat=True)[:50000]
+            Novel.objects.filter(word_num__gt=0).values_list("word_num", flat=True)[
+                :50000
+            ]
         )
 
-        fig = go.Figure(data=[go.Histogram(
-            x=word_data, nbinsx=40,
-            marker_color=amber, opacity=0.8,
-        )])
-        fig.update_layout(**_layout(280),
+        fig = go.Figure(
+            data=[
+                go.Histogram(
+                    x=word_data,
+                    nbinsx=40,
+                    marker_color=amber,
+                    opacity=0.8,
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(280),
             xaxis=dict(title="字数", type="log", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
         )
@@ -681,91 +782,125 @@ class Command(BaseCommand):
         contest_labels = [c.name[:12] for c in top_contests]
         contest_data = [c.novel_count for c in top_contests]
 
-        fig = go.Figure(data=[go.Bar(
-            y=contest_labels[::-1], x=contest_data[::-1], orientation="h",
-            marker_color=colors[:len(contest_labels)],
-            text=[_w(d) for d in contest_data[::-1]], textposition="outside",
-        )])
-        fig.update_layout(**_layout(320),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=contest_labels[::-1],
+                    x=contest_data[::-1],
+                    orientation="h",
+                    marker_color=colors[: len(contest_labels)],
+                    text=[_w(d) for d in contest_data[::-1]],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(320),
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
         ctx["chart_contests_json"] = _to_json(fig)
 
         # 8. Genre x Status heatmap
-        heatmap_data = (
-            Novel.objects.values("genre", "status")
-            .annotate(c=Count("id"))
-        )
+        heatmap_data = Novel.objects.values("genre", "status").annotate(c=Count("id"))
         genre_range = list(range(2, 11))
         status_range = list(range(2, 8))
         heat_matrix = []
         for g in genre_range:
             row = []
             for s in status_range:
-                val = next((h["c"] for h in heatmap_data if h["genre"] == g and h["status"] == s), 0)
+                val = next(
+                    (
+                        h["c"]
+                        for h in heatmap_data
+                        if h["genre"] == g and h["status"] == s
+                    ),
+                    0,
+                )
                 row.append(val)
             heat_matrix.append(row)
 
-        fig = go.Figure(data=[go.Heatmap(
-            z=heat_matrix,
-            x=[STATUS.get_zh(s) for s in status_range],
-            y=[GENRE.get_zh(g) for g in genre_range],
-            colorscale="YlOrRd",
-        )])
+        fig = go.Figure(
+            data=[
+                go.Heatmap(
+                    z=heat_matrix,
+                    x=[STATUS.get_zh(s) for s in status_range],
+                    y=[GENRE.get_zh(g) for g in genre_range],
+                    colorscale="YlOrRd",
+                )
+            ]
+        )
         fig.update_layout(**_layout(350))
         ctx["chart_heatmap_json"] = _to_json(fig)
 
         # 9. Top 10 novels by click
         top_click = data["all_novels"][:10]
-        fig = go.Figure(data=[go.Bar(
-            y=[n.title[:12] for n in top_click[::-1]],
-            x=[n.click_num or 0 for n in top_click[::-1]],
-            orientation="h",
-            marker_color=amber,
-            text=[_w(n.click_num or 0) for n in top_click[::-1]],
-            textposition="outside",
-        )])
-        fig.update_layout(**_layout(380),
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=[n.title[:12] for n in top_click[::-1]],
+                    x=[n.click_num or 0 for n in top_click[::-1]],
+                    orientation="h",
+                    marker_color=amber,
+                    text=[_w(n.click_num or 0) for n in top_click[::-1]],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(380),
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
         ctx["chart_top_click_json"] = _to_json(fig)
 
         # 10. Top 10 novels by like
-        top_like_novels = sorted(data["all_novels"], key=lambda n: n.like_num or 0, reverse=True)[:10]
-        fig = go.Figure(data=[go.Bar(
-            y=[n.title[:12] for n in top_like_novels[::-1]],
-            x=[n.like_num or 0 for n in top_like_novels[::-1]],
-            orientation="h",
-            marker_color=orange,
-            text=[_w(n.like_num or 0) for n in top_like_novels[::-1]],
-            textposition="outside",
-        )])
-        fig.update_layout(**_layout(380),
+        top_like_novels = sorted(
+            data["all_novels"], key=lambda n: n.like_num or 0, reverse=True
+        )[:10]
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    y=[n.title[:12] for n in top_like_novels[::-1]],
+                    x=[n.like_num or 0 for n in top_like_novels[::-1]],
+                    orientation="h",
+                    marker_color=orange,
+                    text=[_w(n.like_num or 0) for n in top_like_novels[::-1]],
+                    textposition="outside",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(380),
             yaxis=dict(autorange="reversed"),
             xaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
         ctx["chart_top_like_json"] = _to_json(fig)
 
         # 11. Scatter: click vs like
-        sample_novels = (
-            Novel.objects.filter(click_num__gt=0, like_num__gt=0)
-            .values("click_num", "like_num", "title", "genre")
-            [:3000]
-        )
+        sample_novels = Novel.objects.filter(click_num__gt=0, like_num__gt=0).values(
+            "click_num", "like_num", "title", "genre"
+        )[:3000]
         scatter_x = [n["click_num"] for n in sample_novels]
         scatter_y = [n["like_num"] for n in sample_novels]
         scatter_text = [n["title"][:20] for n in sample_novels]
         scatter_color = [GENRE.get_zh(n["genre"]) for n in sample_novels]
 
-        fig = go.Figure(data=[go.Scatter(
-            x=scatter_x, y=scatter_y, mode="markers",
-            marker=dict(size=4, opacity=0.5, line=dict(width=0)),
-            text=scatter_text, customdata=scatter_color,
-            hovertemplate="%{text}<br>分类: %{customdata}<br>点击: %{x}<br>收藏: %{y}",
-        )])
-        fig.update_layout(**_layout(350),
+        fig = go.Figure(
+            data=[
+                go.Scatter(
+                    x=scatter_x,
+                    y=scatter_y,
+                    mode="markers",
+                    marker=dict(size=4, opacity=0.5, line=dict(width=0)),
+                    text=scatter_text,
+                    customdata=scatter_color,
+                    hovertemplate="%{text}<br>分类: %{customdata}<br>点击: %{x}<br>收藏: %{y}",
+                )
+            ]
+        )
+        fig.update_layout(
+            **_layout(350),
             xaxis=dict(title="点击", type="log", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="收藏", type="log", gridcolor="rgba(128,128,128,0.2)"),
         )
@@ -773,6 +908,7 @@ class Command(BaseCommand):
 
         # 12. Banner comparison
         from django.db.models import Q
+
         banner_stats = Novel.objects.aggregate(
             banner_count=Count("id", filter=Q(has_banner=True)),
             nonbanner_count=Count("id", filter=Q(has_banner=False)),
@@ -801,33 +937,59 @@ class Command(BaseCommand):
         nonbanner_per = [v / nc for v in nonbanner_vals]
 
         fig = go.Figure()
-        fig.add_trace(go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber))
-        fig.add_trace(go.Bar(x=metrics, y=nonbanner_per, name=f"非Banner ({nc}部)", marker_color="#94a3b8"))
-        fig.update_layout(**_layout(300), barmode="group", yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"))
+        fig.add_trace(
+            go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber)
+        )
+        fig.add_trace(
+            go.Bar(
+                x=metrics,
+                y=nonbanner_per,
+                name=f"非Banner ({nc}部)",
+                marker_color="#94a3b8",
+            )
+        )
+        fig.update_layout(
+            **_layout(300),
+            barmode="group",
+            yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+        )
         ctx["chart_banner_json"] = _to_json(fig)
 
         # 13. A-status candidates
-        a_criteria = Q(has_banner=True) | Q(click_num__gte=10000000) | Q(review_num__gte=60) | Q(like_num__gte=10000) | Q(praise_num__gte=10000)
+        a_criteria = (
+            Q(has_banner=True)
+            | Q(click_num__gte=10000000)
+            | Q(review_num__gte=60)
+            | Q(like_num__gte=10000)
+            | Q(praise_num__gte=10000)
+        )
         a_count = Novel.objects.filter(a_criteria, status__in=[3, 2]).count()
         not_a_count = Novel.objects.filter(~a_criteria, status__in=[3, 2]).count()
         already_a = Novel.objects.filter(status__in=[4, 5]).count()
 
-        fig = go.Figure(data=[go.Pie(
-            labels=["已是A状态", "符合A条件(待升级)", "不符合A条件"],
-            values=[already_a, a_count, not_a_count],
-            hole=0.5,
-            marker_colors=[amber, orange, "#94a3b8"],
-            textinfo="label+value", textposition="outside",
-        )])
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=["已是A状态", "符合A条件(待升级)", "不符合A条件"],
+                    values=[already_a, a_count, not_a_count],
+                    hole=0.5,
+                    marker_colors=[amber, orange, "#94a3b8"],
+                    textinfo="label+value",
+                    textposition="outside",
+                )
+            ]
+        )
         fig.update_layout(**_layout(300), showlegend=False)
         ctx["chart_a_status_json"] = _to_json(fig)
 
-        pages.append((
-            "novels/dashboard.html",
-            ctx,
-            str(output_dir / "dashboard" / "index.html"),
-            base_path,
-        ))
+        pages.append(
+            (
+                "novels/dashboard.html",
+                ctx,
+                str(output_dir / "dashboard" / "index.html"),
+                base_path,
+            )
+        )
 
         return pages
 
@@ -837,11 +999,13 @@ class Command(BaseCommand):
 
         context = {}
 
-        pages.append((
-            "novels/404.html",
-            context,
-            str(output_dir / "404.html"),
-            base_path,
-        ))
+        pages.append(
+            (
+                "novels/404.html",
+                context,
+                str(output_dir / "404.html"),
+                base_path,
+            )
+        )
 
         return pages

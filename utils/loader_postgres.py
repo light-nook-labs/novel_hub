@@ -44,7 +44,9 @@ def bulk_create_m2m(through_model, objects: list, batch_size: int = 5000) -> int
     return len(created)
 
 
-def bulk_upsert(model, objects: list, update_fields: list, batch_size: int = 5000) -> int:
+def bulk_upsert(
+    model, objects: list, update_fields: list, batch_size: int = 5000
+) -> int:
     """Bulk upsert (INSERT ... ON CONFLICT UPDATE) for PostgreSQL.
 
     Uses raw SQL for performance with ON CONFLICT ... DO UPDATE SET.
@@ -72,9 +74,7 @@ def bulk_upsert(model, objects: list, update_fields: list, batch_size: int = 500
     columns = ", ".join(all_fields)
 
     # Build ON CONFLICT UPDATE SET clause
-    update_set = ", ".join(
-        [f"{f} = EXCLUDED.{f}" for f in update_fields]
-    )
+    update_set = ", ".join([f"{f} = EXCLUDED.{f}" for f in update_fields])
 
     sql = f"""
         INSERT INTO {table_name} ({columns})
@@ -85,7 +85,7 @@ def bulk_upsert(model, objects: list, update_fields: list, batch_size: int = 500
     count = 0
     with connection.cursor() as cursor:
         for i in range(0, len(objects), batch_size):
-            batch = objects[i:i + batch_size]
+            batch = objects[i : i + batch_size]
             params_list = []
             for obj in batch:
                 params = [getattr(obj, f) for f in all_fields]

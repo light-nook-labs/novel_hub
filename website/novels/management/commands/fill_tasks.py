@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 # Status values
 ACTIVE_D = STATUS.enum.ACTIVE_D.value  # 断更A
 ACTIVE_F = STATUS.enum.ACTIVE_F.value  # 完结A
-DIED = STATUS.enum.DIED.value          # 断更
+DIED = STATUS.enum.DIED.value  # 断更
 FINISHED = STATUS.enum.FINISHED.value  # 已完结
 
 
@@ -64,10 +64,8 @@ class Command(BaseCommand):
         novels = []
         batch_size = 500
         for i in range(0, len(duplicate_covers), batch_size):
-            batch = duplicate_covers[i:i + batch_size]
-            novels.extend(
-                Novel.objects.filter(cover__in=batch).select_related("task")
-            )
+            batch = duplicate_covers[i : i + batch_size]
+            novels.extend(Novel.objects.filter(cover__in=batch).select_related("task"))
         total = len(novels)
         logger.info("Found %d novels with duplicate covers", total)
 
@@ -78,11 +76,11 @@ class Command(BaseCommand):
         def _is_active_candidate(n):
             """Check if novel meets A-status criteria."""
             return (
-                n.has_banner or
-                (n.click_num or 0) >= 10_000_000 or
-                (n.review_num or 0) >= 60 or
-                (n.like_num or 0) >= 10_000 or
-                (n.praise_num or 0) >= 10_000
+                n.has_banner
+                or (n.click_num or 0) >= 10_000_000
+                or (n.review_num or 0) >= 60
+                or (n.like_num or 0) >= 10_000
+                or (n.praise_num or 0) >= 10_000
             )
 
         for novel in progress(novels, desc="Classifying"):
@@ -105,7 +103,11 @@ class Command(BaseCommand):
             else:
                 default_novels.append(novel)
 
-        logger.info("Classification: %d urgent, %d default", len(urgent_novels), len(default_novels))
+        logger.info(
+            "Classification: %d urgent, %d default",
+            len(urgent_novels),
+            len(default_novels),
+        )
 
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN — no tasks created"))
@@ -130,6 +132,8 @@ class Command(BaseCommand):
         urgent_count = Task.objects.filter(status=Task.Status.URGENT).count()
         default_count = Task.objects.filter(status=Task.Status.DEFAULT).count()
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Done! Tasks: {total_tasks} (urgent: {urgent_count}, default: {default_count})"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done! Tasks: {total_tasks} (urgent: {urgent_count}, default: {default_count})"
+            )
+        )

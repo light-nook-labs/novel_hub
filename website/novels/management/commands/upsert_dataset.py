@@ -46,7 +46,9 @@ NOVEL_UPDATE_FIELDS = [
 
 
 class Command(BaseCommand):
-    help = "Upsert dataset from JSONL/CSV files into database (updates existing records)"
+    help = (
+        "Upsert dataset from JSONL/CSV files into database (updates existing records)"
+    )
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -100,7 +102,9 @@ class Command(BaseCommand):
         logger.info("Upserting authors...")
         authors = list({m.author for m in meta_list if m.author})
         author_count = bulk_create_ignore(
-            Author, [Author(name=a) for a in progress(authors, desc="Authors")], batch_size
+            Author,
+            [Author(name=a) for a in progress(authors, desc="Authors")],
+            batch_size,
         )
         logger.info("Created %d new authors", author_count)
 
@@ -114,7 +118,9 @@ class Command(BaseCommand):
         logger.info("Upserting contests...")
         contests = list({m.contest for m in meta_list if m.contest})
         contest_count = bulk_create_ignore(
-            Contest, [Contest(name=c) for c in progress(contests, desc="Contests")], batch_size
+            Contest,
+            [Contest(name=c) for c in progress(contests, desc="Contests")],
+            batch_size,
         )
         logger.info("Created %d new contests", contest_count)
 
@@ -137,7 +143,9 @@ class Command(BaseCommand):
                         id=django_data["id"],
                         title=django_data["title"],
                         author_id=author_map.get(meta.author),
-                        contest_id=contest_map.get(meta.contest) if meta.contest else None,
+                        contest_id=(
+                            contest_map.get(meta.contest) if meta.contest else None
+                        ),
                         genre=django_data["genre"],
                         status=django_data["status"],
                         ptype=django_data["ptype"],
@@ -170,15 +178,18 @@ class Command(BaseCommand):
 
         # Delete and re-insert M2M relationships in a transaction
         with transaction.atomic():
-            deleted_count, _ = Novel.tags.through.objects.filter(novel_id__in=novel_ids).delete()
+            deleted_count, _ = Novel.tags.through.objects.filter(
+                novel_id__in=novel_ids
+            ).delete()
             logger.info("Deleted %d stale novel-tag relationships", deleted_count)
 
             if novel_tags:
                 if is_postgres:
                     from django.db import connection
+
                     with connection.cursor() as cursor:
                         for i in range(0, len(novel_tags), batch_size):
-                            batch = novel_tags[i:i + batch_size]
+                            batch = novel_tags[i : i + batch_size]
                             args_str = ",".join(
                                 cursor.mogrify("(%s,%s)", (nid, tid)).decode()
                                 for nid, tid in batch
@@ -190,7 +201,10 @@ class Command(BaseCommand):
                 else:
                     m2m_count = bulk_create_ignore(
                         Novel.tags.through,
-                        [Novel.tags.through(novel_id=nid, tag_id=tid) for nid, tid in novel_tags],
+                        [
+                            Novel.tags.through(novel_id=nid, tag_id=tid)
+                            for nid, tid in novel_tags
+                        ],
                         batch_size,
                     )
             else:

@@ -44,7 +44,9 @@ def bulk_create_m2m(through_model, objects: list, batch_size: int = 1000) -> int
     return len(created)
 
 
-def bulk_upsert(model, objects: list, update_fields: list, batch_size: int = 1000) -> int:
+def bulk_upsert(
+    model, objects: list, update_fields: list, batch_size: int = 1000
+) -> int:
     """Bulk upsert for SQLite using transaction.
 
     Args:

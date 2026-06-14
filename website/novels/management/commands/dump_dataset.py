@@ -58,9 +58,22 @@ class Command(BaseCommand):
         # Step 2: Query novels in batches and convert to Meta objects
         logger.info("Querying novels...")
         novel_qs = Novel.objects.values(
-            "id", "title", "author__name", "genre", "status", "ptype",
-            "has_banner", "word_num", "click_num", "praise_num", "like_num",
-            "review_num", "comment_num", "contest__name", "last_update", "cover",
+            "id",
+            "title",
+            "author__name",
+            "genre",
+            "status",
+            "ptype",
+            "has_banner",
+            "word_num",
+            "click_num",
+            "praise_num",
+            "like_num",
+            "review_num",
+            "comment_num",
+            "contest__name",
+            "last_update",
+            "cover",
         )
         total = novel_qs.count()
         logger.info("Total novels: %d", total)
@@ -68,7 +81,7 @@ class Command(BaseCommand):
         meta_list = []
         batch_size = 10000
         for start in progress(range(0, total, batch_size), desc="Converting"):
-            for row in novel_qs[start:start + batch_size]:
+            for row in novel_qs[start : start + batch_size]:
                 try:
                     meta = Meta.from_django_dict(row)
                     meta.tags = tags_dict.get(meta.nid, [])
@@ -123,7 +136,9 @@ class Command(BaseCommand):
         import pandas as pd
 
         filepath = output_path / "dataset.csv"
-        records = [meta.model_dump() for meta in progress(meta_list, desc="Writing CSV")]
+        records = [
+            meta.model_dump() for meta in progress(meta_list, desc="Writing CSV")
+        ]
         df = pd.DataFrame(records)
         df.to_csv(filepath, index=False, encoding="utf-8")
         logger.info("Written %s: %d records", filepath, len(meta_list))

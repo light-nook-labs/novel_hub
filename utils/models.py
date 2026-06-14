@@ -46,7 +46,7 @@ class Meta(BaseModel):
         # Compress cover URL
         cover = self.cover
         if cover and cover.startswith(COVER_PREFIX):
-            suffix = cover[len(COVER_PREFIX):]
+            suffix = cover[len(COVER_PREFIX) :]
             cover = None if suffix == DEFAULT_COVER else suffix
 
         return {

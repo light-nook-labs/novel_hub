@@ -152,7 +152,9 @@ def banner_url(nid):
 def novel_url(nid):
     """Generate novel page URL from nid."""
     cfg = settings.TOML
-    pattern = cfg.get("scraper", {}).get("novel_url", "https://book.sfacg.com/Novel/{nid}/")
+    pattern = cfg.get("scraper", {}).get(
+        "novel_url", "https://book.sfacg.com/Novel/{nid}/"
+    )
     return pattern.format(nid=nid)
 
 

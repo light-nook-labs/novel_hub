@@ -4,7 +4,6 @@ from django.urls import reverse
 from novels.models import Novel, Author, Tag, Contest
 from novels.mappings import GENRE, STATUS, PTYPE
 
-
 # ── Novel views ──────────────────────────────────────────────────────
 
 
@@ -49,15 +48,11 @@ class NovelListViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_index_sort_click_num(self):
-        response = self.client.get(
-            reverse("novels:index"), {"sort": "click_num"}
-        )
+        response = self.client.get(reverse("novels:index"), {"sort": "click_num"})
         self.assertEqual(response.status_code, 200)
 
     def test_index_sort_word_num(self):
-        response = self.client.get(
-            reverse("novels:index"), {"sort": "word_num"}
-        )
+        response = self.client.get(reverse("novels:index"), {"sort": "word_num"})
         self.assertEqual(response.status_code, 200)
 
     def test_index_invalid_sort(self):
@@ -135,9 +130,7 @@ class NovelRankViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_rank_invalid_sort(self):
-        response = self.client.get(
-            reverse("novels:rank"), {"sort": "invalid"}
-        )
+        response = self.client.get(reverse("novels:rank"), {"sort": "invalid"})
         self.assertEqual(response.status_code, 200)
 
     def test_rank_queries(self):

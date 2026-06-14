@@ -27,13 +27,17 @@ class SearchBoundaryTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_search_special_chars(self):
-        response = self.client.get(reverse("novels:index"), {"q": "<script>alert(1)</script>"})
+        response = self.client.get(
+            reverse("novels:index"), {"q": "<script>alert(1)</script>"}
+        )
         self.assertEqual(response.status_code, 200)
         # Django auto-escapes HTML, so check for escaped version
         self.assertContains(response, "&lt;script&gt;")
 
     def test_search_sql_injection(self):
-        response = self.client.get(reverse("novels:index"), {"q": "'; DROP TABLE novels;--"})
+        response = self.client.get(
+            reverse("novels:index"), {"q": "'; DROP TABLE novels;--"}
+        )
         self.assertEqual(response.status_code, 200)
 
     def test_search_found(self):
