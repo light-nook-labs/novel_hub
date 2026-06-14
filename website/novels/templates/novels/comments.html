@@ -50,12 +50,6 @@
     <h2 class="text-lg font-semibold mb-3">评论区</h2>
     <div id="giscus-container"></div>
   </div>
-
-  <!-- GISCUS Comments Section -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-    <h2 class="text-lg font-semibold mb-4">评论区</h2>
-    <div id="giscus-container"></div>
-  </div>
 </div>
 
 <script>
@@ -141,18 +135,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // Create GitHub issue
-      var issueTitle = '[Task] 小说 ID: ' + nid;
-      var issueBody = '## 任务提交\n\n' +
-        '**小说 ID**: ' + nid + '\n' +
-        '**提交时间**: ' + new Date().toISOString() + '\n\n' +
-        '---\n' +
-        '*此任务由评论页面自动提交，等待 Actions 处理*';
-
+      // Use GitHub issue template
       var url = 'https://github.com/light-nook-labs/novel_hub/issues/new?' +
-        'title=' + encodeURIComponent(issueTitle) + '&' +
-        'body=' + encodeURIComponent(issueBody) + '&' +
-        'labels=task';
+        'template=task.yml&' +
+        'title=' + encodeURIComponent('[Task] 小说 ID: ' + nid) + '&' +
+        'novel-id=' + encodeURIComponent(nid);
 
       window.open(url, '_blank');
       showResult('已跳转到 GitHub，请提交 Issue', 'success');
