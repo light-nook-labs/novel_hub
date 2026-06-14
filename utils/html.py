@@ -22,9 +22,9 @@ def fetch_html(session, nid):
     resp.raise_for_status()
     tree = lxml.html.fromstring(resp.text)
 
-    # Title from <h1>
-    h1_texts = tree.xpath("//h1//text()")
-    title = "".join(t.strip() for t in h1_texts)
+    # Title from <h1> — only direct text of span.text, exclude nested tag spans
+    title_parts = tree.xpath('//h1//span[contains(@class,"text")]/text()')
+    title = "".join(t.strip() for t in title_parts)
 
     # Author from <title> tag
     # Format: '小说名 - 小说全文阅读 - 类型标签 - 作者 - SF轻小说'
@@ -42,9 +42,9 @@ def fetch_html(session, nid):
     btns = tree.xpath(
         '//div[@id="BasicOperation"]' '//a[contains(@class,"btn")]/text()'
     )
-    # Ptype + contest
+    # Ptype + contest (tags inside h1.title)
     ptype_contest = tree.xpath(
-        '//div[contains(@class,"title")]' '//span[contains(@class,"tag")]/text()'
+        '//h1[contains(@class,"title")]//span[contains(@class,"tag")]/text()'
     )
     # Banner
     banner = tree.xpath('//div[contains(@class,"d-banner")]')
