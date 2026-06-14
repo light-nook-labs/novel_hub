@@ -117,11 +117,14 @@ Task table tracks novels that need attention (duplicate covers, data issues).
 
 ### Priority Logic
 
-| Priority | Condition |
-|----------|-----------|
-| `urgent` | Status is `断更A` / `完结A` |
-| `urgent` | Meets A-status criteria: `has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >= 1w` OR `praise >= 1w` |
-| `default` | Everything else |
+| Priority | Status | Condition |
+|----------|--------|-----------|
+| `long_term` | `l` | Manually added high-value A-status novels (永久保留) |
+| `urgent` | `u` | Auto-detected: `断更A` / `完结A` or meets A-status criteria |
+| `default` | `d` | Everything else |
+| `finished` | `f` | Processed tasks (deleted after processing) |
+
+A-status criteria: `has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >= 1w` OR `praise >= 1w`
 
 ### Commands
 
@@ -130,19 +133,70 @@ uv run python manage.py fill_tasks              # Create tasks for duplicate cov
 uv run python manage.py fill_tasks --dry-run    # Preview without creating
 uv run python manage.py run_tasks               # Process tasks (crawl + update)
 uv run python manage.py run_tasks --limit 100   # Process limited tasks
+uv run python manage.py add_long_term <nid>     # Add novel as long-term task
 ```
 
 ### Workflow
 
 1. `fill_tasks` finds novels sharing the same cover (excluding None)
-2. Classifies each novel as urgent or default based on priority logic
+2. Classifies each novel based on priority logic
 3. Creates Task entries with OneToOne link to Novel
-4. `run_tasks` processes tasks: crawls novel details, updates DB, marks finished
-5. Finished tasks are deleted after processing
+4. `run_tasks` processes tasks: crawls novel details, updates DB
+5. `long_term` tasks are never deleted (permanent tracking)
+6. `urgent`/`default` tasks marked as `finished` after processing
 
 ### Task Ordering
 
-Status priority: `urgent` > `default` > `finished`, then `novel_id` descending.
+Status priority: `long_term` > `urgent` > `default` > `finished`, then `novel_id` descending.
+
+## Snapshot System
+
+Track novel metrics over time for trend analysis.
+
+### Strategy
+
+Only snapshot novels that Scrapy naturally crawls (连载中 list, ordered by update time):
+
+| Source | Target | Frequency |
+|--------|--------|-----------|
+| Scrapy | 连载中 (最近 7 天更新) | 每次爬取 |
+| Long-term tasks | 手动添加的 A-status | 每次爬取 |
+| Scheduled | 补充遗漏 | 每天 |
+
+### Storage
+
+- **Supabase**: 30 days of snapshots (~6 MB)
+- **GitHub**: Monthly archive (JSONL)
+
+### Data Volume
+
+```
+连载中 (3,003): ~151 pages, ~1.25 hours to crawl
+最近 7 天更新: ~335 novels, ~17 pages, ~8.5 minutes
+Long-term tasks: ~100 novels (assumed)
+Total snapshot storage: ~6 MB (30 days)
+```
+
+### Commands
+
+```bash
+uv run python manage.py smart_snapshot          # Create daily snapshots
+uv run python manage.py archive_snapshots       # Archive old snapshots to JSONL
+uv run python manage.py archive_snapshots --month 2026-01  # Archive specific month
+```
+
+### Workflow
+
+1. Scrapy crawls 连载中 list (stops at 7-day cutoff)
+2. `SnapshotPipeline` creates snapshot for each crawled novel
+3. Long-term tasks are always crawled and snapshotted
+4. `smart_snapshot` fills gaps for novels Scrapy missed
+5. `archive_snapshots` exports old data to JSONL and cleans DB
+
+### GitHub Actions
+
+- `daily-snapshot.yml`: Runs `smart_snapshot` daily at 04:00 Shanghai
+- `monthly-archive.yml`: Runs `archive_snapshots` on 1st of each month
 
 ## Spider Rules
 
