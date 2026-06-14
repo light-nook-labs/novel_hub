@@ -2,6 +2,7 @@
 
 from datetime import date, timedelta
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from novels.models import Novel, NovelSnapshot
@@ -12,12 +13,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         today = date.today()
+        cfg = settings.TOML.get("snapshot", {})
+        snapshot_days = cfg.get("snapshot_days", 7)
+        retention_days = cfg.get("retention_days", 30)
 
-        # 1. ON_GOING novels updated within 7 days
-        week_ago = today - timedelta(days=7)
+        # 1. ON_GOING novels updated within snapshot_days
+        cutoff_date = today - timedelta(days=snapshot_days)
         ongoing = Novel.objects.filter(
             status=3,  # ON_GOING
-            last_update__date__gte=week_ago,
+            last_update__date__gte=cutoff_date,
         )
 
         # 2. Long-term tasks
@@ -45,9 +49,11 @@ class Command(BaseCommand):
         if snapshots:
             NovelSnapshot.objects.bulk_create(snapshots, ignore_conflicts=True)
 
-        # 5. Delete snapshots older than 30 days
-        cutoff = today - timedelta(days=30)
-        deleted, _ = NovelSnapshot.objects.filter(snapshot_date__lt=cutoff).delete()
+        # 5. Delete snapshots older than retention_days
+        retention_cutoff = today - timedelta(days=retention_days)
+        deleted, _ = NovelSnapshot.objects.filter(
+            snapshot_date__lt=retention_cutoff
+        ).delete()
 
         self.stdout.write(
             self.style.SUCCESS(

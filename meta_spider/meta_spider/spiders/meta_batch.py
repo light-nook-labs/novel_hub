@@ -20,7 +20,9 @@ class MetaBatchSpider(Spider):
         settings = get_project_settings()
         toml = settings.get("TOML", {})
         scraper = toml.get("scraper", {})
-        self._base_url = "https://book.sfacg.com/List/default.aspx"
+        self._base_url = scraper.get(
+            "list_url", "https://book.sfacg.com/List/default.aspx"
+        )
         self._common_url = scraper.get(
             "common_url", "https://book.sfacg.com/ajax/ashx/Common.ashx"
         )

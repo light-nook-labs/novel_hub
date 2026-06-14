@@ -1033,12 +1033,18 @@ class Command(BaseCommand):
         ctx["chart_banner_engagement_json"] = _to_json(fig)
 
         # 13. A-status candidates
+        thresholds = settings.TOML.get("thresholds", {})
+        active_click = thresholds.get("active_click", 10000000)
+        active_review = thresholds.get("active_review", 60)
+        active_like = thresholds.get("active_like", 10000)
+        active_praise = thresholds.get("active_praise", 10000)
+
         a_criteria = (
             Q(has_banner=True)
-            | Q(click_num__gte=10000000)
-            | Q(review_num__gte=60)
-            | Q(like_num__gte=10000)
-            | Q(praise_num__gte=10000)
+            | Q(click_num__gte=active_click)
+            | Q(review_num__gte=active_review)
+            | Q(like_num__gte=active_like)
+            | Q(praise_num__gte=active_praise)
         )
         a_count = Novel.objects.filter(a_criteria, status__in=[3, 2]).count()
         not_a_count = Novel.objects.filter(~a_criteria, status__in=[3, 2]).count()

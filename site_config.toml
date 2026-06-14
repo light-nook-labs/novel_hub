@@ -12,6 +12,7 @@ detail_novel_limit = 50
 
 [scraper]
 user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
+list_url = "https://book.sfacg.com/List/default.aspx"
 common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 novel_url = "https://book.sfacg.com/Novel/{nid}/"
 mobile_url = "https://m.sfacg.com/b/{nid}/"
@@ -26,3 +27,7 @@ active_click = 10000000
 active_praise = 10000
 active_like = 10000
 active_review = 60
+
+[snapshot]
+snapshot_days = 7
+retention_days = 30
