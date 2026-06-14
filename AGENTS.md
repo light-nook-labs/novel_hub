@@ -188,10 +188,10 @@ uv run python manage.py archive_snapshots --month 2026-01  # Archive specific mo
 ### Workflow
 
 1. Scrapy crawls ON_GOING list (stops at 7-day cutoff)
-2. `SnapshotPipeline` creates snapshot for each crawled novel
-3. Long-term tasks are always crawled and snapshotted
-4. `smart_snapshot` fills gaps for novels Scrapy missed
-5. `archive_snapshots` exports old data to JSONL and cleans DB
+2. Scrapy outputs to JSONL (existing workflow)
+3. `upsert_dataset` loads JSONL data into DB
+4. `smart_snapshot` creates snapshots for ON_GOING novels and long-term tasks
+5. `archive_snapshots` exports old data to JSONL/CSV and cleans DB
 
 ### GitHub Actions
 
