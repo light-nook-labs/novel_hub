@@ -192,7 +192,7 @@ class Command(BaseCommand):
                     author=author,
                     status=1,  # Default status
                 )
-                Task.objects.create(novel_id=nid, status=Task.Status.DEFAULT)
+                Task.objects.create(novel_id=nid, status=Task.Status.URGENT)
 
             logger.info("Created pending novel %d: %s", nid, title)
             return "created_pending"
