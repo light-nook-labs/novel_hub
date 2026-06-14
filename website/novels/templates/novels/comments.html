@@ -12,9 +12,6 @@
       <a href="https://giscus.app" target="_blank" class="text-amber-600 dark:text-amber-400 hover:underline">GISCUS</a>，
       使用 GitHub Discussions 作为后端。
     </p>
-    <p class="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-4 py-2 inline-block">
-      ⚠️ 此页面切换配色方案会强制刷新页面
-    </p>
   </div>
 
   <!-- Task Collection Section -->
@@ -56,28 +53,50 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Load GISCUS
+function loadGiscus() {
   var container = document.getElementById('giscus-container');
-  if (container) {
-    var isDark = document.documentElement.classList.contains('dark');
-    var script = document.createElement('script');
-    script.src = 'https://giscus.app/client.js';
-    script.setAttribute('data-repo', 'light-nook-labs/novel_hub');
-    script.setAttribute('data-repo-id', 'R_kgDOSQm3uQ');
-    script.setAttribute('data-category', 'General');
-    script.setAttribute('data-category-id', 'DIC_kwDOSQm3uc4C_Hbp');
-    script.setAttribute('data-mapping', 'pathname');
-    script.setAttribute('data-strict', '0');
-    script.setAttribute('data-reactions-enabled', '1');
-    script.setAttribute('data-emit-metadata', '0');
-    script.setAttribute('data-input-position', 'bottom');
-    script.setAttribute('data-theme', isDark ? 'dark' : 'light');
-    script.setAttribute('data-lang', 'zh-CN');
-    script.setAttribute('crossorigin', 'anonymous');
-    script.async = true;
-    container.appendChild(script);
-  }
+  if (!container) return;
+
+  // Clear existing content
+  container.innerHTML = '';
+
+  var isDark = document.documentElement.classList.contains('dark');
+  var script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.setAttribute('data-repo', 'light-nook-labs/novel_hub');
+  script.setAttribute('data-repo-id', 'R_kgDOSQm3uQ');
+  script.setAttribute('data-category', 'General');
+  script.setAttribute('data-category-id', 'DIC_kwDOSQm3uc4C_Hbp');
+  script.setAttribute('data-mapping', 'pathname');
+  script.setAttribute('data-strict', '0');
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-emit-metadata', '0');
+  script.setAttribute('data-input-position', 'bottom');
+  script.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  script.setAttribute('data-lang', 'zh-CN');
+  script.setAttribute('crossorigin', 'anonymous');
+  script.async = true;
+  container.appendChild(script);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Initial load
+  loadGiscus();
+
+  // Listen for theme changes from main.js
+  var observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.attributeName === 'class') {
+        // Theme changed, reload GISCUS
+        loadGiscus();
+      }
+    });
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class']
+  });
 
   // Task form submission
   var form = document.getElementById('task-form');
@@ -140,14 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
     resultDiv.className = 'mt-3 text-sm ' +
       (type === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400');
     resultDiv.classList.remove('hidden');
-  }
-
-  // Force page reload when theme toggle is clicked
-  var toggle = document.getElementById('theme-toggle');
-  if (toggle) {
-    toggle.addEventListener('click', function() {
-      location.reload();
-    });
   }
 });
 </script>
