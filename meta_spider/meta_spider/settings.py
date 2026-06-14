@@ -75,6 +75,7 @@ EXTENSIONS = {
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "meta_spider.pipelines.CSVPipeline": 300,
+    "meta_spider.pipelines.SnapshotPipeline": 100,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

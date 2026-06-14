@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import time
 from typing import Any
 from urllib.parse import urlencode, urljoin
@@ -24,6 +24,7 @@ class MetaBatchSpider(Spider):
         self._common_url = scraper.get(
             "common_url", "https://book.sfacg.com/ajax/ashx/Common.ashx"
         )
+        self.should_stop = False
 
     async def start(self):
         """CLI Args
@@ -31,20 +32,26 @@ class MetaBatchSpider(Spider):
         Args:
             begin: start page
             num: total num
+            days: cutoff days (default: 7)
 
         Examples:
             - scrapy crawl meta_batch -o o.jsonl -a num=3
             - scrapy crawl meta_batch -o o.jsonl -a num=3 -a begin=22
             - scrapy crawl meta_batch -o o.jsonl -a begin=12465
+            - scrapy crawl meta_batch -o o.jsonl -a days=14
         """
         self.begin_num = int(getattr(self, "begin", 1))
         self.curr_page = self.begin_num
         self.total_num = int(getattr(self, "num", 2))
         self.end_page = self.begin_num + self.total_num - 1
+        self.cutoff_days = int(getattr(self, "days", 7))
 
         yield Request(self._join_url(), callback=self.parse)
 
     def parse(self, response: HtmlResponse):
+        if self.should_stop:
+            return
+
         items = response.css(".Comic_Pic_List")
         if not items:
             return
@@ -89,6 +96,15 @@ class MetaBatchSpider(Spider):
             # nid, cover, title, author, genre
             **meta_info,
         )
+
+        # Check update time for cutoff
+        last_update = data.get("last_update")
+        if last_update:
+            cutoff_date = datetime.now() - timedelta(days=self.cutoff_days)
+            if last_update < cutoff_date:
+                self.should_stop = True
+                self.logger.info(f"Reached novel updated {last_update}, stopping crawl")
+
         comment_url = self._get_comment_url(data["nid"])
         yield Request(
             comment_url,

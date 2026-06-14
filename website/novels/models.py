@@ -102,6 +102,7 @@ class Novel(models.Model):
 
 class Task(models.Model):
     class Status(models.TextChoices):
+        LONG_TERM = "l", "long_term"
         URGENT = "u", "urgent"
         DEFAULT = "d", "default"
         FINISHED = "f", "finished"
@@ -120,13 +121,41 @@ class Task(models.Model):
     class Meta:
         ordering = [
             models.Case(
-                models.When(status="u", then=0),
-                models.When(status="d", then=1),
-                models.When(status="f", then=2),
-                default=3,
+                models.When(status="l", then=0),
+                models.When(status="u", then=1),
+                models.When(status="d", then=2),
+                models.When(status="f", then=3),
+                default=4,
             ),
             "-novel_id",
         ]
 
     def __str__(self):
         return f"Task #{self.id} → Novel {self.novel_id}"
+
+
+class NovelSnapshot(models.Model):
+    novel = models.ForeignKey(
+        Novel,
+        on_delete=models.CASCADE,
+        related_name="snapshots",
+    )
+    snapshot_date = models.DateField()
+
+    click_num = models.IntegerField(null=True)
+    like_num = models.IntegerField(null=True)
+    praise_num = models.IntegerField(null=True)
+    word_num = models.IntegerField(null=True)
+    review_num = models.IntegerField(null=True)
+    comment_num = models.IntegerField(null=True)
+
+    class Meta:
+        unique_together = ("novel", "snapshot_date")
+        ordering = ["-snapshot_date"]
+        indexes = [
+            models.Index(fields=["snapshot_date"]),
+            models.Index(fields=["novel", "snapshot_date"]),
+        ]
+
+    def __str__(self):
+        return f"Snapshot {self.novel_id} @ {self.snapshot_date}"

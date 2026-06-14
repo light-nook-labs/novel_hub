@@ -1,10 +1,10 @@
 """Management command to process tasks: crawl novel details, update DB.
 
 Processes up to 500 tasks per run:
-1. Fetch tasks ordered by status priority (u > d > f), novel_id desc
+1. Fetch tasks ordered by status priority (l > u > d > f), novel_id desc
 2. Crawl novel detail page + comment API
 3. Update novel metadata in DB
-4. Mark task as finished
+4. Mark task as finished (except long-term tasks)
 5. Delete finished tasks after all processed
 
 Usage:
@@ -58,7 +58,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         limit = options["limit"]
 
-        # Get tasks ordered by priority (u > d > f), novel_id desc
+        # Get tasks ordered by priority (l > u > d > f), novel_id desc
         tasks = Task.objects.select_related("novel")[:limit]
         total = tasks.count()
 
@@ -121,9 +121,10 @@ class Command(BaseCommand):
                             setattr(novel, field, value)
                     novel.save()
 
-                    # Mark task as finished
-                    task.status = Task.Status.FINISHED
-                    task.save()
+                    # Long-term tasks: keep as-is
+                    if task.status != Task.Status.LONG_TERM:
+                        task.status = Task.Status.FINISHED
+                        task.save()
 
                 success += 1
 
@@ -133,7 +134,7 @@ class Command(BaseCommand):
                 )
                 failed += 1
 
-        # Delete finished tasks
+        # Delete finished tasks (not long-term)
         deleted, _ = Task.objects.filter(status=Task.Status.FINISHED).delete()
         logger.info("Deleted %d finished tasks", deleted)
 
