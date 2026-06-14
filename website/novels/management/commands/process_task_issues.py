@@ -81,17 +81,29 @@ class Command(BaseCommand):
                     continue
 
                 # Add task
-                task_created = self._add_task(nid)
+                result = self._add_task(nid)
                 processed += 1
-                if task_created:
-                    created_tasks += 1
 
-                # Close issue with comment
-                comment = (
-                    f"✅ 已收到任务提交\n\n"
-                    f"**小说 ID**: {nid}\n\n"
-                    f"任务已加入队列，将在下次 Run Tasks 时处理。"
-                )
+                if result == "created":
+                    created_tasks += 1
+                    comment = (
+                        f"✅ 已收到任务提交\n\n"
+                        f"**小说 ID**: {nid}\n\n"
+                        f"任务已加入队列，将在下次 Run Tasks 时处理。"
+                    )
+                elif result == "exists":
+                    comment = (
+                        f"⚠️ 任务已存在\n\n"
+                        f"**小说 ID**: {nid}\n\n"
+                        f"该任务已在队列中，无需重复提交。"
+                    )
+                else:  # not_found
+                    comment = (
+                        f"❌ 小说不存在\n\n"
+                        f"**小说 ID**: {nid}\n\n"
+                        f"数据库中未找到该小说，请检查 ID 是否正确。"
+                    )
+
                 self._close_issue(headers, repo, issue_number, comment)
 
                 logger.info("Processed issue #%d: %s", issue_number, nid)
@@ -127,23 +139,23 @@ class Command(BaseCommand):
         return None
 
     def _add_task(self, nid):
-        """Add task for novel ID. Returns True if created."""
+        """Add task for novel ID. Returns 'created', 'exists', or 'not_found'."""
         nid = int(nid)
 
         # Check if novel exists
         if not Novel.objects.filter(id=nid).exists():
             logger.warning("Novel %d not found, skipping", nid)
-            return False
+            return "not_found"
 
         # Check if task already exists
         if Task.objects.filter(novel_id=nid).exists():
             logger.info("Task for novel %d already exists, skipping", nid)
-            return False
+            return "exists"
 
         with transaction.atomic():
             Task.objects.create(novel_id=nid, status=Task.Status.URGENT)
 
-        return True
+        return "created"
 
     def _close_issue(self, headers, repo, issue_number, comment):
         """Add comment and close issue."""
