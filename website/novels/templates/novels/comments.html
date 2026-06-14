@@ -20,14 +20,9 @@
 </div>
 
 <script>
-function loadGiscus() {
+document.addEventListener('DOMContentLoaded', function() {
   var container = document.getElementById('giscus-container');
   if (!container) return;
-
-  // Remove all existing children including iframe
-  while (container.firstChild) {
-    container.removeChild(container.firstChild);
-  }
 
   var isDark = document.documentElement.classList.contains('dark');
   var script = document.createElement('script');
@@ -46,8 +41,6 @@ function loadGiscus() {
   script.setAttribute('crossorigin', 'anonymous');
   script.async = true;
   container.appendChild(script);
-}
-
-loadGiscus();
+});
 </script>
 {% endblock %}

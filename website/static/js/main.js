@@ -10,13 +10,6 @@
     moon.classList.toggle('hidden', isDark);
   }
 
-  function reloadGiscus() {
-    if (typeof loadGiscus === 'function') {
-      // Small delay to ensure DOM is updated
-      setTimeout(loadGiscus, 100);
-    }
-  }
-
   updateIcons();
 
   toggle.addEventListener('click', function() {
@@ -24,7 +17,11 @@
     const isDark = document.documentElement.classList.contains('dark');
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     updateIcons();
-    reloadGiscus();
+
+    // Reload page if on comments page to refresh GISCUS
+    if (document.getElementById('giscus-container')) {
+      location.reload();
+    }
   });
 })();
 
