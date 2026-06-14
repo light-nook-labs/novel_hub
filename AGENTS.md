@@ -104,8 +104,8 @@ novel_hub/
 ## Data Rules
 
 - **Meta model is the standard**: `models.py` defines the canonical field names (`title`, `ptype`, `has_banner`). All datasets (JSONL), spider output, pandas processing, and dump/load pipelines MUST use these names. No renaming.
-- **Died status**: `连载中` + 3 months no update → `断更`
-- **A status** (pseudo): `断更` or `已完结` + (`has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >= 1w` OR `praise >= 1w`) → `断更A` / `完结A`
+- **Died status**: `ON_GOING` + 3 months no update → `DIED`
+- **A status** (pseudo): `DIED` or `FINISHED` + (`has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >= 1w` OR `praise >= 1w`) → `ACTIVE_D` / `ACTIVE_F`
 - **Missing values**: `null`/`None` — never `0`
 - **Optional fields**: All optional fields in `models.py` MUST have default value `= None`
 - **Cover URL**: Stored as suffix, reconstructed via `cover_url` filter
@@ -119,8 +119,8 @@ Task table tracks novels that need attention (duplicate covers, data issues).
 
 | Priority | Status | Condition |
 |----------|--------|-----------|
-| `long_term` | `l` | Manually added high-value A-status novels (永久保留) |
-| `urgent` | `u` | Auto-detected: `断更A` / `完结A` or meets A-status criteria |
+| `long_term` | `l` | Manually added high-value A-status novels (permanent) |
+| `urgent` | `u` | Auto-detected: `ACTIVE_D` / `ACTIVE_F` or meets A-status criteria |
 | `default` | `d` | Everything else |
 | `finished` | `f` | Processed tasks (deleted after processing) |
 
@@ -155,13 +155,13 @@ Track novel metrics over time for trend analysis.
 
 ### Strategy
 
-Only snapshot novels that Scrapy naturally crawls (连载中 list, ordered by update time):
+Only snapshot novels that Scrapy naturally crawls (ON_GOING list, ordered by update time):
 
 | Source | Target | Frequency |
 |--------|--------|-----------|
-| Scrapy | 连载中 (最近 7 天更新) | 每次爬取 |
-| Long-term tasks | 手动添加的 A-status | 每次爬取 |
-| Scheduled | 补充遗漏 | 每天 |
+| Scrapy | ON_GOING (updated within 7 days) | Each crawl |
+| Long-term tasks | Manually added A-status | Each crawl |
+| Scheduled | Fill gaps | Daily |
 
 ### Storage
 
@@ -171,8 +171,8 @@ Only snapshot novels that Scrapy naturally crawls (连载中 list, ordered by up
 ### Data Volume
 
 ```
-连载中 (3,003): ~151 pages, ~1.25 hours to crawl
-最近 7 天更新: ~335 novels, ~17 pages, ~8.5 minutes
+ON_GOING (3,003): ~151 pages, ~1.25 hours to crawl
+Updated within 7 days: ~335 novels, ~17 pages, ~8.5 minutes
 Long-term tasks: ~100 novels (assumed)
 Total snapshot storage: ~6 MB (30 days)
 ```
@@ -187,7 +187,7 @@ uv run python manage.py archive_snapshots --month 2026-01  # Archive specific mo
 
 ### Workflow
 
-1. Scrapy crawls 连载中 list (stops at 7-day cutoff)
+1. Scrapy crawls ON_GOING list (stops at 7-day cutoff)
 2. `SnapshotPipeline` creates snapshot for each crawled novel
 3. Long-term tasks are always crawled and snapshotted
 4. `smart_snapshot` fills gaps for novels Scrapy missed
