@@ -932,3 +932,10 @@ class DashboardView(TemplateView):
         ctx["chart_a_status"] = _to_html(fig)
 
         return ctx
+
+
+# ── Comments view ────────────────────────────────────────────────────
+
+
+class CommentsView(TemplateView):
+    template_name = "novels/comments.html"

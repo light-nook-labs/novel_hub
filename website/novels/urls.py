@@ -48,4 +48,5 @@ urlpatterns = [
     ),
     path("about/", views.AboutView.as_view(), name="about"),
     path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
+    path("comments/", views.CommentsView.as_view(), name="comments"),
 ]
