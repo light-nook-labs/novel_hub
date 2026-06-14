@@ -878,16 +878,15 @@ class DashboardView(TemplateView):
         fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_ptype_json"] = _to_json(fig)
 
-        # 7. Word count distribution (frequency histogram)
+        # 7. Word count distribution (frequency histogram, exclude <10w)
         word_data = list(
-            Novel.objects.filter(word_num__gt=0).values_list("word_num", flat=True)[
-                :100000
-            ]
+            Novel.objects.filter(word_num__gte=100000).values_list(
+                "word_num", flat=True
+            )[:100000]
         )
-        # Bins: 0-10w, 10w-50w, 50w-100w, 100w-200w, 200w-500w, 500w-1000w, 1000w+
-        bins = [0, 100000, 500000, 1000000, 2000000, 5000000, 10000000, float("inf")]
+        # Bins: 10-50w, 50-100w, 100-200w, 200-500w, 500-1000w, 1000w+
+        bins = [100000, 500000, 1000000, 2000000, 5000000, 10000000, float("inf")]
         bin_labels = [
-            "<10w",
             "10-50w",
             "50-100w",
             "100-200w",
