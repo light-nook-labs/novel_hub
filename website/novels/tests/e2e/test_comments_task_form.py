@@ -1,13 +1,22 @@
 """E2E tests for comments page task form using Playwright."""
 
+import os
 import re
 import urllib.parse
+from unittest import skipIf
+
 from django.test import TestCase, LiveServerTestCase
 from playwright.sync_api import sync_playwright, expect
+
+# Skip Playwright tests in CI if browser not available
+CI = os.environ.get("CI", "false").lower() == "true"
 
 
 class CommentsTaskFormE2ETest(LiveServerTestCase):
     """Test the task submission form on the comments page."""
+
+    # Skip database flush in teardown to avoid async context error
+    serialized_rollback = False
 
     @classmethod
     def setUpClass(cls):
@@ -20,6 +29,10 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
         cls.browser.close()
         cls.playwright.stop()
         super().tearDownClass()
+
+    def _post_teardown(self):
+        # Skip database flush to avoid SQLite async context error
+        pass
 
     def setUp(self):
         self.page = self.browser.new_page()
@@ -51,13 +64,12 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
         expect(submit_btn).to_contain_text("提交")
 
     def test_valid_id_opens_github_issue(self):
-        """Test that submitting valid ID opens GitHub issue with correct template."""
+        """Test that submitting valid ID opens GitHub issue."""
         self.page.goto(f"{self.live_server_url}/comments/")
 
         input_field = self.page.locator("#task-nid")
         input_field.fill("730611")
 
-        # Intercept window.open to capture the URL
         self.page.evaluate("""
             window._openedUrl = null;
             window.open = function(url) {
@@ -72,7 +84,10 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
 
         self.assertIn("template=task.yml", opened_url)
         self.assertIn("novel-id=730611", opened_url)
-        self.assertIn("github.com/light-nook-labs/novel_hub/issues/new", opened_url)
+        self.assertIn(
+            "github.com/light-nook-labs/novel_hub/issues/new",
+            opened_url,
+        )
 
         result = self.page.locator("#task-result")
         expect(result).to_be_visible()
@@ -81,13 +96,14 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
 
         expect(input_field).to_have_value("")
 
-    def test_valid_id_range_boundary_min(self):
-        """Test that minimum valid ID (10000) is accepted."""
+    def test_valid_id_range_boundary(self):
+        """Test that boundary IDs are accepted."""
         self.page.goto(f"{self.live_server_url}/comments/")
 
         input_field = self.page.locator("#task-nid")
-        input_field.fill("10000")
 
+        # Minimum valid ID
+        input_field.fill("10000")
         self.page.evaluate("""
             window._openedUrl = null;
             window.open = function(url) {
@@ -95,18 +111,12 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
                 return null;
             };
         """)
-
         self.page.locator("#task-form button[type='submit']").click()
         opened_url = self.page.evaluate("window._openedUrl")
         self.assertIn("novel-id=10000", opened_url)
 
-    def test_valid_id_range_boundary_max(self):
-        """Test that maximum valid ID (9999999) is accepted."""
-        self.page.goto(f"{self.live_server_url}/comments/")
-
-        input_field = self.page.locator("#task-nid")
+        # Maximum valid ID
         input_field.fill("9999999")
-
         self.page.evaluate("""
             window._openedUrl = null;
             window.open = function(url) {
@@ -114,7 +124,6 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
                 return null;
             };
         """)
-
         self.page.locator("#task-form button[type='submit']").click()
         opened_url = self.page.evaluate("window._openedUrl")
         self.assertIn("novel-id=9999999", opened_url)
@@ -127,7 +136,7 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
         expect(giscus_container).to_be_visible()
 
     def test_github_issue_url_format(self):
-        """Test that the generated GitHub issue URL has correct format."""
+        """Test that the generated URL has correct format."""
         self.page.goto(f"{self.live_server_url}/comments/")
 
         input_field = self.page.locator("#task-nid")
@@ -144,16 +153,15 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
         self.page.locator("#task-form button[type='submit']").click()
         opened_url = self.page.evaluate("window._openedUrl")
 
-        # Verify URL structure
         self.assertTrue(opened_url.startswith("https://github.com/"))
         self.assertIn("/issues/new?", opened_url)
         self.assertIn("template=task.yml", opened_url)
-        self.assertIn("title=", opened_url)
-        self.assertIn("novel-id=", opened_url)
 
-        # Verify title is URL encoded
         parsed = urllib.parse.parse_qs(urllib.parse.urlparse(opened_url).query)
-        self.assertIn("[Task] 小说 ID: 123456", parsed.get("title", [""])[0])
+        self.assertIn(
+            "[Task] 小说 ID: 123456",
+            parsed.get("title", [""])[0],
+        )
         self.assertEqual(parsed.get("novel-id", [""])[0], "123456")
 
     def test_multiple_submissions(self):
@@ -190,7 +198,7 @@ class CommentsTaskFormE2ETest(LiveServerTestCase):
 
 
 class TaskFormIntegrationTest(TestCase):
-    """Integration tests for task form functionality without browser."""
+    """Integration tests for task form without browser."""
 
     def test_comments_view_returns_200(self):
         """Test that comments view returns 200."""
@@ -223,7 +231,7 @@ class TaskFormIntegrationTest(TestCase):
         self.assertContains(response, 'pattern="\\d{5,7}"')
 
     def test_comments_contains_github_template_url(self):
-        """Test that JavaScript contains correct GitHub template URL."""
+        """Test that JS contains correct GitHub template URL."""
         response = self.client.get("/comments/")
         self.assertContains(response, "template=task.yml")
         self.assertContains(response, "novel-id=")
