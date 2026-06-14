@@ -21,6 +21,7 @@ dev = [
     "black>=26.3.1",
     "faker>=40.21.0",
     "flake8>=7.3.0",
+    "playwright>=1.52.0",
     "pre-commit>=4.6.0",
 ]
 
