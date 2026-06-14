@@ -738,75 +738,7 @@ class Command(BaseCommand):
         fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_ongoing_breakdown_json"] = _to_json(fig)
 
-        # 3. Top 15 tags (horizontal bar, log scale)
-        top_tags = (
-            Tag.objects.annotate(novel_count=Count("novels"))
-            .filter(novel_count__gt=0)
-            .order_by("-novel_count")[:15]
-        )
-        tag_labels = [t.name for t in top_tags]
-        tag_data = [t.novel_count for t in top_tags]
-
-        fig = go.Figure(
-            data=[
-                go.Bar(
-                    y=tag_labels[::-1],
-                    x=tag_data[::-1],
-                    orientation="h",
-                    marker_color=amber,
-                    text=[_w(d) for d in tag_data[::-1]],
-                    textposition="outside",
-                )
-            ]
-        )
-        fig.update_layout(
-            **_layout(380),
-            yaxis=dict(autorange="reversed"),
-            xaxis=dict(
-                type="log",
-                gridcolor="rgba(128,128,128,0.2)",
-                ticktext=[_w_axis(v) for v in [10, 100, 1000, 10000, 100000]],
-                tickvals=[10, 100, 1000, 10000, 100000],
-            ),
-        )
-        ctx["chart_tags_json"] = _to_json(fig)
-
-        # 4. Top 10 authors by total clicks (horizontal bar, log scale)
-        top_authors = (
-            Author.objects.annotate(
-                novel_count=Count("novels"),
-                total_click=Sum("novels__click_num"),
-            )
-            .filter(novel_count__gt=0)
-            .order_by("-total_click")[:10]
-        )
-        author_labels = [a.name[:8] for a in top_authors]
-        author_clicks = [a.total_click or 0 for a in top_authors]
-
-        fig = go.Figure()
-        fig.add_trace(
-            go.Bar(
-                y=author_labels[::-1],
-                x=author_clicks[::-1],
-                orientation="h",
-                marker_color=orange,
-                text=[_w(c) for c in author_clicks[::-1]],
-                textposition="outside",
-            )
-        )
-        fig.update_layout(
-            **_layout(380),
-            yaxis=dict(autorange="reversed"),
-            xaxis=dict(
-                type="log",
-                gridcolor="rgba(128,128,128,0.2)",
-                ticktext=[_w_axis(v) for v in [100000, 1000000, 10000000, 100000000]],
-                tickvals=[100000, 1000000, 10000000, 100000000],
-            ),
-        )
-        ctx["chart_authors_json"] = _to_json(fig)
-
-        # 5. Ptype distribution (donut)
+        # 3. Ptype distribution (donut)
         ptype_stats = dict(
             Novel.objects.values_list("ptype")
             .annotate(c=Count("id"))

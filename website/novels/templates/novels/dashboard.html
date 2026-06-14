@@ -98,48 +98,20 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- Bar Charts Row: 2 charts side by side -->
+<!-- Heatmap + Banner + Word dist + Contests -->
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">热门标签 Top 15</h3>
-    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_tags_json }}"></div>
-  </div>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">高人气作者 Top 10</h3>
-    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_authors_json }}"></div>
-  </div>
-</div>
-
-<!-- Novel Rankings: 2 charts side by side -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 Top 10</h3>
-    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_top_click_json }}"></div>
-  </div>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">收藏 Top 10</h3>
-    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_top_like_json }}"></div>
-  </div>
-</div>
-
-<!-- Scatter + Heatmap: 2 charts side by side -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 vs 收藏（采样 3000 部）</h3>
-    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_scatter_json }}"></div>
-  </div>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类 × 状态 热力图</h3>
     <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_heatmap_json }}"></div>
   </div>
-</div>
-
-<!-- Banner + Word dist + Contests -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner 效果对比（人均）</h3>
-    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_banner_json }}"></div>
+    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_banner_json }}"></div>
   </div>
+</div>
+
+<!-- Word dist + Contests -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字数分布</h3>
     <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_word_dist_json }}"></div>
