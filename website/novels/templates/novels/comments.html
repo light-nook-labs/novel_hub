@@ -17,33 +17,109 @@
     </p>
   </div>
 
+  <!-- Task Collection Section -->
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">提交任务</h2>
+    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      提交小说 ID 以修复数据问题（如重复封面、缺失信息等）。系统会自动处理并更新。
+    </p>
+    <form id="task-form" class="flex gap-3">
+      <input
+        type="text"
+        id="task-nids"
+        placeholder="输入小说 ID，多个用逗号分隔（如：730611, 767294）"
+        class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+      >
+      <button
+        type="submit"
+        class="px-6 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+      >
+        提交
+      </button>
+    </form>
+    <div id="task-result" class="mt-3 text-sm hidden"></div>
+  </div>
+
+  <!-- GISCUS Comments Section -->
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold mb-4">评论区</h2>
     <div id="giscus-container"></div>
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Load GISCUS
   var container = document.getElementById('giscus-container');
-  if (!container) return;
+  if (container) {
+    var isDark = document.documentElement.classList.contains('dark');
+    var script = document.createElement('script');
+    script.src = 'https://giscus.app/client.js';
+    script.setAttribute('data-repo', 'light-nook-labs/novel_hub');
+    script.setAttribute('data-repo-id', 'R_kgDOSQm3uQ');
+    script.setAttribute('data-category', 'General');
+    script.setAttribute('data-category-id', 'DIC_kwDOSQm3uc4C_Hbp');
+    script.setAttribute('data-mapping', 'pathname');
+    script.setAttribute('data-strict', '0');
+    script.setAttribute('data-reactions-enabled', '1');
+    script.setAttribute('data-emit-metadata', '0');
+    script.setAttribute('data-input-position', 'bottom');
+    script.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    script.setAttribute('data-lang', 'zh-CN');
+    script.setAttribute('crossorigin', 'anonymous');
+    script.async = true;
+    container.appendChild(script);
+  }
 
-  var isDark = document.documentElement.classList.contains('dark');
-  var script = document.createElement('script');
-  script.src = 'https://giscus.app/client.js';
-  script.setAttribute('data-repo', 'light-nook-labs/novel_hub');
-  script.setAttribute('data-repo-id', 'R_kgDOSQm3uQ');
-  script.setAttribute('data-category', 'General');
-  script.setAttribute('data-category-id', 'DIC_kwDOSQm3uc4C_Hbp');
-  script.setAttribute('data-mapping', 'pathname');
-  script.setAttribute('data-strict', '0');
-  script.setAttribute('data-reactions-enabled', '1');
-  script.setAttribute('data-emit-metadata', '0');
-  script.setAttribute('data-input-position', 'bottom');
-  script.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  script.setAttribute('data-lang', 'zh-CN');
-  script.setAttribute('crossorigin', 'anonymous');
-  script.async = true;
-  container.appendChild(script);
+  // Task form submission
+  var form = document.getElementById('task-form');
+  var resultDiv = document.getElementById('task-result');
+
+  if (form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var input = document.getElementById('task-nids');
+      var nids = input.value.trim();
+
+      if (!nids) {
+        showResult('请输入小说 ID', 'error');
+        return;
+      }
+
+      // Validate format
+      var nidList = nids.split(',').map(function(s) { return s.trim(); });
+      var valid = nidList.every(function(nid) { return /^\d+$/.test(nid); });
+
+      if (!valid) {
+        showResult('ID 格式错误，只能包含数字和逗号', 'error');
+        return;
+      }
+
+      // Create GitHub issue
+      var issueTitle = '[Task] 提交小说 ID: ' + nids;
+      var issueBody = '## 任务提交\n\n' +
+        '**提交时间**: ' + new Date().toISOString() + '\n' +
+        '**小说 ID**: ' + nids + '\n\n' +
+        '---\n' +
+        '*此任务由评论页面自动提交，等待 Actions 处理*';
+
+      var url = 'https://github.com/light-nook-labs/novel_hub/issues/new?' +
+        'title=' + encodeURIComponent(issueTitle) + '&' +
+        'body=' + encodeURIComponent(issueBody) + '&' +
+        'labels=task';
+
+      window.open(url, '_blank');
+      showResult('已跳转到 GitHub，请提交 Issue', 'success');
+      input.value = '';
+    });
+  }
+
+  function showResult(message, type) {
+    resultDiv.textContent = message;
+    resultDiv.className = 'mt-3 text-sm ' +
+      (type === 'error' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400');
+    resultDiv.classList.remove('hidden');
+  }
 
   // Force page reload when theme toggle is clicked
   var toggle = document.getElementById('theme-toggle');
