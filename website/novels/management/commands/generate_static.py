@@ -762,26 +762,44 @@ class Command(BaseCommand):
         fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_ptype_json"] = _to_json(fig)
 
-        # 6. Word count distribution (histogram, log x-axis)
+        # 6. Word count distribution (frequency histogram)
         word_data = list(
             Novel.objects.filter(word_num__gt=0).values_list("word_num", flat=True)[
-                :50000
+                :100000
             ]
         )
+        # Bins: 0-10w, 10w-50w, 50w-100w, 100w-200w, 200w-500w, 500w-1000w, 1000w+
+        bins = [0, 100000, 500000, 1000000, 2000000, 5000000, 10000000, float("inf")]
+        bin_labels = [
+            "<10w",
+            "10-50w",
+            "50-100w",
+            "100-200w",
+            "200-500w",
+            "500-1000w",
+            "1000w+",
+        ]
+        bin_counts = [0] * len(bin_labels)
+        for w in word_data:
+            for i in range(len(bins) - 1):
+                if bins[i] <= w < bins[i + 1]:
+                    bin_counts[i] += 1
+                    break
 
         fig = go.Figure(
             data=[
-                go.Histogram(
-                    x=word_data,
-                    nbinsx=40,
+                go.Bar(
+                    x=bin_labels,
+                    y=bin_counts,
                     marker_color=amber,
-                    opacity=0.8,
+                    text=bin_counts,
+                    textposition="outside",
                 )
             ]
         )
         fig.update_layout(
             **_layout(280),
-            xaxis=dict(title="字数", type="log", gridcolor="rgba(128,128,128,0.2)"),
+            xaxis=dict(title="字数区间", gridcolor="rgba(128,128,128,0.2)"),
             yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
         )
         ctx["chart_word_dist_json"] = _to_json(fig)
@@ -814,36 +832,44 @@ class Command(BaseCommand):
         )
         ctx["chart_contests_json"] = _to_json(fig)
 
-        # 8. Genre x Status heatmap
-        heatmap_data = Novel.objects.values("genre", "status").annotate(c=Count("id"))
+        # 8. Genre x Status stacked bar
+        genre_status_data = Novel.objects.values("genre", "status").annotate(
+            c=Count("id")
+        )
         genre_range = list(range(2, 11))
         status_range = list(range(2, 8))
-        heat_matrix = []
-        for g in genre_range:
-            row = []
-            for s in status_range:
+        status_colors = [amber, orange, rose, "#f472b6", "#fbbf24", "#94a3b8"]
+
+        fig = go.Figure()
+        for i, s in enumerate(status_range):
+            vals = []
+            for g in genre_range:
                 val = next(
                     (
-                        h["c"]
-                        for h in heatmap_data
-                        if h["genre"] == g and h["status"] == s
+                        d["c"]
+                        for d in genre_status_data
+                        if d["genre"] == g and d["status"] == s
                     ),
                     0,
                 )
-                row.append(val)
-            heat_matrix.append(row)
-
-        fig = go.Figure(
-            data=[
-                go.Heatmap(
-                    z=heat_matrix,
-                    x=[STATUS.get_zh(s) for s in status_range],
-                    y=[GENRE.get_zh(g) for g in genre_range],
-                    colorscale="YlOrRd",
+                vals.append(val)
+            fig.add_trace(
+                go.Bar(
+                    x=[GENRE.get_zh(g) for g in genre_range],
+                    y=vals,
+                    name=STATUS.get_zh(s),
+                    marker_color=status_colors[i % len(status_colors)],
                 )
-            ]
+            )
+        fig.update_layout(
+            **_layout(300),
+            barmode="stack",
+            xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(title="小说数", gridcolor="rgba(128,128,128,0.2)"),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
         )
-        fig.update_layout(**_layout(350))
         ctx["chart_heatmap_json"] = _to_json(fig)
 
         # 9. Top 10 novels by click
@@ -919,7 +945,7 @@ class Command(BaseCommand):
         )
         ctx["chart_scatter_json"] = _to_json(fig)
 
-        # 12. Banner comparison
+        # 12. Banner comparison (2 charts)
         from django.db.models import Q
 
         banner_stats = Novel.objects.aggregate(
@@ -933,40 +959,60 @@ class Command(BaseCommand):
             nonbanner_praise=Sum("praise_num", filter=Q(has_banner=False)),
         )
 
-        metrics = ["点击", "收藏", "点赞"]
-        banner_vals = [
-            banner_stats["banner_click"] or 0,
-            banner_stats["banner_like"] or 0,
-            banner_stats["banner_praise"] or 0,
-        ]
-        nonbanner_vals = [
-            banner_stats["nonbanner_click"] or 0,
-            banner_stats["nonbanner_like"] or 0,
-            banner_stats["nonbanner_praise"] or 0,
-        ]
         bc = banner_stats["banner_count"] or 1
         nc = banner_stats["nonbanner_count"] or 1
-        banner_per = [v / bc for v in banner_vals]
-        nonbanner_per = [v / nc for v in nonbanner_vals]
 
+        # Chart 1: Click comparison
+        banner_click_per = (banner_stats["banner_click"] or 0) / bc
+        nonbanner_click_per = (banner_stats["nonbanner_click"] or 0) / nc
         fig = go.Figure()
         fig.add_trace(
-            go.Bar(x=metrics, y=banner_per, name=f"Banner ({bc}部)", marker_color=amber)
+            go.Bar(
+                x=["Banner", "非Banner"],
+                y=[banner_click_per, nonbanner_click_per],
+                marker_color=[amber, "#94a3b8"],
+                text=[_w(int(v)) for v in [banner_click_per, nonbanner_click_per]],
+                textposition="outside",
+            )
+        )
+        fig.update_layout(
+            **_layout(280),
+            yaxis=dict(title="人均点击", gridcolor="rgba(128,128,128,0.2)"),
+            showlegend=False,
+        )
+        ctx["chart_banner_click_json"] = _to_json(fig)
+
+        # Chart 2: Engagement comparison (like + praise)
+        banner_like_per = (banner_stats["banner_like"] or 0) / bc
+        nonbanner_like_per = (banner_stats["nonbanner_like"] or 0) / nc
+        banner_praise_per = (banner_stats["banner_praise"] or 0) / bc
+        nonbanner_praise_per = (banner_stats["nonbanner_praise"] or 0) / nc
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                x=["收藏", "点赞"],
+                y=[banner_like_per, banner_praise_per],
+                name=f"Banner ({bc}部)",
+                marker_color=amber,
+            )
         )
         fig.add_trace(
             go.Bar(
-                x=metrics,
-                y=nonbanner_per,
+                x=["收藏", "点赞"],
+                y=[nonbanner_like_per, nonbanner_praise_per],
                 name=f"非Banner ({nc}部)",
                 marker_color="#94a3b8",
             )
         )
         fig.update_layout(
-            **_layout(300),
+            **_layout(280),
             barmode="group",
-            yaxis=dict(type="log", gridcolor="rgba(128,128,128,0.2)"),
+            yaxis=dict(title="人均", gridcolor="rgba(128,128,128,0.2)"),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+            ),
         )
-        ctx["chart_banner_json"] = _to_json(fig)
+        ctx["chart_banner_engagement_json"] = _to_json(fig)
 
         # 13. A-status candidates
         a_criteria = (
