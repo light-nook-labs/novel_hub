@@ -25,7 +25,8 @@ from django.db.models import Subquery, OuterRef, Count, Sum, Max
 from django.template.loader import render_to_string
 
 from novels.models import Author, Novel, Tag, Contest
-from novels.views import AuthorListView, COLUMNS
+from novels.views import AuthorListView
+from novels.views.novel import COLUMNS
 from novels.mappings import GENRE, STATUS, PTYPE
 
 from utils.logger import get_logger, progress
