@@ -10,14 +10,19 @@
 {{ block.super }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Defer chart rendering
+  var plotlyConfig = {
+    responsive: true,
+    displayModeBar: false,
+    staticPlot: false
+  };
+
   var charts = document.querySelectorAll('.plotly-chart');
   var observer = new IntersectionObserver(function(entries) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
         var div = entry.target;
         var data = JSON.parse(div.dataset.plotly);
-        Plotly.newPlot(div, data.data, data.layout, {responsive: true});
+        Plotly.newPlot(div, data.data, data.layout, plotlyConfig);
         observer.unobserve(div);
       }
     });
@@ -56,39 +61,55 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- Charts Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <!-- Row 1: Distribution -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类分布</h3>
-    <div class="plotly-chart" style="min-height:320px" data-plotly="{{ chart_genre_json }}"></div>
+<!-- Pie Charts Row: 4 charts side by side on PC -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+  <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">分布概览</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">分类</h4>
+      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_genre_json }}"></div>
+    </div>
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">状态</h4>
+      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_status_json }}"></div>
+    </div>
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">类型</h4>
+      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_ptype_json }}"></div>
+    </div>
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">A 状态</h4>
+      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_a_status_json }}"></div>
+    </div>
   </div>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">状态分布</h3>
-    <div class="plotly-chart" style="min-height:320px" data-plotly="{{ chart_status_json }}"></div>
-  </div>
+</div>
 
-  <!-- Row 2: Rankings -->
+<!-- Bar Charts Row: 2 charts side by side -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">热门标签 Top 15</h3>
-    <div class="plotly-chart" style="min-height:380px" data-plotly="{{ chart_tags_json }}"></div>
+    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_tags_json }}"></div>
   </div>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">高人气作者 Top 10</h3>
-    <div class="plotly-chart" style="min-height:380px" data-plotly="{{ chart_authors_json }}"></div>
+    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_authors_json }}"></div>
   </div>
+</div>
 
-  <!-- Row 3: Novel Rankings -->
+<!-- Novel Rankings: 2 charts side by side -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 Top 10</h3>
-    <div class="plotly-chart" style="min-height:380px" data-plotly="{{ chart_top_click_json }}"></div>
+    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_top_click_json }}"></div>
   </div>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">收藏 Top 10</h3>
-    <div class="plotly-chart" style="min-height:380px" data-plotly="{{ chart_top_like_json }}"></div>
+    <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_top_like_json }}"></div>
   </div>
+</div>
 
-  <!-- Row 4: Scatter + Heatmap -->
+<!-- Scatter + Heatmap: 2 charts side by side -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">点击 vs 收藏（采样 3000 部）</h3>
     <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_scatter_json }}"></div>
@@ -97,31 +118,21 @@ document.addEventListener('DOMContentLoaded', function() {
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">分类 × 状态 热力图</h3>
     <div class="plotly-chart" style="min-height:350px" data-plotly="{{ chart_heatmap_json }}"></div>
   </div>
+</div>
 
-  <!-- Row 5: Ptype + Word dist -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">类型分布</h3>
-    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_ptype_json }}"></div>
-  </div>
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字数分布</h3>
-    <div class="plotly-chart" style="min-height:280px" data-plotly="{{ chart_word_dist_json }}"></div>
-  </div>
-
-  <!-- Row 6: Banner + A-status -->
+<!-- Banner + Word dist + Contests -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Banner 效果对比（人均）</h3>
     <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_banner_json }}"></div>
   </div>
   <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">A 状态分布</h3>
-    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_a_status_json }}"></div>
+    <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">字数分布</h3>
+    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_word_dist_json }}"></div>
   </div>
-
-  <!-- Row 7: Contests -->
-  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:col-span-2">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
     <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">征文活动 Top 10</h3>
-    <div class="plotly-chart" style="min-height:320px" data-plotly="{{ chart_contests_json }}"></div>
+    <div class="plotly-chart" style="min-height:300px" data-plotly="{{ chart_contests_json }}"></div>
   </div>
 </div>
 {% endblock %}

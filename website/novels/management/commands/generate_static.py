@@ -629,7 +629,7 @@ class Command(BaseCommand):
                 )
             ]
         )
-        fig.update_layout(**_layout(320), showlegend=False)
+        fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_genre_json"] = _to_json(fig)
 
         # 2. Status distribution (donut)
@@ -654,7 +654,7 @@ class Command(BaseCommand):
                 )
             ]
         )
-        fig.update_layout(**_layout(320), showlegend=False)
+        fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_status_json"] = _to_json(fig)
 
         # 3. Top 15 tags (horizontal bar, log scale)
@@ -746,7 +746,7 @@ class Command(BaseCommand):
                 )
             ]
         )
-        fig.update_layout(**_layout(300), showlegend=False)
+        fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_ptype_json"] = _to_json(fig)
 
         # 6. Word count distribution (histogram, log x-axis)
@@ -979,7 +979,7 @@ class Command(BaseCommand):
                 )
             ]
         )
-        fig.update_layout(**_layout(300), showlegend=False)
+        fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_a_status_json"] = _to_json(fig)
 
         pages.append(
