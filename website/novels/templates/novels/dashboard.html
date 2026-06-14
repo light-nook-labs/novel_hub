@@ -61,25 +61,40 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<!-- Pie Charts Row: 4 charts side by side on PC -->
+<!-- Pie Charts: Enum distributions -->
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-  <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">分布概览</h3>
+  <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">枚举分布</h3>
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     <div>
       <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">分类</h4>
       <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_genre_json }}"></div>
     </div>
     <div>
-      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">状态</h4>
-      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_status_json }}"></div>
-    </div>
-    <div>
       <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">类型</h4>
       <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_ptype_json }}"></div>
     </div>
     <div>
-      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">A 状态</h4>
-      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_a_status_json }}"></div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">真实类型</h4>
+      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_real_type_json }}"></div>
+    </div>
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">连载中细分</h4>
+      <div class="plotly-chart" style="min-height:240px" data-plotly="{{ chart_ongoing_breakdown_json }}"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Status Pie Charts: with/without A -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+  <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">状态分布</h3>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">无 A 状态</h4>
+      <div class="plotly-chart" style="min-height:280px" data-plotly="{{ chart_status_no_a_json }}"></div>
+    </div>
+    <div>
+      <h4 class="text-xs text-center text-gray-500 dark:text-gray-400 mb-1">含 A 状态</h4>
+      <div class="plotly-chart" style="min-height:280px" data-plotly="{{ chart_status_with_a_json }}"></div>
     </div>
   </div>
 </div>

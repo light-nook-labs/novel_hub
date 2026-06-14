@@ -748,22 +748,27 @@ class DashboardView(TemplateView):
         fig.update_layout(**_layout(240), showlegend=False)
         ctx["chart_genre_json"] = _to_json(fig)
 
-        # 2. Status distribution (donut)
+        # 2. Status distribution - multiple pie charts
         status_stats = dict(
             Novel.objects.values_list("status")
             .annotate(c=Count("id"))
             .values_list("status", "c")
         )
-        status_labels = [STATUS.get_zh(i) for i in range(2, 8)]
-        status_data = [status_stats.get(i, 0) for i in range(2, 8)]
+        # FINISHED=2, ON_GOING=3, DIED=4, ACTIVE_D=5, ACTIVE_F=6, REMOVED=7
 
+        # 2a. Real type: 已完结 (FINISHED+ACTIVE_F) vs 连载中 (ON_GOING+DIED+ACTIVE_D)
+        real_finished = status_stats.get(2, 0) + status_stats.get(6, 0)
+        real_ongoing = (
+            status_stats.get(3, 0) + status_stats.get(4, 0) + status_stats.get(5, 0)
+        )
+        real_removed = status_stats.get(7, 0)
         fig = go.Figure(
             data=[
                 go.Pie(
-                    labels=status_labels,
-                    values=status_data,
+                    labels=["已完结", "连载中", "下架"],
+                    values=[real_finished, real_ongoing, real_removed],
                     hole=0.5,
-                    marker_colors=colors,
+                    marker_colors=[amber, orange, "#94a3b8"],
                     textinfo="label+percent",
                     textposition="outside",
                     textfont=dict(size=11),
@@ -771,7 +776,83 @@ class DashboardView(TemplateView):
             ]
         )
         fig.update_layout(**_layout(240), showlegend=False)
-        ctx["chart_status_json"] = _to_json(fig)
+        ctx["chart_real_type_json"] = _to_json(fig)
+
+        # 2b. Status without A (no ACTIVE_D, ACTIVE_F)
+        no_a_labels = ["连载中", "已完结", "断更", "下架"]
+        no_a_data = [
+            status_stats.get(3, 0),
+            status_stats.get(2, 0),
+            status_stats.get(4, 0),
+            status_stats.get(7, 0),
+        ]
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=no_a_labels,
+                    values=no_a_data,
+                    hole=0.5,
+                    marker_colors=[orange, amber, rose, "#94a3b8"],
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
+        fig.update_layout(**_layout(240), showlegend=False)
+        ctx["chart_status_no_a_json"] = _to_json(fig)
+
+        # 2c. Status with A (all statuses)
+        all_labels = ["连载中", "已完结", "断更", "断更A", "完结A", "下架"]
+        all_data = [
+            status_stats.get(3, 0),
+            status_stats.get(2, 0),
+            status_stats.get(4, 0),
+            status_stats.get(5, 0),
+            status_stats.get(6, 0),
+            status_stats.get(7, 0),
+        ]
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=all_labels,
+                    values=all_data,
+                    hole=0.5,
+                    marker_colors=[
+                        orange,
+                        amber,
+                        rose,
+                        "#f472b6",
+                        "#fbbf24",
+                        "#94a3b8",
+                    ],
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
+        fig.update_layout(**_layout(240), showlegend=False)
+        ctx["chart_status_with_a_json"] = _to_json(fig)
+
+        # 2d. 连载中 breakdown without A: 连载中 vs 断更
+        ongoing_labels = ["连载中", "断更"]
+        ongoing_data = [status_stats.get(3, 0), status_stats.get(4, 0)]
+        fig = go.Figure(
+            data=[
+                go.Pie(
+                    labels=ongoing_labels,
+                    values=ongoing_data,
+                    hole=0.5,
+                    marker_colors=[orange, rose],
+                    textinfo="label+percent",
+                    textposition="outside",
+                    textfont=dict(size=11),
+                )
+            ]
+        )
+        fig.update_layout(**_layout(240), showlegend=False)
+        ctx["chart_ongoing_breakdown_json"] = _to_json(fig)
 
         # 3. Top 15 tags (horizontal bar, log scale)
         top_tags = (
