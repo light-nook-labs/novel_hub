@@ -1,0 +1,160 @@
+"""Management command to process task issues from GitHub.
+
+Reads open issues with 'task' label, extracts novel IDs, adds to Task table.
+Closes issues after processing.
+
+Usage:
+    uv run python manage.py process_task_issues
+
+Requires GITHUB_TOKEN and GITHUB_REPO environment variables.
+"""
+
+import os
+import re
+
+import requests
+from django.core.management.base import BaseCommand
+from django.db import transaction
+
+from novels.models import Novel, Task
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
+
+GITHUB_API = "https://api.github.com"
+
+
+class Command(BaseCommand):
+    help = "Process task issues from GitHub"
+
+    def handle(self, *args, **options):
+        token = os.environ.get("GITHUB_TOKEN")
+        repo = os.environ.get("GITHUB_REPO")
+
+        if not token or not repo:
+            self.stdout.write(
+                self.style.ERROR(
+                    "GITHUB_TOKEN and GITHUB_REPO environment variables required"
+                )
+            )
+            return
+
+        headers = {
+            "Authorization": f"token {token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
+
+        # Get open issues with 'task' label
+        url = f"{GITHUB_API}/repos/{repo}/issues"
+        params = {"labels": "task", "state": "open", "per_page": 100}
+
+        resp = requests.get(url, headers=headers, params=params, timeout=30)
+        resp.raise_for_status()
+        issues = resp.json()
+
+        if not issues:
+            self.stdout.write(self.style.SUCCESS("No task issues found."))
+            return
+
+        logger.info("Found %d task issues", len(issues))
+
+        processed = 0
+        failed = 0
+        created_tasks = 0
+
+        for issue in issues:
+            issue_number = issue["number"]
+            title = issue["title"]
+            body = issue.get("body", "")
+
+            try:
+                nid = self._extract_nid(title, body)
+                if not nid:
+                    logger.warning("No novel ID found in issue #%d", issue_number)
+                    self._close_issue(
+                        headers,
+                        repo,
+                        issue_number,
+                        "❌ 未找到有效的小说 ID（需要5-7位纯数字）",
+                    )
+                    failed += 1
+                    continue
+
+                # Add task
+                task_created = self._add_task(nid)
+                processed += 1
+                if task_created:
+                    created_tasks += 1
+
+                # Close issue with comment
+                comment = (
+                    f"✅ 已收到任务提交\n\n"
+                    f"**小说 ID**: {nid}\n\n"
+                    f"任务已加入队列，将在下次 Run Tasks 时处理。"
+                )
+                self._close_issue(headers, repo, issue_number, comment)
+
+                logger.info("Processed issue #%d: %s", issue_number, nid)
+
+            except Exception as e:
+                logger.error("Failed to process issue #%d: %s", issue_number, e)
+                failed += 1
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done! Processed: {processed}, Failed: {failed}, "
+                f"Tasks created: {created_tasks}"
+            )
+        )
+
+    def _extract_nid(self, title, body):
+        """Extract single novel ID from issue title or body."""
+        # Title format: [Task] 小说 ID: 123456
+        match = re.search(r"\[Task\]\s*小说\s*ID:\s*(\d{5,7})", title)
+        if match:
+            return match.group(1)
+
+        # Body format: **小说 ID**: 123456
+        match = re.search(r"\*\*小说\s*ID\*\*:\s*(\d{5,7})", body)
+        if match:
+            return match.group(1)
+
+        # Fallback: any 5-7 digit number in title
+        match = re.search(r"\b(\d{5,7})\b", title)
+        if match:
+            return match.group(1)
+
+        return None
+
+    def _add_task(self, nid):
+        """Add task for novel ID. Returns True if created."""
+        nid = int(nid)
+
+        # Check if novel exists
+        if not Novel.objects.filter(id=nid).exists():
+            logger.warning("Novel %d not found, skipping", nid)
+            return False
+
+        # Check if task already exists
+        if Task.objects.filter(novel_id=nid).exists():
+            logger.info("Task for novel %d already exists, skipping", nid)
+            return False
+
+        with transaction.atomic():
+            Task.objects.create(novel_id=nid, status=Task.Status.URGENT)
+
+        return True
+
+    def _close_issue(self, headers, repo, issue_number, comment):
+        """Add comment and close issue."""
+        # Add comment
+        url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
+        requests.post(
+            url, headers=headers, json={"body": comment}, timeout=30
+        ).raise_for_status()
+
+        # Close issue
+        url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}"
+        requests.patch(
+            url, headers=headers, json={"state": "closed"}, timeout=30
+        ).raise_for_status()

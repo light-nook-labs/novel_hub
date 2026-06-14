@@ -1,0 +1,28 @@
+name: 📋 提交任务
+description: 提交小说 ID 以修复数据问题
+title: "[Task] 小说 ID: "
+labels: ["task"]
+body:
+  - type: input
+    id: novel-id
+    attributes:
+      label: 小说 ID
+      description: "请输入 5-7 位纯数字的小说 ID"
+      placeholder: "例如：730611"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述（可选）
+      description: 简要描述需要修复的问题
+      placeholder: "例如：封面重复、标题错误、状态不正确等"
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        **提示**：提交后系统会自动处理，处理完成后此 Issue 将被关闭。

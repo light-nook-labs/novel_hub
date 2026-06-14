@@ -28,113 +28,9 @@ jobs:
       - name: Install dependencies
         run: uv sync
 
-      - name: Extract and process task issues
-        id: extract
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-
-            // Get open issues with 'task' label
-            const { data: issues } = await github.rest.issues.listForRepo({
-              owner,
-              repo,
-              labels: 'task',
-              state: 'open',
-              per_page: 100,
-            });
-
-            if (issues.length === 0) {
-              core.info('No task issues found');
-              core.setOutput('nids', '');
-              return;
-            }
-
-            core.info(`Found ${issues.length} task issues`);
-
-            const allNids = [];
-
-            for (const issue of issues) {
-              const body = issue.body || '';
-              const title = issue.title;
-
-              // Extract single novel ID from title (format: [Task] 小说 ID: 123456)
-              const titleMatch = title.match(/\[Task\]\s*小说\s*ID:\s*(\d{5,7})/);
-              // Fallback: extract from body
-              const bodyMatch = body.match(/\*\*小说\s*ID\*\*:\s*(\d{5,7})/);
-              // Last resort: any 5-7 digit number
-              const fallbackMatch = (body + ' ' + title).match(/\b(\d{5,7})\b/);
-
-              const nid = titleMatch?.[1] || bodyMatch?.[1] || fallbackMatch?.[1];
-
-              if (!nid) {
-                core.warning(`No novel ID found in issue #${issue.number}`);
-                await closeIssue(github, owner, repo, issue.number, '❌ 未找到有效的小说 ID（需要5-7位纯数字）');
-                continue;
-              }
-
-              allNids.push(nid);
-
-              // Add comment with extracted ID
-              const comment = `✅ 已收到任务提交\n\n**小说 ID**: ${nid}\n\n任务已加入队列，将在下次 Run Tasks 时处理。`;
-              await closeIssue(github, owner, repo, issue.number, comment);
-
-              core.info(`Processed issue #${issue.number}: ${nid}`);
-            }
-
-            // Output unique NIDs
-            const uniqueNids = [...new Set(allNids)];
-            core.setOutput('nids', uniqueNids.join(','));
-            core.info(`Total unique NIDs: ${uniqueNids.length}`);
-
-            async function closeIssue(github, owner, repo, issueNumber, comment) {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                body: comment,
-              });
-              await github.rest.issues.update({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                state: 'closed',
-              });
-            }
-
-      - name: Add tasks to database
-        if: steps.extract.outputs.nids != ''
+      - name: Process task issues
         working-directory: website
-        run: |
-          uv run python -c "
-          import django, os
-          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-          django.setup()
-          from novels.models import Novel, Task
-          from django.db import transaction
-
-          nids = [int(n) for n in '${{ steps.extract.outputs.nids }}'.split(',') if n]
-          print(f'Processing {len(nids)} novel IDs')
-
-          tasks = []
-          for nid in nids:
-              if not Novel.objects.filter(id=nid).exists():
-                  print(f'  Novel {nid} not found, skipping')
-                  continue
-              if Task.objects.filter(novel_id=nid).exists():
-                  print(f'  Task for novel {nid} already exists, skipping')
-                  continue
-              tasks.append(Task(novel_id=nid, status=Task.Status.URGENT))
-
-          if tasks:
-              with transaction.atomic():
-                  Task.objects.bulk_create(tasks, ignore_conflicts=True)
-              print(f'Created {len(tasks)} tasks')
-          else:
-              print('No new tasks to create')
-          "
+        run: uv run python manage.py process_task_issues
         env:
           DB_TYPE: postgresql
           DB_HOST: ${{ secrets.DB_HOST }}
@@ -144,3 +40,5 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DEBUG: "0"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ github.repository }}
