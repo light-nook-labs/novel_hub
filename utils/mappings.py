@@ -90,5 +90,4 @@ PTYPE = Mapping(
     free="免费",
     sign="签约",
     vip="VIP",
-    removed="下架",
 )

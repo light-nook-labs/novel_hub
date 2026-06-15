@@ -168,7 +168,7 @@ class MetaBatchSpider(Spider):
         ptypes: set[str] = {"签约", "VIP"}
         if not ptype_contest:
             return dict(
-                ptype="下架",
+                ptype="免费",
                 contest=None,
             )
         ptype_contest: set[str] = set(ptype_contest)
