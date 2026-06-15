@@ -95,7 +95,7 @@ class Command(BaseCommand):
                     author=html_data.get("author") or "",
                     genre=html_data.get("genre") or "其他",
                     status=html_data.get("status") or "连载中",
-                    ptype=html_data.get("ptype") or novel.get_ptype_display(),
+                    ptype=html_data.get("ptype") or "",
                     has_banner=html_data.get("has_banner", False),
                     word_num=html_data.get("word_num"),
                     click_num=html_data.get("click_num"),
@@ -115,10 +115,16 @@ class Command(BaseCommand):
                 # Update novel
                 with transaction.atomic():
                     for field, value in django_data.items():
-                        if field in ("id", "tags"):
-                            continue  # Skip PK and M2M
+                        if field in ("id", "tags", "ptype"):
+                            continue  # Skip PK, M2M, and ptype (handled separately)
                         if value is not None:
                             setattr(novel, field, value)
+
+                    # Upgrade ptype only (free → sign → VIP, never downgrade)
+                    new_ptype = django_data.get("ptype")
+                    if new_ptype and new_ptype > novel.ptype:
+                        novel.ptype = new_ptype
+
                     novel.save()
 
                     # Long-term tasks: keep as-is

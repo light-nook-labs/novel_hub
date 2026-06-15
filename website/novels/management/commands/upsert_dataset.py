@@ -31,7 +31,6 @@ NOVEL_UPDATE_FIELDS = [
     "contest_id",
     "genre",
     "status",
-    "ptype",
     "has_banner",
     "word_num",
     "click_num",
@@ -163,6 +162,23 @@ class Command(BaseCommand):
                 )
             novel_count = bulk_upsert(Novel, novels, NOVEL_UPDATE_FIELDS, batch_size)
             logger.info("Upserted %d novels", novel_count)
+
+            # Step 5b: Upgrade ptype only (free → sign → VIP, never downgrade)
+            ptype_upgrades = []
+            for meta in meta_list:
+                new_ptype = meta.to_django_dict()["ptype"]
+                if new_ptype:  # Only if we have a valid ptype
+                    ptype_upgrades.append((meta.nid, new_ptype))
+
+            if ptype_upgrades:
+                upgraded = 0
+                with transaction.atomic():
+                    for nid, new_ptype in ptype_upgrades:
+                        updated = Novel.objects.filter(
+                            id=nid, ptype__lt=new_ptype
+                        ).update(ptype=new_ptype)
+                        upgraded += updated
+                logger.info("Upgraded %d novels ptype", upgraded)
 
         # Step 6: Upsert M2M relationships (tags)
         logger.info("Upserting novel-tag relationships...")
