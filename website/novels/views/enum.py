@@ -191,6 +191,7 @@ class EnumDetailView(ListView):
             Novel.objects.filter(**{self.enum_type: self.enum_value})
             .select_related("author", "contest")
             .prefetch_related("tags")
+            .order_by("-click_num")
         )
 
     LIST_URLS = {"genre": "genres", "status": "statuses", "ptype": "ptypes"}
