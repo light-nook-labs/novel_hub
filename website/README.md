@@ -98,6 +98,9 @@ uv run python manage.py smart_snapshot          # Create daily snapshots
 uv run python manage.py archive_snapshots       # Archive last month to JSONL/CSV
 uv run python manage.py archive_snapshots --month 2026-01  # Archive specific month
 
+# Fix data
+uv run python manage.py fix_ptype ../release/dataset/  # Fix ptype (upgrade only)
+
 # Static site
 uv run python manage.py generate_static --output ../build --base-path novel_hub
 uv run python manage.py serve_static --port 8080

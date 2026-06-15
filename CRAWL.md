@@ -58,16 +58,20 @@ uv run scrapy crawl meta_batch -o /tmp/june7.jsonl -a begin=80 -a num=20 -a days
 cd website
 uv run python manage.py upsert_dataset /tmp/june7.jsonl
 
-# 3. Create snapshots
+# 3. Fix ptype if needed (upgrade only: free→sign→VIP)
+uv run python manage.py fix_ptype ../release/dataset/
+
+# 4. Create snapshots
 uv run python manage.py smart_snapshot
 
-# 4. Add long-term tracking for important novel
+# 5. Add long-term tracking for important novel
 uv run python manage.py add_long_term 763391
 ```
 
 ## Notes
 
 - `upsert_dataset` updates existing records, inserts new ones
+- `fix_ptype` upgrades ptype only (free→sign→VIP), never downgrades
 - `smart_snapshot` deletes snapshots older than 30 days
 - `archive_snapshots` exports to JSONL/CSV and deletes from DB
 - Scrapy `days` arg controls cutoff (default: 7)

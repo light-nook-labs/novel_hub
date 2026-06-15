@@ -152,11 +152,24 @@ A-status criteria: `has_banner` OR `click >= 1000w` OR `review >= 60` OR `like >
 ### Commands
 
 ```bash
-uv run python manage.py fill_tasks              # Create tasks for duplicate covers
-uv run python manage.py fill_tasks --dry-run    # Preview without creating
-uv run python manage.py run_tasks               # Process tasks (crawl + update)
-uv run python manage.py run_tasks --limit 100   # Process limited tasks
+# Daily operations
+uv run python manage.py smart_snapshot          # Create daily snapshots
+
+# Long-term tasks
 uv run python manage.py add_long_term <nid>     # Add novel as long-term task
+uv run python manage.py remove_long_term <nid>  # Remove long-term task
+uv run python manage.py remove_long_term --all  # Remove all long-term tasks
+
+# Archive
+uv run python manage.py archive_snapshots                     # Archive last month (JSONL + CSV)
+uv run python manage.py archive_snapshots --month 2026-01     # Archive specific month
+
+# Fix
+uv run python manage.py fix_ptype ../release/dataset/         # Fix ptype (upgrade only)
+
+# Existing commands
+uv run python manage.py run_tasks               # Process tasks (preserves long-term)
+uv run python manage.py fill_tasks              # Create tasks for duplicate covers
 ```
 
 ### Workflow
