@@ -109,7 +109,7 @@ class Command(BaseCommand):
         logger.info("Created %d new authors", author_count)
 
         logger.info("Upserting tags...")
-        tags = list({t for m in meta_list for t in m.tags})
+        tags = list({t for m in meta_list for t in m.tags if not t.startswith("[")})
         tag_count = bulk_create_ignore(
             Tag, [Tag(name=t) for t in progress(tags, desc="Tags")], batch_size
         )
@@ -173,6 +173,8 @@ class Command(BaseCommand):
         novel_tags = []
         for meta in progress(meta_list, desc="Tag relations"):
             for tag_name in meta.tags:
+                if tag_name.startswith("["):
+                    continue
                 if tag_name in tag_map:
                     novel_tags.append((meta.nid, tag_map[tag_name]))
 
