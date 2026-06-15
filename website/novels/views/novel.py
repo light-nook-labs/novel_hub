@@ -179,6 +179,8 @@ class NovelRankView(ListView):
     SORTABLE = {c.get("sort_key", c["key"]) for c in COLUMNS if c["sortable"]}
 
     def get_queryset(self):
+        from django.db.models import F
+
         qs = (
             super()
             .get_queryset()
@@ -191,7 +193,13 @@ class NovelRankView(ListView):
         direction = self.request.GET.get("dir", "desc")
         if direction not in ("asc", "desc"):
             direction = "desc"
-        return qs.order_by(f"{'-' if direction == 'desc' else ''}{sort}")
+
+        if direction == "desc":
+            qs = qs.order_by(F(sort).desc(nulls_last=True))
+        else:
+            qs = qs.order_by(F(sort).asc(nulls_last=True))
+
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
