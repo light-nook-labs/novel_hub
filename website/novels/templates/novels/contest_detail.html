@@ -10,15 +10,14 @@
   <span class="text-gray-900 dark:text-gray-100">{{ contest.name }}</span>
 </nav>
 
-<div class="flex flex-col lg:flex-row gap-4 mb-4">
+<div class="flex items-start gap-4 mb-4">
   <div class="flex-shrink-0">
     <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50">{{ contest.name }}</h1>
     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ novel_count }} 本小说</p>
   </div>
-  <div class="flex-1 min-w-0">
-    {% include "novels/components/filters.html" %}
-  </div>
 </div>
+
+{% include "novels/components/filters.html" %}
 
 <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
   {% for novel in novels %}
