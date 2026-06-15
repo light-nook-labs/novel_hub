@@ -55,6 +55,9 @@ class AuthorAdmin(ReadOnlyMixin, admin.ModelAdmin):
             .order_by("-novel_count")
         )
 
+    def has_delete_permission(self, request, obj=None):
+        return True
+
     @admin.display(description="小说数", ordering="novel_count")
     def novel_count(self, obj):
         return obj.novel_count
@@ -114,6 +117,9 @@ class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
         return super().get_queryset(request).select_related("author", "contest")
 
     def has_change_permission(self, request, obj=None):
+        return True
+
+    def has_delete_permission(self, request, obj=None):
         return True
 
     def formfield_for_dbfield(self, db_field, request, **kwargs):
