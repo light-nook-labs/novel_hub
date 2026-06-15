@@ -27,12 +27,13 @@
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}ptype={{ p.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
          class="flex-shrink-0 px-2 py-1 rounded {% if current_ptype == p.value|stringformat:'d' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ p.label }}</a>
       {% endfor %}
-    </div>
-    <div class="flex items-center gap-2">
+      <span class="flex-shrink-0 text-gray-300 dark:text-gray-600 mx-1">|</span>
       <span class="flex-shrink-0 text-gray-500 dark:text-gray-400 font-medium">排序：</span>
       {% for key, label in sort_options.items %}
+      {% if key %}
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}sort={{ key }}"
          class="flex-shrink-0 px-2 py-1 rounded {% if current_sort == key %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ label }}</a>
+      {% endif %}
       {% endfor %}
     </div>
   </div>

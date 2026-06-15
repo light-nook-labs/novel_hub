@@ -10,12 +10,11 @@ _pagination = __import__("django.conf", fromlist=["settings"]).settings.TOML.get
 _paginate_by = _pagination.get("per_page", 24)
 
 SORT_OPTIONS = {
-    "": "综合排序",
-    "click_num": "点击排序",
-    "word_num": "字数排序",
-    "like_num": "收藏排序",
-    "praise_num": "点赞排序",
-    "last_update": "最近更新",
+    "click_num": "点击",
+    "word_num": "字数",
+    "like_num": "收藏",
+    "praise_num": "点赞",
+    "last_update": "最近",
 }
 
 
