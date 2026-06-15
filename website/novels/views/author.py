@@ -1,12 +1,13 @@
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView
 from django.db import models
+from django.http import Http404
 
 from ..models import Novel, Author
 
 _pagination = __import__("django.conf", fromlist=["settings"]).settings.TOML.get(
     "pagination", {}
 )
-_detail_novel_limit = _pagination.get("detail_novel_limit", 50)
+_paginate_by = _pagination.get("per_page", 24)
 
 
 class AuthorListView(ListView):
@@ -99,18 +100,32 @@ class AuthorListView(ListView):
         return ctx
 
 
-class AuthorDetailView(DetailView):
+class AuthorDetailView(ListView):
     model = Author
     template_name = "novels/author_detail.html"
-    context_object_name = "author"
+    context_object_name = "novels"
+    paginate_by = _paginate_by
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        novels_qs = (
-            self.object.novels.select_related("author", "contest")
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.author = Author.objects.get(pk=self.kwargs["pk"])
+        except Author.DoesNotExist:
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            Novel.objects.filter(author=self.author)
+            .select_related("author", "contest")
             .prefetch_related("tags")
             .order_by("-click_num")
         )
-        ctx["novels"] = novels_qs[:_detail_novel_limit]
-        ctx["novel_count"] = self.object.novels.count()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["author"] = self.author
+        ctx["novel_count"] = ctx["paginator"].count
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
         return ctx

@@ -1,11 +1,12 @@
-from django.views.generic import ListView, DetailView
+from django.views.generic import ListView
+from django.http import Http404
 
-from ..models import Contest
+from ..models import Novel, Contest
 
 _pagination = __import__("django.conf", fromlist=["settings"]).settings.TOML.get(
     "pagination", {}
 )
-_detail_novel_limit = _pagination.get("detail_novel_limit", 50)
+_paginate_by = _pagination.get("per_page", 24)
 
 
 class ContestListView(ListView):
@@ -21,18 +22,32 @@ class ContestListView(ListView):
         return qs.annotate_novel_count()
 
 
-class ContestDetailView(DetailView):
+class ContestDetailView(ListView):
     model = Contest
     template_name = "novels/contest_detail.html"
-    context_object_name = "contest"
+    context_object_name = "novels"
+    paginate_by = _paginate_by
 
-    def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        novels_qs = (
-            self.object.novels.select_related("author", "contest")
+    def dispatch(self, request, *args, **kwargs):
+        try:
+            self.contest = Contest.objects.get(pk=self.kwargs["pk"])
+        except Contest.DoesNotExist:
+            raise Http404
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            Novel.objects.filter(contest=self.contest)
+            .select_related("author", "contest")
             .prefetch_related("tags")
             .order_by("-click_num")
         )
-        ctx["novels"] = novels_qs[:_detail_novel_limit]
-        ctx["novel_count"] = self.object.novels.count()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["contest"] = self.contest
+        ctx["novel_count"] = ctx["paginator"].count
+        params = self.request.GET.copy()
+        params.pop("page", None)
+        ctx["querystring"] = params.urlencode()
         return ctx
