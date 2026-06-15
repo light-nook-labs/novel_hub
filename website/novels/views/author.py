@@ -50,14 +50,29 @@ class AuthorListView(ListView):
         if q:
             qs = qs.filter(name__icontains=q)
 
+        from django.db.models import Value, IntegerField
+        from django.db.models.functions import Coalesce
+
         qs = qs.annotate(
             novel_count=models.Count("novels"),
-            total_click=models.Sum("novels__click_num"),
-            total_word=models.Sum("novels__word_num"),
-            total_like=models.Sum("novels__like_num"),
-            total_praise=models.Sum("novels__praise_num"),
-            total_review=models.Sum("novels__review_num"),
-            total_comment=models.Sum("novels__comment_num"),
+            total_click=Coalesce(
+                models.Sum("novels__click_num"), Value(0), output_field=IntegerField()
+            ),
+            total_word=Coalesce(
+                models.Sum("novels__word_num"), Value(0), output_field=IntegerField()
+            ),
+            total_like=Coalesce(
+                models.Sum("novels__like_num"), Value(0), output_field=IntegerField()
+            ),
+            total_praise=Coalesce(
+                models.Sum("novels__praise_num"), Value(0), output_field=IntegerField()
+            ),
+            total_review=Coalesce(
+                models.Sum("novels__review_num"), Value(0), output_field=IntegerField()
+            ),
+            total_comment=Coalesce(
+                models.Sum("novels__comment_num"), Value(0), output_field=IntegerField()
+            ),
             banner_count=models.Count(
                 "novels", filter=models.Q(novels__has_banner=True)
             ),
