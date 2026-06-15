@@ -1,5 +1,5 @@
 {% load novel_tags %}
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3 mb-4">
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-3">
   <div class="flex flex-wrap items-center gap-2 text-sm">
     <span class="text-gray-500 dark:text-gray-400 font-medium">分类：</span>
     <a href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
