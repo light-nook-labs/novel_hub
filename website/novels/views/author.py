@@ -77,7 +77,7 @@ class AuthorListView(ListView):
                 "novels", filter=models.Q(novels__has_banner=True)
             ),
             latest_update=models.Max("novels__last_update"),
-        )
+        ).filter(novel_count__gt=0)
 
         sort = self.request.GET.get("sort", "total_click")
         if sort in self.SORT_OPTIONS:
