@@ -26,9 +26,10 @@ meta_spider/
 # From project root
 uv run scrapy crawl meta_batch -o o.jsonl -a num=3
 uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
+uv run scrapy crawl meta_batch -o o.jsonl -a begin=80 -a num=20 -a days=7
 ```
 
-**Always specify `-a` and `-o`. Max 10 pages per run.**
+**Always specify `-a` and `-o`. Max 10 pages per run (unless testing cutoff).**
 
 ## CLI Args
 
@@ -36,6 +37,7 @@ uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
 |-----|---------|-------------|
 | `begin` | 1 | Start page index |
 | `num` | 2 | Number of pages to crawl |
+| `days` | 7 | Cutoff days — stop if novel updated before this |
 | `-o` | — | Output file (JSONL) |
 
 ## Meta pydantic model

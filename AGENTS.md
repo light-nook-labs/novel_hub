@@ -92,6 +92,29 @@ novel_hub/
 - **HTML/JS/CSS**: 2-space indent
 - **Linting**: `uv run black . && uv run flake8 .`
 
+## Config Rules
+
+**No hardcoded constants.** All constants MUST be managed through config files.
+
+### Data Flow
+
+```
+site_config.toml          # Single source of truth
+    ├── utils/config.py           # Reads [scraper]
+    ├── website/config/settings.py  # Reads [site], [pagination]
+    └── meta_spider/settings.py     # Reads [scraper]
+```
+
+### Rules
+
+- **site_config.toml**: Site name, pagination, scraper URLs, thresholds
+- **utils/config.py**: Reads `[scraper]` from TOML, exports constants
+- **website/config/settings.py**: Reads `.env` for secrets, DB config; reads TOML for site/pagination
+- **meta_spider/settings.py**: Reads TOML for scraper settings
+- **Never** use hardcoded URLs, paths, or magic numbers in application code
+- **Always** add new constants to `site_config.toml` first, then read via config module
+- **No cross-dependency**: Each module reads TOML directly, not from each other
+
 ## Design Rules
 
 - **No cold colors** (blue, indigo, sky, cyan, violet, purple, fuchsia)
@@ -188,10 +211,10 @@ uv run python manage.py archive_snapshots --month 2026-01  # Archive specific mo
 ### Workflow
 
 1. Scrapy crawls ON_GOING list (stops at 7-day cutoff)
-2. `SnapshotPipeline` creates snapshot for each crawled novel
-3. Long-term tasks are always crawled and snapshotted
-4. `smart_snapshot` fills gaps for novels Scrapy missed
-5. `archive_snapshots` exports old data to JSONL and cleans DB
+2. Scrapy outputs to JSONL (existing workflow)
+3. `upsert_dataset` loads JSONL data into DB
+4. `smart_snapshot` creates snapshots for ON_GOING novels and long-term tasks
+5. `archive_snapshots` exports old data to JSONL/CSV and cleans DB
 
 ### GitHub Actions
 

@@ -12,6 +12,7 @@ A novel metadata website for sfacg.com, built with Django + Tailwind CSS.
 - Dark mode support
 - Mobile-responsive design
 - Static site generation for GitHub Pages
+- Snapshot system for tracking novel metrics over time
 
 ## Tech Stack
 
@@ -56,13 +57,24 @@ erDiagram
     }
 
     Task {
-        CharField status "u=urgent d=default f=finished"
+        CharField status "l=long_term u=urgent d=default f=finished"
+    }
+
+    NovelSnapshot {
+        DateField snapshot_date
+        IntegerField click_num
+        IntegerField like_num
+        IntegerField praise_num
+        IntegerField word_num
+        IntegerField review_num
+        IntegerField comment_num
     }
 
     Author ||--o{ Novel : "1:N"
     Contest ||--o{ Novel : "1:N"
     Novel }o--o{ Tag : "M2M"
     Novel ||--o| Task : "1:0..1"
+    Novel ||--o{ NovelSnapshot : "1:N"
 ```
 
 ### Relationships
@@ -70,6 +82,7 @@ erDiagram
 2. Contest : Novel  →  One-to-Many (`ForeignKey`, `on_delete=SET_NULL`)
 3. Novel   : Tag    →  Many-to-Many (`ManyToManyField`)
 4. Novel   : Task   →  One-to-One (`OneToOneField`, `on_delete=CASCADE`)
+5. Novel   : NovelSnapshot → One-to-Many (`ForeignKey`, `on_delete=CASCADE`)
 
 ### Mappings (Context Processor)
 
@@ -169,7 +182,7 @@ uv run python manage.py serve_static --port 8080
 uv run python manage.py test novels -v 2
 ```
 
-97 unit tests covering views, models, mappings, template tags, commands, search, and pagination.
+118 unit tests covering views, models, mappings, template tags, commands, search, and pagination.
 
 ## License
 

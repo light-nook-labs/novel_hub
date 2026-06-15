@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models import Count
 
 from .mappings import GENRE, PTYPE, STATUS
-from .models import Author, Contest, Novel, Tag, Task
+from .models import Author, Contest, Novel, NovelSnapshot, Tag, Task
 
 _site = settings.TOML.get("site", {})
 admin.site.site_header = f"{_site.get('name', 'Novel Hub')} 管理"
@@ -54,6 +54,9 @@ class AuthorAdmin(ReadOnlyMixin, admin.ModelAdmin):
             .annotate(novel_count=Count("novels"))
             .order_by("-novel_count")
         )
+
+    def has_delete_permission(self, request, obj=None):
+        return True
 
     @admin.display(description="小说数", ordering="novel_count")
     def novel_count(self, obj):
@@ -116,6 +119,9 @@ class NovelAdmin(ReadOnlyMixin, admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         return True
 
+    def has_delete_permission(self, request, obj=None):
+        return True
+
     def formfield_for_dbfield(self, db_field, request, **kwargs):
         if db_field.name == "genre":
             kwargs["widget"] = forms.Select(choices=GENRE.choices)
@@ -151,6 +157,18 @@ class TaskAdmin(admin.ModelAdmin):
     search_fields = ["novel__title"]
     autocomplete_fields = ["novel"]
     readonly_fields = ["novel"]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("novel")
+
+
+@admin.register(NovelSnapshot)
+class NovelSnapshotAdmin(ReadOnlyMixin, admin.ModelAdmin):
+    list_display = ["novel", "snapshot_date", "click_num", "like_num", "praise_num"]
+    list_filter = ["snapshot_date"]
+    search_fields = ["novel__title"]
+    autocomplete_fields = ["novel"]
+    readonly_fields = ["novel", "snapshot_date"]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("novel")

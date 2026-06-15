@@ -16,13 +16,14 @@ else:
     TOML = {}
     logger.warning("site_config.toml not found at %s, using defaults", _config_path)
 
-_cfg = TOML.get("scraper", {})
+_cfg = TOML.get("urls", {})
+_site = TOML.get("site", {})
 
 USER_AGENT = _cfg.get("user_agent", "")
 HEADERS = {"User-Agent": USER_AGENT}
-COMMON_URL = _cfg.get("common_url", "")
-NOVEL_URL = _cfg.get("novel_url", "https://book.sfacg.com/Novel/{nid}/")
-MOBILE_URL = _cfg.get("mobile_url", "https://m.sfacg.com/b/{nid}/")
+COMMON_URL = _cfg.get("common", "")
+NOVEL_URL = _cfg.get("novel", "https://book.sfacg.com/Novel/{nid}/")
+MOBILE_URL = _cfg.get("mobile", "https://m.sfacg.com/b/{nid}/")
 MOBILE_HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
 }
@@ -31,4 +32,4 @@ COVER_PREFIX = _cfg.get(
     "http://rs.sfacg.com/web/novel/images/NovelCover/Big/",
 )
 DEFAULT_COVER = _cfg.get("default_cover", "defaultNew.jpg")
-TIMEZONE = _cfg.get("timezone", "Asia/Shanghai")
+TIMEZONE = _site.get("timezone", "Asia/Shanghai")

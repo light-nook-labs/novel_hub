@@ -16,7 +16,7 @@ _config_path = _ROOT / "site_config.toml"
 with open(_config_path, "rb") as f:
     TOML = tomllib.load(f)
 
-_scraper = TOML.get("scraper", {})
+_cfg = TOML.get("urls", {})
 
 BOT_NAME = "meta_spider"
 
@@ -27,7 +27,7 @@ ADDONS = {}
 
 
 # Crawl responsibly by identifying yourself (and your website) via user-agent
-USER_AGENT = _scraper.get("user_agent", "Scrapy")
+USER_AGENT = _cfg.get("user_agent", "Scrapy")
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True

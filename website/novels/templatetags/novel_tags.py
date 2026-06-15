@@ -52,8 +52,8 @@ def get_attr(obj, attr):
 def cover_url(suffix):
     """Reconstruct full cover URL from suffix using TOML config."""
     cfg = settings.TOML
-    prefix = cfg.get("scraper", {}).get("cover_prefix", "")
-    default = cfg.get("scraper", {}).get("default_cover", "defaultNew.jpg")
+    prefix = cfg.get("urls", {}).get("cover_prefix", "")
+    default = cfg.get("urls", {}).get("default_cover", "defaultNew.jpg")
 
     if not suffix or suffix in ("nan", "<NA>", "None"):
         url = prefix + default
@@ -142,8 +142,8 @@ def detail_url(obj, url_name):
 def banner_url(nid):
     """Generate banner image URL from nid."""
     cfg = settings.TOML
-    pattern = cfg.get("scraper", {}).get(
-        "banner_url", "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
+    pattern = cfg.get("urls", {}).get(
+        "banner", "https://rs.sfacg.com/web/novel/images/images/beitouNew/{nid}.jpg"
     )
     return pattern.format(nid=nid)
 
@@ -152,9 +152,7 @@ def banner_url(nid):
 def novel_url(nid):
     """Generate novel page URL from nid."""
     cfg = settings.TOML
-    pattern = cfg.get("scraper", {}).get(
-        "novel_url", "https://book.sfacg.com/Novel/{nid}/"
-    )
+    pattern = cfg.get("urls", {}).get("novel", "https://book.sfacg.com/Novel/{nid}/")
     return pattern.format(nid=nid)
 
 

@@ -10,10 +10,10 @@ website/
     config/                 # Django settings, urls, wsgi
         settings.py         # Loads .env from project root
     novels/                 # Main Django app
-        models.py           # Novel, Author, Tag, Contest, Task
+        models.py           # Novel, Author, Tag, Contest, Task, NovelSnapshot
         views.py            # ListView, DetailView for all pages
         mappings.py         # GENRE/STATUS/PTYPE enum mappings
-        tests/              # 97 unit tests
+        tests/              # 118 unit tests
             test_models.py
             test_views.py
             test_tags.py
@@ -24,12 +24,18 @@ website/
             novel_tags.py   # cover_url, humanize_num, pill_bg, etc.
         management/
             commands/
-                init_db.py          # Init DB (deletes all data first)
-                upsert_dataset.py   # Upsert (updates existing records)
-                dump_dataset.py     # Dump DB → JSONL/CSV
-                fix_m2m.py          # Fix missing M2M tag relationships
-                generate_static.py  # SSG for GitHub Pages
-                serve_static.py     # Local preview server
+                init_db.py              # Init DB (deletes all data first)
+                upsert_dataset.py       # Upsert (updates existing records)
+                dump_dataset.py         # Dump DB → JSONL/CSV
+                fix_m2m.py              # Fix missing M2M tag relationships
+                generate_static.py      # SSG for GitHub Pages
+                serve_static.py         # Local preview server
+                fill_tasks.py           # Create tasks for duplicate covers
+                run_tasks.py            # Process tasks (crawl + update)
+                add_long_term.py        # Add novel as long-term task
+                remove_long_term.py     # Remove long-term task
+                smart_snapshot.py       # Create daily snapshots
+                archive_snapshots.py    # Archive snapshots to JSONL/CSV
         templates/novels/
             base.html
             index.html
@@ -80,6 +86,17 @@ uv run python manage.py dump_dataset release
 # Fix M2M relationships
 uv run python manage.py fix_m2m --check                    # Check M2M status
 uv run python manage.py fix_m2m ../release/dataset/ --force  # Rebuild M2M
+
+# Task system
+uv run python manage.py fill_tasks              # Create tasks for duplicate covers
+uv run python manage.py run_tasks               # Process tasks (crawl + update)
+uv run python manage.py add_long_term <nid>     # Add novel as long-term task
+uv run python manage.py remove_long_term <nid>  # Remove long-term task
+
+# Snapshot system
+uv run python manage.py smart_snapshot          # Create daily snapshots
+uv run python manage.py archive_snapshots       # Archive last month to JSONL/CSV
+uv run python manage.py archive_snapshots --month 2026-01  # Archive specific month
 
 # Static site
 uv run python manage.py generate_static --output ../build --base-path novel_hub

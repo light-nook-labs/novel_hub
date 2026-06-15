@@ -1,0 +1,85 @@
+name: Monthly Archive
+
+on:
+  schedule:
+    # UTC 21:00 = Shanghai 05:00, 1st of each month
+    - cron: "0 21 1 * *"
+  workflow_dispatch:
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Archive last month snapshots
+        working-directory: website
+        run: uv run python manage.py archive_snapshots
+        env:
+          DB_TYPE: postgresql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: "0"
+
+      - name: Dump latest dataset
+        working-directory: website
+        run: uv run python manage.py dump_dataset release
+        env:
+          DB_TYPE: postgresql
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          DEBUG: "0"
+
+      - name: Commit archived files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add release/dataset/
+          git diff --cached --quiet || git commit -m "Archive snapshots for $(date -d 'last month' '+%Y-%m')"
+          git push
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: snapshot-${{ github.run_id }}
+          name: "Snapshot $(date -d 'last month' '+%Y-%m')"
+          body: |
+            Monthly snapshot archive for $(date -d 'last month' '+%Y-%m')
+            
+            ## Contents
+            - **snapshots**: Novel metrics for the past month
+            - **dataset**: Full novel dataset
+            
+            ## Files
+            - `snapshot_YYYY_MM.jsonl` - Snapshot data in JSONL format
+            - `snapshot_YYYY_MM.csv` - Snapshot data in CSV format
+            - `dataset/*.jsonl` - Full dataset in JSONL format
+            - `dataset/*.csv` - Full dataset in CSV format
+          files: |
+            release/dataset/jsonl/snapshot_*.jsonl
+            release/dataset/csv/snapshot_*.csv
+            release/dataset/*.jsonl
+            release/dataset/*.csv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -39,7 +39,17 @@ Reads from `site_config.toml` (project root):
 user_agent = "Mozilla/5.0 ..."
 common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
 novel_url = "https://book.sfacg.com/Novel/{nid}/"
+timezone = "Asia/Shanghai"
 ```
+
+## Meta model
+
+Shared Pydantic model for data exchange between `meta_spider` and `website`.
+
+- `to_django_dict()`: Converts field names, compresses cover URL, makes `last_update` timezone-aware
+- `from_django_dict()`: Creates from Django QuerySet values
+
+**Timezone handling**: `last_update` from Scrapy is naive datetime. `to_django_dict()` converts it to timezone-aware using `timezone` from `site_config.toml`.
 
 ## fetch_html return value
 
