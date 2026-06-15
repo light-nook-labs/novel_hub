@@ -19,7 +19,7 @@
           <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider {% if col.sortable %}cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none transition-colors{% endif %} {% if forloop.counter > 1 %}hidden md:table-cell{% endif %}"
               {% if col.sortable %}
               hx-get="?sort={{ col.sort_key|default:col.key }}&dir={% if current_sort == col.sort_key|default:col.key and current_dir == 'desc' %}asc{% else %}desc{% endif %}{% if querystring %}&{{ querystring }}{% endif %}"
-              hx-target="#content" hx-select="#content" hx-push-url="true"
+              hx-target="#content" hx-select="#content" hx-swap="outerHTML" hx-push-url="true"
               {% endif %}>
             <div class="flex items-center gap-1">
               {{ col.label }}

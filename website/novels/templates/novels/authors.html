@@ -19,7 +19,7 @@
           <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">代表作</th>
           <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none transition-colors"
               hx-get="?sort=novel_count&dir={% if current_sort == 'novel_count' and current_dir == 'desc' %}asc{% else %}desc{% endif %}{% if querystring %}&{{ querystring }}{% endif %}"
-              hx-target="#content" hx-select="#content" hx-push-url="true">
+              hx-target="#content" hx-select="#content" hx-swap="outerHTML" hx-push-url="true">
             <div class="flex items-center justify-end gap-1">
               背投/作品
               {% if current_sort == "novel_count" %}
@@ -33,7 +33,7 @@
           {% if key != "novel_count" %}
           <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none transition-colors {% if key == 'latest_update' %}hidden lg:table-cell{% elif key == 'banner_count' %}{% else %}hidden md:table-cell{% endif %}"
               hx-get="?sort={{ key }}&dir={% if current_sort == key and current_dir == 'desc' %}asc{% else %}desc{% endif %}{% if querystring %}&{{ querystring }}{% endif %}"
-              hx-target="#content" hx-select="#content" hx-push-url="true">
+              hx-target="#content" hx-select="#content" hx-swap="outerHTML" hx-push-url="true">
             <div class="flex items-center justify-end gap-1">
               {{ label }}
               {% if current_sort == key %}
