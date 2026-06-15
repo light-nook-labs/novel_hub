@@ -31,6 +31,7 @@ NOVEL_UPDATE_FIELDS = [
     "contest_id",
     "genre",
     "status",
+    "ptype",
     "has_banner",
     "word_num",
     "click_num",
@@ -164,16 +165,18 @@ class Command(BaseCommand):
             logger.info("Upserted %d novels", novel_count)
 
             # Step 5b: Upgrade ptype only (free → sign → VIP, never downgrade)
-            ptype_upgrades = []
-            for meta in meta_list:
-                new_ptype = meta.to_django_dict()["ptype"]
-                if new_ptype:  # Only if we have a valid ptype
-                    ptype_upgrades.append((meta.nid, new_ptype))
+            from django.db.models import Case, When, Value, IntegerField
+            from django.db.models import F
 
-            if ptype_upgrades:
+            ptype_map = {
+                m.nid: m.to_django_dict()["ptype"]
+                for m in meta_list
+                if m.to_django_dict()["ptype"]
+            }
+            if ptype_map:
                 upgraded = 0
                 with transaction.atomic():
-                    for nid, new_ptype in ptype_upgrades:
+                    for nid, new_ptype in ptype_map.items():
                         updated = Novel.objects.filter(
                             id=nid, ptype__lt=new_ptype
                         ).update(ptype=new_ptype)
