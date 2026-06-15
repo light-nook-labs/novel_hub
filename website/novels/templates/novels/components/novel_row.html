@@ -1,7 +1,7 @@
 {% load novel_tags %}
 <div class="flex items-start gap-3">
-  <a href="{% if static_mode %}{% novel_url novel.id %}{% else %}{% url 'novels:detail' novel.id %}{% endif %}"{% if static_mode %} target="_blank"{% endif %} class="flex-shrink-0">
-    <img src="{{ novel.cover|cover_url }}" alt="" class="w-16 h-auto rounded">
+  <a href="{% if static_mode %}{% novel_url novel.id %}{% else %}{% url 'novels:detail' novel.id %}{% endif %}"{% if static_mode %} target="_blank"{% endif %} class="flex-shrink-0 w-16 aspect-[4/5] bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
+    <img src="{{ novel.cover|cover_url }}" alt="" class="w-full h-full object-cover">
   </a>
   <div class="min-w-0 flex-1">
     <div class="flex items-center gap-2">
