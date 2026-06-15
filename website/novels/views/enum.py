@@ -1,4 +1,5 @@
 from django.views.generic import ListView
+from django.http import Http404
 
 from ..models import Novel
 from ..mappings import GENRE, STATUS, PTYPE
@@ -7,6 +8,23 @@ _pagination = __import__("django.conf", fromlist=["settings"]).settings.TOML.get
     "pagination", {}
 )
 _paginate_by = _pagination.get("per_page", 24)
+
+SORT_OPTIONS = {
+    "": "综合排序",
+    "click_num": "点击排序",
+    "word_num": "字数排序",
+    "like_num": "收藏排序",
+    "praise_num": "点赞排序",
+    "last_update": "最近更新",
+}
+
+
+def _choices(mapping):
+    return [
+        {"value": m.value, "label": mapping.get_zh(m.value)}
+        for m in mapping.enum
+        if m.name != "OTHER"
+    ]
 
 
 class EnumListView(ListView):
@@ -20,8 +38,6 @@ class EnumListView(ListView):
         self.enum_type = kwargs["enum_type"]
         self.mapping = self.ENUM_MAP.get(self.enum_type)
         if not self.mapping:
-            from django.http import Http404
-
             raise Http404
         return super().dispatch(request, *args, **kwargs)
 
@@ -52,55 +68,55 @@ class EnumListView(ListView):
                 "text": "#92400e",
                 "bg_d": "#78350f",
                 "text_d": "#fcd34d",
-            },  # amber
+            },
             3: {
                 "bg": "#ffedd5",
                 "text": "#9a3412",
                 "bg_d": "#7c2d12",
                 "text_d": "#fb923c",
-            },  # orange
+            },
             4: {
                 "bg": "#ffe4e6",
                 "text": "#9f1239",
                 "bg_d": "#881337",
                 "text_d": "#fb7185",
-            },  # rose
+            },
             5: {
                 "bg": "#fef9c3",
                 "text": "#854d0e",
                 "bg_d": "#713f12",
                 "text_d": "#facc15",
-            },  # yellow
+            },
             6: {
                 "bg": "#ecfccb",
                 "text": "#3f6212",
                 "bg_d": "#365314",
                 "text_d": "#a3e635",
-            },  # lime
+            },
             7: {
                 "bg": "#e5e7eb",
                 "text": "#374151",
                 "bg_d": "#1f2937",
                 "text_d": "#d1d5db",
-            },  # gray
+            },
             8: {
                 "bg": "#fce7f3",
                 "text": "#9d174d",
                 "bg_d": "#831843",
                 "text_d": "#f472b6",
-            },  # pink
+            },
             9: {
                 "bg": "#f5f5f4",
                 "text": "#57534e",
                 "bg_d": "#44403c",
                 "text_d": "#a8a29e",
-            },  # stone
+            },
             10: {
                 "bg": "#ffedd5",
                 "text": "#c2410c",
                 "bg_d": "#9a3412",
                 "text_d": "#fdba74",
-            },  # light orange
+            },
         },
         "status": {
             2: {
@@ -108,31 +124,31 @@ class EnumListView(ListView):
                 "text": "#92400e",
                 "bg_d": "#78350f",
                 "text_d": "#fcd34d",
-            },  # amber
+            },
             3: {
                 "bg": "#ffe4e6",
                 "text": "#9f1239",
                 "bg_d": "#881337",
                 "text_d": "#fb7185",
-            },  # rose
+            },
             4: {
                 "bg": "#e5e7eb",
                 "text": "#374151",
                 "bg_d": "#1f2937",
                 "text_d": "#d1d5db",
-            },  # gray
+            },
             5: {
                 "bg": "#ffedd5",
                 "text": "#9a3412",
                 "bg_d": "#7c2d12",
                 "text_d": "#fb923c",
-            },  # orange
+            },
             6: {
                 "bg": "#fef9c3",
                 "text": "#854d0e",
                 "bg_d": "#713f12",
                 "text_d": "#facc15",
-            },  # yellow
+            },
         },
         "ptype": {
             2: {
@@ -140,13 +156,13 @@ class EnumListView(ListView):
                 "text": "#92400e",
                 "bg_d": "#78350f",
                 "text_d": "#fcd34d",
-            },  # amber
+            },
             3: {
                 "bg": "#fce7f3",
                 "text": "#9d174d",
                 "bg_d": "#831843",
                 "text_d": "#f472b6",
-            },  # pink
+            },
         },
     }
 
@@ -173,26 +189,42 @@ class EnumDetailView(ListView):
         self.enum_type = kwargs["enum_type"]
         self.mapping = self.ENUM_MAP.get(self.enum_type)
         if not self.mapping:
-            from django.http import Http404
-
             raise Http404
         self.enum_value = int(kwargs["value"])
         try:
             self.mapping.enum(self.enum_value)
         except ValueError:
-            from django.http import Http404
-
             raise Http404
         self.enum_label = self.mapping.get_zh(self.enum_value)
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return (
+        qs = (
             Novel.objects.filter(**{self.enum_type: self.enum_value})
             .select_related("author", "contest")
             .prefetch_related("tags")
-            .order_by("-click_num")
         )
+
+        # Apply filters
+        genre = self.request.GET.get("genre")
+        status = self.request.GET.get("status")
+        ptype = self.request.GET.get("ptype")
+
+        if self.enum_type != "genre" and genre:
+            qs = qs.filter(genre=int(genre))
+        if self.enum_type != "status" and status:
+            qs = qs.filter(status=int(status))
+        if self.enum_type != "ptype" and ptype:
+            qs = qs.filter(ptype=int(ptype))
+
+        # Apply sorting
+        sort = self.request.GET.get("sort", "click_num")
+        if sort in SORT_OPTIONS and sort:
+            qs = qs.order_by(f"-{sort}")
+        else:
+            qs = qs.order_by("-click_num")
+
+        return qs
 
     LIST_URLS = {"genre": "genres", "status": "statuses", "ptype": "ptypes"}
 
@@ -202,6 +234,14 @@ class EnumDetailView(ListView):
         ctx["enum_value"] = self.enum_value
         ctx["enum_label"] = self.enum_label
         ctx["list_url"] = self.LIST_URLS[self.enum_type]
+        ctx["genres"] = _choices(GENRE)
+        ctx["statuses"] = _choices(STATUS)
+        ctx["ptypes"] = _choices(PTYPE)
+        ctx["sort_options"] = SORT_OPTIONS
+        ctx["current_genre"] = self.request.GET.get("genre", "")
+        ctx["current_status"] = self.request.GET.get("status", "")
+        ctx["current_ptype"] = self.request.GET.get("ptype", "")
+        ctx["current_sort"] = self.request.GET.get("sort", "click_num")
         params = self.request.GET.copy()
         params.pop("page", None)
         ctx["querystring"] = params.urlencode()
