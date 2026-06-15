@@ -206,5 +206,7 @@ class NovelRankView(ListView):
         ctx["columns"] = COLUMNS
         params = self.request.GET.copy()
         params.pop("page", None)
+        params.pop("sort", None)
+        params.pop("dir", None)
         ctx["querystring"] = params.urlencode()
         return ctx

@@ -100,6 +100,8 @@ class AuthorListView(ListView):
         )
         params = self.request.GET.copy()
         params.pop("page", None)
+        params.pop("sort", None)
+        params.pop("dir", None)
         ctx["querystring"] = params.urlencode()
 
         # Fetch top novel for each author on current page
