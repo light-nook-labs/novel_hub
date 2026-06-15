@@ -44,7 +44,7 @@
              class="px-2 py-1 rounded {% if current_genre == g.value|stringformat:'d' %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">{{ g.label }}</a>
           {% endfor %}
         </div>
-        <div class="hidden sm:flex flex-wrap items-center gap-2 text-sm mt-2">
+        <div class="flex flex-wrap items-center gap-2 text-sm mt-2">
           <span class="text-gray-700 font-bold">状态：</span>
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
              class="px-2 py-1 rounded {% if not current_status %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">全部</a>
@@ -52,7 +52,8 @@
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}status={{ s.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
              class="px-2 py-1 rounded {% if current_status == s.value|stringformat:'d' %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">{{ s.label }}</a>
           {% endfor %}
-          <span class="text-gray-400 mx-1">|</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 text-sm mt-2">
           <span class="text-gray-700 font-bold">类型：</span>
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
              class="px-2 py-1 rounded {% if not current_ptype %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">全部</a>
@@ -60,12 +61,13 @@
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}ptype={{ p.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
              class="px-2 py-1 rounded {% if current_ptype == p.value|stringformat:'d' %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">{{ p.label }}</a>
           {% endfor %}
-        </div>
-        <div class="hidden sm:flex flex-wrap items-center gap-2 text-sm mt-2">
+          <span class="text-gray-400 mx-1">|</span>
           <span class="text-gray-700 font-bold">排序：</span>
           {% for key, label in sort_options.items %}
+          {% if key %}
           <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}sort={{ key }}"
              class="px-2 py-1 rounded {% if current_sort == key %}bg-gray-200 text-gray-900{% else %}text-gray-800 hover:bg-gray-100{% endif %} transition-colors">{{ label }}</a>
+          {% endif %}
           {% endfor %}
         </div>
       </div>
