@@ -4,22 +4,24 @@
 {% block title %}{{ enum_label }} - {{ TOML.site.name }}{% endblock %}
 
 {% block content %}
-<nav class="mb-4 md:mb-6 text-sm text-gray-500 dark:text-gray-400">
-  <a href="{% url 'novels:'|add:list_url %}" class="hover:text-amber-600 dark:hover:text-amber-400">
-    {% if enum_type == "genre" %}分类{% elif enum_type == "status" %}状态{% else %}类型{% endif %}
-  </a>
-  <span class="mx-2">/</span>
-  <span class="text-gray-900 dark:text-gray-100">{{ enum_label }}</span>
-</nav>
-
-<div class="flex items-start gap-4 mb-4">
-  <div class="flex-shrink-0">
-    <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50">{{ enum_label }}</h1>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 本</p>
+<div class="mb-4">
+  <nav class="mb-2 text-sm text-gray-500 dark:text-gray-400">
+    <a href="{% url 'novels:'|add:list_url %}" class="hover:text-amber-600 dark:hover:text-amber-400">
+      {% if enum_type == "genre" %}分类{% elif enum_type == "status" %}状态{% else %}类型{% endif %}
+    </a>
+    <span class="mx-2">/</span>
+    <span class="text-gray-900 dark:text-gray-100">{{ enum_label }}</span>
+  </nav>
+  <div class="flex items-start gap-4">
+    <div class="flex-shrink-0">
+      <h1 class="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-50">{{ enum_label }}</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ paginator.count }} 本</p>
+    </div>
+    <div class="flex-1 min-w-0">
+      {% include "novels/components/filters.html" %}
+    </div>
   </div>
 </div>
-
-{% include "novels/components/filters.html" %}
 
 <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
   {% for novel in novels %}
