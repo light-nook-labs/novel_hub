@@ -69,7 +69,7 @@
             <a href="{% if static_mode %}{% novel_url author.top_novel_id %}{% else %}{% url 'novels:detail' author.top_novel_id %}{% endif %}"{% if static_mode %} target="_blank"{% endif %}
                class="text-xs text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors truncate block mt-0.5 md:hidden"
                title="{{ author.top_novel_title }} ({{ author.top_novel_click|humanize_num }}次点击)">
-              {{ author.top_novel_title|truncate_cjk:26 }}
+              {{ author.top_novel_title|truncate_cjk:36 }}
             </a>
             {% endif %}
           </td>

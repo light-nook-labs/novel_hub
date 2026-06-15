@@ -1,100 +1,54 @@
 # meta_spider
 
-Scrapy spider for sfacg.com novel metadata. Batch crawls list pages → detail pages → comment API.
+Scrapy spider for sfacg.com novel metadata. Batch crawls list pages → detail pages → comment API, outputting validated `Meta` objects to JSONL.
 
-## Structure
+## Tech Stack
+
+- **Scrapy** — async web crawling framework; spider yields `Meta` objects serialized to JSONL via `-o` flag
+- **utils/models.py** — imports `Meta` Pydantic model for data validation
+
+## Purpose
+
+Batch crawl sfacg.com novel list pages to extract metadata for all novels. Each novel goes through three stages: list page (basic info), detail page (metrics), and comment API (review counts). A cutoff mechanism stops crawling when novels haven't been updated within N days, enabling efficient incremental updates.
+
+## Quick Start
+
+```bash
+# Crawl 10 pages
+uv run scrapy crawl meta_batch -o o.jsonl -a num=10
+
+# Crawl from page 100, 5 pages, 14-day cutoff
+uv run scrapy crawl meta_batch -o o.jsonl -a begin=100 -a num=5 -a days=14
+```
+
+## Modules
 
 ```
 meta_spider/
-    scrapy.cfg
-    meta_spider/
-        __init__.py         # Re-exports Meta pydantic model
-        settings.py         # Scrapy settings (UA, concurrency, throttling)
-        items.py            # Unused placeholder
-        middlewares.py      # Default Scrapy middlewares
-        pipelines.py        # Disabled pipeline (writes tag.jsonl)
-        models.py           # Pydantic Meta model
-        spiders/
-            __init__.py
-            meta.py         # Legacy (commented out, reference only)
-            meta_batch.py   # Active spider
+├── scrapy.cfg
+└── meta_spider/
+    ├── settings.py         # Reads site_config.toml → USER_AGENT, URLs
+    ├── pipelines.py        # CSVPipeline writes Meta items to o.csv
+    ├── models.py           # Re-exports Meta from utils.models
+    └── spiders/
+        ├── meta.py         # Legacy (commented out, reference only)
+        └── meta_batch.py   # Active spider — MetaBatchSpider
 ```
-
-## Usage
-
-```bash
-# From project root
-uv run scrapy crawl meta_batch -o o.jsonl -a num=3
-uv run scrapy crawl meta_batch -o o.jsonl -a begin=12465 -a num=5
-uv run scrapy crawl meta_batch -o o.jsonl -a begin=80 -a num=20 -a days=7
-```
-
-**Always specify `-a` and `-o`. Max 10 pages per run (unless testing cutoff).**
 
 ## CLI Args
 
 | Arg | Default | Description |
 |-----|---------|-------------|
 | `begin` | 1 | Start page index |
-| `num` | 2 | Number of pages to crawl |
+| `num` | 2 | Number of pages |
 | `days` | 7 | Cutoff days — stop if novel updated before this |
 | `-o` | — | Output file (JSONL) |
 
-## Meta pydantic model
+## Module Dependencies
 
-```python
-class Meta(BaseModel):
-    nid: int
-    title: str
-    author: str
-    genre: str           # Chinese label
-    status: str          # Chinese label
-    has_banner: bool
-    word_num: int | None
-    click_num: int | None
-    praise_num: int | None
-    like_num: int | None
-    ptype: str           # "免费" / "签约" / "VIP"
-    contest: str
-    last_update: datetime | None
-    review_num: int | None
-    comment_num: int | None
-    tags: list[str]
-    cover: str
-```
+- Imports `Meta` from `utils.models`
+- Reads `site_config.toml` via `settings.py`
 
-## CSS selectors (DO NOT MODIFY)
+## Docs
 
-| Page | Selector | Field |
-|------|----------|-------|
-| List | `.Comic_Pic_List` | item container |
-| List | `.Conjunction a::attr(href)` | novel_url |
-| List | `.Conjunction a img::attr(src)` | cover |
-| List | `.Conjunction a img::attr(alt)` | title |
-| List | `a[id*="AuthorLink"]::text` | author |
-| List | `.font_red::text` | score |
-| List | `.font_red ~a::text` | genre |
-| Detail | `.count-detail .text-row .text::text` | stats row |
-| Detail | `#BasicOperation .btn::text` | praise/like |
-| Detail | `.title .tag::text` | ptype/contest |
-| Detail | `.d-banner` | banner |
-| Detail | `.tag-list .tag .highlight .text::text` | tags |
-| API | `Common.ashx?op=getcomment` | comment_num, review_num |
-
-## Settings
-
-| Setting | Value |
-|---------|-------|
-| `USER_AGENT` | Chrome 147 |
-| `ROBOTSTXT_OBEY` | True |
-| `CONCURRENT_REQUESTS_PER_DOMAIN` | 2 |
-| `DOWNLOAD_DELAY` | 1s |
-| `TELNETCONSOLE_ENABLED` | False |
-| `FEED_EXPORT_ENCODING` | utf-8 |
-
-## Rules
-
-- **DO NOT** modify CSS selectors/xpaths
-- **DO NOT** delete `meta.py` — comment it out if changes needed
-- New code goes in `meta_batch.py`
-- Comment API uses async Scrapy `Request` (not `requests.Session`)
+See [docs/meta_spider.md](../docs/meta_spider.md) for CSS selectors, parsing methods, and detailed documentation.

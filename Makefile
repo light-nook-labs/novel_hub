@@ -1,55 +1,96 @@
-.PHONY: dev static serve test lint clean docker-build docker-up docker-down
+.PHONY: setup spider runserver makemigrations migrate createsuperuser test lint dev build \
+       init_db init_from_release upsert_dataset dump_dataset create_release \
+       fix_m2m fix_ptype \
+       fill_tasks run_tasks add_long_term remove_long_term process_task_issues \
+       smart_snapshot archive_snapshots \
+       generate_static preview
+
+setup:
+	uv sync
+	pnpm install
+
+# Spider
+spider:
+	cd meta_spider && uv run scrapy crawl meta_batch -o o.jsonl \
+		-a num=$(or $(NUM),10) \
+		-a begin=$(or $(BEGIN),1) \
+		-a days=$(or $(DAYS),7)
 
 # Development
-dev:
-	cd website && uv run python manage.py runserver
+runserver:
+	uv run python website/manage.py runserver $(PORT)
 
-# Static site generation (local preview)
-static:
-	cd website && uv run python manage.py generate_static --output ../build
+makemigrations:
+	uv run python website/manage.py makemigrations
 
-# Serve static site (foreground, Ctrl+C to stop)
-serve:
-	cd website && uv run python manage.py serve_static --dir ../build
+migrate:
+	uv run python website/manage.py migrate
 
+createsuperuser:
+	uv run python website/manage.py createsuperuser
 
-# Run tests
 test:
-	cd website && uv run python manage.py test novels -v 2
+	uv run python website/manage.py test novels -v 2
 
-# Lint
 lint:
-	cd website && uv run black . && uv run flake8 .
-
-# Clean
-clean:
-	rm -rf build
-	rm -f website/db.sqlite3
-
-# Load data to PostgreSQL
-load-data:
-	cd website && uv run python manage.py load_dataset ../release/dataset/meta_13.jsonl
-
-# Load data to SQLite
-load-data-sqlite:
-	@echo "DB_TYPE=sqlite" > /tmp/.env_tmp
-	@echo "SECRET_KEY=dev-secret-key" >> /tmp/.env_tmp
-	@echo "DEBUG=1" >> /tmp/.env_tmp
-	cd website && DB_TYPE=sqlite uv run python manage.py load_dataset ../release/dataset/meta_13.jsonl
+	uv run black .
+	uv run flake8 .
 
 # Tailwind CSS
-tailwind:
-	cd website && pnpm dev
+dev:
+	pnpm dev
 
-tailwind-build:
-	cd website && pnpm build
+build:
+	pnpm build
 
-# Docker
-docker-build:
-	docker compose build
+# Data
+init_db:
+	uv run python website/manage.py init_db $(or $(PATH),../release/dataset/)
 
-docker-up:
-	docker compose up -d
+init_from_release:
+	uv run python website/manage.py init_from_release $(URL)
 
-docker-down:
-	docker compose down
+upsert_dataset:
+	uv run python website/manage.py upsert_dataset $(or $(PATH),../release/dataset/)
+
+dump_dataset:
+	uv run python website/manage.py dump_dataset $(or $(PATH),release)
+
+create_release:
+	uv run python website/manage.py create_release --output $(or $(OUT),../release.tar.gz)
+
+fix_m2m:
+	uv run python website/manage.py fix_m2m $(or $(PATH),../release/dataset/) --force
+
+fix_ptype:
+	uv run python website/manage.py fix_ptype $(or $(PATH),../release/dataset/)
+
+# Tasks
+fill_tasks:
+	uv run python website/manage.py fill_tasks
+
+run_tasks:
+	uv run python website/manage.py run_tasks --limit $(or $(LIMIT),500)
+
+add_long_term:
+	uv run python website/manage.py add_long_term $(NID)
+
+remove_long_term:
+	uv run python website/manage.py remove_long_term $(NID)
+
+process_task_issues:
+	uv run python website/manage.py process_task_issues
+
+# Snapshots
+smart_snapshot:
+	uv run python website/manage.py smart_snapshot
+
+archive_snapshots:
+	uv run python website/manage.py archive_snapshots $(if $(MONTH),--month $(MONTH))
+
+# Static site
+generate_static:
+	uv run python website/manage.py generate_static --output $(or $(OUT),../build) --base-path $(or $(BASE),novel_hub) --workers $(or $(WORKERS),4)
+
+preview:
+	uv run python website/manage.py serve_static --port $(or $(PORT),8080)

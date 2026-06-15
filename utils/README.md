@@ -1,92 +1,64 @@
 # utils
 
-Shared utilities for sfacg.com scraping and data processing. Used by `meta_spider` and `website`.
+Shared scraping tools and data models for sfacg.com. Used by `meta_spider` and `website`.
 
-## Public API
+## Tech Stack
+
+- **requests** — `fetch_api` calls `Common.ashx` JSON API; `fetch_cover` fetches mobile page
+- **lxml** — `fetch_html` parses detail page HTML via XPath (selectors converted from meta_spider's CSS)
+- **pydantic** — `Meta` model validates scraped data, serializes to JSONL, converts to Django dict
+- **pandas** — `loader` module handles DataFrame-based JSONL/CSV loading, normalization, and export
+- **tqdm** — `progress()` wrapper shows progress bars for long-running operations
+
+## Purpose
+
+- **Scraping**: Provides `fetch_html` (lxml-based HTML parser) and `fetch_api` (requests-based JSON client) for single novel crawling. These tools reuse the same CSS selectors as meta_spider, enabling the task system to update individual novels without running the full spider.
+
+- **Mappings**: `Mapping` class wraps Python `IntEnum` to create bidirectional label↔integer mappings. Website stores genre/status/ptype as integers for efficient queries; mappings handle conversion for display.
+
+- **Meta**: Pydantic model that defines the canonical data format shared between meta_spider and website. `to_django_dict()` handles field renaming (nid→id), cover URL compression, and timezone normalization. `from_django_dict()` reverses the process for export.
+
+## Quick Start
 
 ```python
-from utils import fetch_html, fetch_api, Meta
+from utils import fetch_html, fetch_cover, fetch_api, Meta
 
 session = requests.Session()
 
-# Detail page HTML → all fields
-data = fetch_html(session, nid)
+# Single novel crawl (same selectors as meta_spider)
+data = fetch_html(session, nid)     # Detail page → all fields
+cover = fetch_cover(session, nid)   # Mobile page → cover suffix
+comment = fetch_api(session, nid)   # Comment API → comment_num, review_num
 
-# Comment/review JSON API
-comment = fetch_api(session, nid)
+# Validate and convert for Django ORM
+meta = Meta(**data, **comment)
+django_data = meta.to_django_dict()
 ```
 
 ## Modules
 
 | File | Purpose |
 |------|---------|
-| `__init__.py` | Exports `fetch_html`, `fetch_api`, `Meta` |
-| `config.py` | Reads `[scraper]` from `site_config.toml` |
-| `html.py` | `fetch_html` + lxml parsing helpers |
-| `api.py` | `fetch_api` (comment/review JSON) |
-| `models.py` | Shared Pydantic model (`Meta`) |
-| `loader.py` | DataFrame ↔ Meta conversion, JSONL/CSV I/O |
-| `loader_postgres.py` | PostgreSQL bulk operations (raw SQL) |
-| `loader_sqlite.py` | SQLite bulk operations (ORM-based) |
-| `logger.py` | Logging utilities, `@log_time`, `progress()` |
+| `config.py` | Reads `site_config.toml` → exports `TOML`, `COVER_PREFIX`, `NOVEL_URL`, etc. |
+| `html.py` | `fetch_html` (lxml XPath parser), `fetch_cover` (mobile page scraper) |
+| `api.py` | `fetch_api` — calls `Common.ashx?op=getcomment` for comment/review counts |
+| `models.py` | `Meta` Pydantic model — validates data, converts between spider and Django formats |
+| `loader.py` | Pandas pipeline — `load_jsonl`, `normalize_df`, `df_to_meta_list`, `denormalize_df` |
+| `loader_sqlite.py` | SQLite bulk ops — `bulk_create_ignore`, `bulk_create_m2m`, `bulk_upsert` |
+| `loader_postgres.py` | PostgreSQL bulk ops — same API, uses raw SQL for `ON CONFLICT DO UPDATE` |
+| `mappings.py` | `Mapping` class + `GENRE`, `STATUS`, `PTYPE` instances — bidirectional IntEnum |
+| `logger.py` | `@log_time` decorator, `timed()` context manager, `progress()` tqdm wrapper |
 
-## Config
+## Module Dependencies
 
-Reads from `site_config.toml` (project root):
+`utils` is standalone — no dependency on `meta_spider` or `website`.
 
-```toml
-[scraper]
-user_agent = "Mozilla/5.0 ..."
-common_url = "https://book.sfacg.com/ajax/ashx/Common.ashx"
-novel_url = "https://book.sfacg.com/Novel/{nid}/"
-timezone = "Asia/Shanghai"
-```
+Both `meta_spider` and `website` import from `utils`:
+- `meta_spider` imports `Meta`
+- `website` imports `loader`, `Meta`, `fetch_html`, `fetch_api`, `mappings`, `logger`
 
-## Meta model
+All three modules read `site_config.toml` directly.
 
-Shared Pydantic model for data exchange between `meta_spider` and `website`.
+## Docs
 
-- `to_django_dict()`: Converts field names, compresses cover URL, makes `last_update` timezone-aware
-- `from_django_dict()`: Creates from Django QuerySet values
-
-**Timezone handling**: `last_update` from Scrapy is naive datetime. `to_django_dict()` converts it to timezone-aware using `timezone` from `site_config.toml`.
-
-## fetch_html return value
-
-```python
-{
-    "title": str,
-    "author": str,
-    "cover": str | None,
-    "has_banner": bool,
-    "tags": list[str],
-    "genre": str,        # Chinese label, e.g. "魔幻"
-    "status": str,       # e.g. "连载中"
-    "word_num": int,
-    "click_num": int,
-    "last_update": datetime,
-    "praise_num": int,
-    "like_num": int,
-    "ptype": str,        # "免费" / "签约" / "VIP"
-    "contest": str,
-}
-```
-
-## fetch_api return value
-
-```python
-{
-    "comment_num": int | None,
-    "review_num": int | None,
-}
-```
-
-## CSS selectors (from meta.py, converted to XPath)
-
-| CSS | XPath | Field |
-|-----|-------|-------|
-| `.count-detail .text-row .text::text` | stats row | genre, word_num, status, click_num, last_update |
-| `#BasicOperation .btn::text` | buttons | praise_num, like_num |
-| `.title .tag::text` | tags | ptype, contest |
-| `.d-banner` | banner div | has_banner |
-| `.tag-list .tag .highlight .text::text` | tag list | tags |
+See [docs/utils.md](../docs/utils.md) for detailed API documentation.

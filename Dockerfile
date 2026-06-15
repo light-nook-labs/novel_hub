@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM docker.m.daocloud.io/library/python:3.13-slim
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
@@ -20,8 +20,11 @@ RUN uv sync --frozen --no-dev
 # Copy project
 COPY . .
 
+# Create .env from example if not exists
+RUN if [ ! -f .env ]; then cp .env.example .env; fi
+
 # Build Tailwind CSS
-RUN cd website && pnpm install --frozen && pnpm build
+RUN cd website && pnpm install --frozen-lockfile && pnpm build
 
 # Collect static files
 RUN cd website && uv run python manage.py collectstatic --noinput 2>/dev/null || true

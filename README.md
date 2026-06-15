@@ -16,11 +16,73 @@ A novel metadata website for sfacg.com, built with Django + Tailwind CSS.
 
 ## Tech Stack
 
-- **Backend**: Django 6.0 + Python 3.13
-- **Frontend**: Tailwind CSS 4.x
-- **Database**: SQLite (dev) / PostgreSQL (Supabase prod)
-- **Data Collection**: Scrapy + pandas
-- **Deployment**: Docker / GitHub Actions + GitHub Pages
+### Python (uv)
+
+- **Django** — web framework, ORM, admin, template engine
+- **Scrapy** — web spider for sfacg.com
+- **pandas** — data processing pipeline
+- **Pydantic** — data validation (shared Meta model)
+- **plotly** — dashboard charts
+- **requests** — HTTP client for scraping
+- **lxml** — HTML parsing
+- **tqdm** — progress bars
+- **psycopg2-binary** — PostgreSQL driver
+- **python-dotenv** — environment variables
+
+### Node.js (pnpm)
+
+- **Tailwind CSS** — CSS framework
+- **htmx.org** — dynamic interactions without JavaScript
+
+### Dev Tools
+
+- **black** — code formatter
+- **flake8** — linter
+- **playwright** — E2E testing
+- **pre-commit** — git hooks
+- **faker** — test data generation
+
+## Quick Start
+
+```bash
+# Install dependencies
+uv sync && pnpm install
+
+# Run migrations
+uv run python manage.py migrate
+
+# Load data
+uv run python manage.py init_db ../release/dataset/
+
+# Start dev server
+uv run python manage.py runserver
+
+# Build CSS
+pnpm build
+```
+
+## Project Structure
+
+```
+novel_hub/
+├── site_config.toml        # Shared config (single source of truth)
+├── .env                    # Environment variables
+├── utils/                  # Shared scraping + data processing
+├── meta_spider/            # Scrapy spider
+├── website/                # Django project
+├── release/                # Dataset (JSONL + CSV)
+└── docs/                   # Detailed documentation
+```
+
+## Documentation
+
+| Module | README | Docs |
+|--------|--------|------|
+| utils | [utils/README.md](utils/README.md) | [docs/utils.md](docs/utils.md) |
+| meta_spider | [meta_spider/README.md](meta_spider/README.md) | [docs/meta_spider.md](docs/meta_spider.md) |
+| website | [website/README.md](website/README.md) | [docs/website.md](docs/website.md) |
+| Commands | [commands/README.md](website/novels/management/commands/README.md) | [docs/commands.md](docs/commands.md) |
+| Deployment | — | [docs/deployment.md](docs/deployment.md) |
 
 ## Database ER Diagram
 
@@ -77,112 +139,11 @@ erDiagram
     Novel ||--o{ NovelSnapshot : "1:N"
 ```
 
-### Relationships
-1. Author  : Novel  →  One-to-Many (`ForeignKey`, `on_delete=SET_NULL`)
-2. Contest : Novel  →  One-to-Many (`ForeignKey`, `on_delete=SET_NULL`)
-3. Novel   : Tag    →  Many-to-Many (`ManyToManyField`)
-4. Novel   : Task   →  One-to-One (`OneToOneField`, `on_delete=CASCADE`)
-5. Novel   : NovelSnapshot → One-to-Many (`ForeignKey`, `on_delete=CASCADE`)
-
-### Mappings (Context Processor)
-
-Enum fields `ptype`, `genre`, `status` store integer values mapped via `Mapping` class:
-
-| Field   | Values (en → zh)                              |
-|---------|-----------------------------------------------|
-| genre   | magic→魔幻, eastern→玄幻, ancient→古风, sci_fi→科幻, school→校园, urban→都市, game→游戏, doujin→同人, mystery→悬疑 |
-| status  | finished→已完结, on_going→连载中, died→断更, active_d→断更A, active_f→完结A, removed→下架 |
-| ptype   | free→免费, sign→签约, vip→VIP                 |
-
-Unknown values fall back to `OTHER` (index 1).
-
-## Quick Start
-
-### Local Development
-
-```bash
-# Install dependencies
-uv sync
-
-# Run migrations
-uv run python manage.py migrate
-
-# Create superuser
-uv run python manage.py createsuperuser
-
-# Load data (from release)
-uv run python manage.py init_db ../release/dataset/
-
-# Start development server
-uv run python manage.py runserver
-
-# Build Tailwind CSS
-pnpm build
-```
-
-### Docker
-
-```bash
-# Build and run
-docker compose up -d --build
-
-# Access at http://localhost:8000
-
-# View logs
-docker compose logs -f web
-
-# Stop
-docker compose down
-```
-
-## Data Loading
-
-For real data (from release):
-```bash
-gh release download v1.1.0 --repo light-nook-labs/novel_hub --pattern '*.tar.gz'
-tar -xzf release-v1.1.0.tar.gz
-uv run python manage.py init_db release/dataset/    # Init (deletes all data first)
-uv run python manage.py upsert_dataset release/dataset/  # Upsert (updates existing)
-uv run python manage.py dump_dataset release                 # Dump DB
-uv run python manage.py fix_m2m release/dataset/ --force    # Fix missing M2M relationships
-```
-
-## Data Dump
-
-Dump database to release format:
-```bash
-uv run python manage.py dump_dataset release
-```
-
-Output structure:
-```
-release/
-├── dataset/
-│   ├── meta_01.jsonl   # 20k records each
-│   ├── ...
-│   └── meta_13.jsonl
-└── tasks.csv
-```
-
-## Static Site Generation
-
-Generate static HTML for GitHub Pages:
-```bash
-uv run python manage.py generate_static --output ../build --base-path novel_hub
-```
-
-Preview locally:
-```bash
-uv run python manage.py serve_static --port 8080
-```
-
 ## Testing
 
 ```bash
 uv run python manage.py test novels -v 2
 ```
-
-118 unit tests covering views, models, mappings, template tags, commands, search, and pagination.
 
 ## License
 
