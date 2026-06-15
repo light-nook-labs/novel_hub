@@ -95,7 +95,7 @@ class Command(BaseCommand):
                     author=html_data.get("author") or "",
                     genre=html_data.get("genre") or "其他",
                     status=html_data.get("status") or "连载中",
-                    ptype=html_data.get("ptype") or "免费",
+                    ptype=html_data.get("ptype") or novel.get_ptype_display(),
                     has_banner=html_data.get("has_banner", False),
                     word_num=html_data.get("word_num"),
                     click_num=html_data.get("click_num"),
