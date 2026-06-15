@@ -52,8 +52,8 @@ def get_attr(obj, attr):
 def cover_url(suffix):
     """Reconstruct full cover URL from suffix using TOML config."""
     cfg = settings.TOML
-    prefix = cfg.get("scraper", {}).get("cover_prefix", "")
-    default = cfg.get("scraper", {}).get("default_cover", "defaultNew.jpg")
+    prefix = cfg.get("urls", {}).get("cover_prefix", "")
+    default = cfg.get("urls", {}).get("default_cover", "defaultNew.jpg")
 
     if not suffix or suffix in ("nan", "<NA>", "None"):
         url = prefix + default
