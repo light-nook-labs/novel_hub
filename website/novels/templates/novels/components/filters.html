@@ -18,7 +18,8 @@
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}status={{ s.value }}{% if current_ptype %}&ptype={{ current_ptype }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
          class="flex-shrink-0 px-2 py-1 rounded {% if current_status == s.value|stringformat:'d' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ s.label }}</a>
       {% endfor %}
-      <span class="flex-shrink-0 text-gray-300 dark:text-gray-600 mx-1">|</span>
+    </div>
+    <div class="flex items-center gap-2">
       <span class="flex-shrink-0 text-gray-500 dark:text-gray-400 font-medium">类型：</span>
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
          class="flex-shrink-0 px-2 py-1 rounded {% if not current_ptype %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">全部</a>
