@@ -1,8 +1,8 @@
 {% load novel_tags %}
-<div class="text-sm space-y-2">
-  <div class="flex items-center gap-2 overflow-x-auto">
-    <span class="flex-shrink-0 text-gray-500 dark:text-gray-400 font-medium">分类：</span>
-    <div class="flex items-center gap-2">
+<div class="text-sm overflow-x-auto">
+  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 min-w-max sm:min-w-0">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-gray-500 dark:text-gray-400 font-medium">分类：</span>
       <a href="?{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
          class="px-2 py-1 rounded {% if not current_genre %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">全部</a>
       {% for g in genres %}
@@ -10,10 +10,8 @@
          class="px-2 py-1 rounded {% if current_genre == g.value|stringformat:'d' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ g.label }}</a>
       {% endfor %}
     </div>
-  </div>
-  <div class="flex items-center gap-2 overflow-x-auto">
-    <span class="flex-shrink-0 text-gray-500 dark:text-gray-400 font-medium">状态：</span>
-    <div class="flex items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <span class="text-gray-500 dark:text-gray-400 font-medium">状态：</span>
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}{% if current_sort %}sort={{ current_sort }}{% endif %}"
          class="px-2 py-1 rounded {% if not current_status %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">全部</a>
       {% for s in statuses %}
@@ -28,11 +26,8 @@
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}ptype={{ p.value }}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
          class="px-2 py-1 rounded {% if current_ptype == p.value|stringformat:'d' %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ p.label }}</a>
       {% endfor %}
-    </div>
-  </div>
-  <div class="flex items-center gap-2 overflow-x-auto">
-    <span class="flex-shrink-0 text-gray-500 dark:text-gray-400 font-medium">排序：</span>
-    <div class="flex items-center gap-2">
+      <span class="text-gray-300 dark:text-gray-600 mx-1">|</span>
+      <span class="text-gray-500 dark:text-gray-400 font-medium">排序：</span>
       {% for key, label in sort_options.items %}
       <a href="?{% if current_genre %}genre={{ current_genre }}&{% endif %}{% if current_status %}status={{ current_status }}&{% endif %}{% if current_ptype %}ptype={{ current_ptype }}&{% endif %}sort={{ key }}"
          class="px-2 py-1 rounded {% if current_sort == key %}bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300{% else %}text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700{% endif %} transition-colors">{{ label }}</a>
