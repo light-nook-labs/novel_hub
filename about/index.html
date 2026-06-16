@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关于 - Novel Hub</title>
+  
+  <link rel="icon" type="image/svg+xml" href="/novel_hub/static/favicon.svg">
+  <link rel="stylesheet" href="/novel_hub/static/css/output.css">
+  <script src="/novel_hub/static/node_modules/htmx.org/dist/htmx.min.js" defer></script>
+  
+  
+  
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.0/dist/mermaid.min.js"></script>
+<script>
+  var isDark = document.documentElement.classList.contains('dark');
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: isDark ? 'dark' : 'default'
+  });
+</script>
+
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+
+
+  
+
+<header id="header" class="bg-gradient-to-r from-amber-200 to-orange-200 dark:from-amber-900 dark:to-orange-900 text-gray-800 dark:text-gray-100 shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <div class="flex items-center gap-8">
+        <a href="/novel_hub/index.html" class="text-xl font-bold tracking-tight hover:text-amber-700 dark:hover:text-amber-300 transition-colors">
+          Novel Hub <span class="text-xs font-normal text-gray-500 dark:text-gray-400 align-top">preview</span>
+        </a>
+        
+
+<nav class="hidden md:flex items-center gap-6 text-sm">
+  <a href="/novel_hub/rank/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">排行榜</a>
+  <a href="/novel_hub/authors/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">作者</a>
+  <a href="/novel_hub/banners/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">背投</a>
+  <a href="/novel_hub/dashboard/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">数据</a>
+  <a href="/novel_hub/comments/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">评论</a>
+</nav>
+
+      </div>
+      
+
+<div class="flex items-center gap-2">
+  <button id="theme-toggle" class="btn-icon" aria-label="切换主题">
+    <span id="icon-sun" class="hidden"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg></span>
+    <span id="icon-moon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></span>
+  </button>
+  <div class="relative md:hidden">
+    <button id="menu-toggle" class="btn-icon" aria-label="菜单">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div id="menu-dropdown" onclick="event.stopPropagation()" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+      <a href="/novel_hub/rank/index.html" class="dropdown-item rounded-t-lg">排行榜</a>
+      <a href="/novel_hub/authors/index.html" class="dropdown-item">作者</a>
+      <a href="/novel_hub/banners/index.html" class="dropdown-item">背投</a>
+      <a href="/novel_hub/dashboard/index.html" class="dropdown-item">数据</a>
+      <a href="/novel_hub/comments/index.html" class="dropdown-item">评论</a>
+    </div>
+  </div>
+  <a href="https://github.com/light-nook-labs/novel_hub" target="_blank" rel="noopener noreferrer"
+     class="btn-icon" aria-label="GitHub">
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+  </a>
+</div>
+
+    </div>
+  </div>
+</header>
+
+
+
+
+<main class="flex-1 bg-white dark:bg-gray-800 px-4 py-8">
+  <div class="max-w-7xl mx-auto">
+    <div id="content">
+      
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold mb-6">关于 Novel Hub</h1>
+
+  <div class="prose prose-gray dark:prose-invert max-w-none">
+    <p class="text-gray-600 dark:text-gray-400">
+      Novel Hub 是一个小说元数据展示网站，数据来源于
+      <a href="https://book.sfacg.com" target="_blank" class="text-amber-600 dark:text-amber-400 hover:underline">sfacg.com</a>（SF轻小说）。
+    </p>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">功能特性</h2>
+    <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+      <li>小说浏览与搜索</li>
+      <li>按分类、状态、类型筛选</li>
+      <li>多维度排行榜（点击、字数、收藏等）</li>
+      <li>作者、标签、征文活动浏览</li>
+      <li>背投小说展示</li>
+      <li>深色模式支持</li>
+    </ul>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">技术栈</h2>
+    <ul class="space-y-2 text-gray-600 dark:text-gray-400">
+      <li><strong>后端</strong>：Django 6.0 + Python 3.13</li>
+      <li><strong>前端</strong>：Tailwind CSS 4.x + HTMX</li>
+      <li><strong>数据库</strong>：SQLite（开发）/ PostgreSQL（生产）</li>
+      <li><strong>数据采集</strong>：Scrapy + pandas</li>
+    </ul>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">数据库结构</h2>
+    <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
+      <pre class="mermaid">
+erDiagram
+    Author {
+        CharField name UK
+    }
+    Tag {
+        CharField name UK
+    }
+    Contest {
+        CharField name UK
+    }
+    Novel {
+        BigIntegerField id PK
+        CharField title
+        SmallIntegerField ptype
+        SmallIntegerField genre
+        SmallIntegerField status
+        IntegerField click_num
+        IntegerField word_num
+        IntegerField praise_num
+        IntegerField like_num
+        BooleanField has_banner
+        IntegerField review_num
+        IntegerField comment_num
+        CharField cover
+        DateTimeField last_update
+    }
+    Task {
+        CharField status
+    }
+    Author ||--o{ Novel : "1:N"
+    Contest ||--o{ Novel : "1:N"
+    Novel }o--o{ Tag : "M2M"
+    Novel ||--o| Task : "1:0..1"
+      </pre>
+    </div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">枚举映射</h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-2">
+      <code>ptype</code>、<code>genre</code>、<code>status</code> 字段存储整数值，通过 <code>Mapping</code> 类映射为中文标签。
+    </p>
+    <div class="overflow-x-auto">
+      <table class="text-sm text-gray-600 dark:text-gray-400">
+        <thead>
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="text-left py-2 pr-4">字段</th>
+            <th class="text-left py-2">映射 (en → zh)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="py-2 pr-4 font-mono">genre</td>
+            <td class="py-2">魔幻、玄幻、古风、科幻、校园、都市、游戏、同人、悬疑</td>
+          </tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="py-2 pr-4 font-mono">status</td>
+            <td class="py-2">已完结、连载中、断更、断更A、完结A、下架</td>
+          </tr>
+          <tr class="border-b border-gray-100 dark:border-gray-800">
+            <td class="py-2 pr-4 font-mono">ptype</td>
+            <td class="py-2">免费、签约、VIP</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">数据说明</h2>
+    <p class="text-gray-600 dark:text-gray-400">
+      网站收录了 SF轻小说 平台的小说元数据信息，包括标题、作者、分类、状态、点击量等。
+      数据通过 Scrapy 爬虫采集，使用 pandas 进行清洗后导入数据库。
+    </p>
+
+    <h2 class="text-xl font-semibold mt-8 mb-4">开源</h2>
+    <p class="text-gray-600 dark:text-gray-400">
+      本项目为开源项目，欢迎贡献代码和提出建议。
+    </p>
+  </div>
+</div>
+
+    </div>
+    
+
+  
+
+
+
+
+  </div>
+</main>
+
+
+
+  
+
+<footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-sm text-gray-500 dark:text-gray-400">
+        &copy; 2026 light-nook-labs &mdash; Novel Hub (static preview)
+      </div>
+      <nav class="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <a href="/novel_hub/index.html" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">首页</a>
+        <a href="/novel_hub/about/index.html" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">关于</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+
+
+
+
+<script src="/novel_hub/static/js/main.js"></script>
+
+
+</body>
+</html>

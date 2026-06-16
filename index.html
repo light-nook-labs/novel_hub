@@ -1,0 +1,721 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Novel Hub</title>
+  
+  <link rel="icon" type="image/svg+xml" href="/novel_hub/static/favicon.svg">
+  <link rel="stylesheet" href="/novel_hub/static/css/output.css">
+  <script src="/novel_hub/static/node_modules/htmx.org/dist/htmx.min.js" defer></script>
+  
+  
+  
+  <script>
+    if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+
+<div id="header" class="relative z-50">
+<div class="relative h-48 md:h-[13rem] lg:h-[16rem]">
+  <!-- Hero Background -->
+  <div id="hero-banner" class="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+    
+    <div id="hero-bg" class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60"
+         data-default-bg="https://rs.sfacg.com/web/novel/images/images/beitouNew/42229.jpg"></div>
+    
+  </div>
+
+  
+    
+
+<header class="absolute top-0 left-0 right-0 z-20 text-gray-800">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-14">
+      <div class="flex items-center gap-8">
+        <a href="/novel_hub/index.html" class="text-xl font-bold tracking-tight hover:text-amber-700 transition-colors">
+          Novel Hub <span class="text-xs font-normal text-gray-500 align-top">preview</span>
+        </a>
+        
+
+<nav class="hidden md:flex items-center gap-6 text-sm">
+  <a href="/novel_hub/rank/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">排行榜</a>
+  <a href="/novel_hub/authors/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">作者</a>
+  <a href="/novel_hub/banners/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">背投</a>
+  <a href="/novel_hub/dashboard/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">数据</a>
+  <a href="/novel_hub/comments/index.html" class="hover:text-amber-700 dark:hover:text-amber-300 transition-colors">评论</a>
+</nav>
+
+      </div>
+      
+
+<div class="flex items-center gap-2">
+  <button id="theme-toggle" class="btn-icon" aria-label="切换主题">
+    <span id="icon-sun" class="hidden"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg></span>
+    <span id="icon-moon"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg></span>
+  </button>
+  <div class="relative md:hidden">
+    <button id="menu-toggle" class="btn-icon" aria-label="菜单">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <div id="menu-dropdown" onclick="event.stopPropagation()" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+      <a href="/novel_hub/rank/index.html" class="dropdown-item rounded-t-lg">排行榜</a>
+      <a href="/novel_hub/authors/index.html" class="dropdown-item">作者</a>
+      <a href="/novel_hub/banners/index.html" class="dropdown-item">背投</a>
+      <a href="/novel_hub/dashboard/index.html" class="dropdown-item">数据</a>
+      <a href="/novel_hub/comments/index.html" class="dropdown-item">评论</a>
+    </div>
+  </div>
+  <a href="https://github.com/light-nook-labs/novel_hub" target="_blank" rel="noopener noreferrer"
+     class="btn-icon" aria-label="GitHub">
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+  </a>
+</div>
+
+    </div>
+  </div>
+</header>
+
+  
+
+  <!-- Header 2: Filters (transparent, no dark mode) -->
+  
+  <div class="absolute bottom-0 left-0 right-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3">
+      <div class="rounded-lg p-3 text-gray-800 text-sm">
+        筛选和排序功能已隐藏。如需完整功能请自行部署。
+      </div>
+    </div>
+  </div>
+  
+</div>
+</div>
+
+
+<main class="flex-1 bg-white dark:bg-gray-800 px-4 py-8">
+  <div class="max-w-7xl mx-auto">
+    <div id="content">
+      
+<!-- Novel Grid -->
+<div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/48704/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2019/11/3d2f9821-16b5-4240-8086-1ff6928e2990.jpg" alt="英雄再临(英雄？我早就不当了)" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/48704/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">英雄再临(英雄？我早就不当了)</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">无聊看看天</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        科幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/42229/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2024/11/7bd0f5b3-9313-48ab-b109-4293e5958e7b.jpg" alt="变身之后，我与她的狂想曲" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/42229/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">变身之后，我与她的狂想曲</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">血烟天照</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/155640/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2021/05/f682e230-7fc9-4f34-8287-384ba38559a0.jpg" alt="血姬与骑士" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/155640/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">血姬与骑士</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">漢唐歸來</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/55564/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2020/09/929d8f1d-c641-45cd-b1ef-60b297a1c4fc.jpg" alt="武林之王的退隐生活" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/55564/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">武林之王的退隐生活</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">Lee太白</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        古风
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/292551/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2025/12/65a85bd2-0875-464a-8213-67563ffeeab6.jpg" alt="在充满怪谈的世界里成为魔女" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/292551/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">在充满怪谈的世界里成为魔女</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">吃土的书语</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/115625/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2021/05/435fd95b-4fc7-4a91-92da-9fdb7283a0c0.jpg" alt="无限使徒与十二战姬" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/115625/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">无限使徒与十二战姬</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">lukezrc</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/101382/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2020/03/3ab8bd3c-a156-4631-9c19-bf7e1e274a69.jpg" alt="失业魔王" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/101382/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">失业魔王</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">业舞</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/217202/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2022/12/05c94f32-3edd-4992-b56c-d19690df2c27.jpg" alt="来自深渊的我今天也要拯救人类" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/217202/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">来自深渊的我今天也要拯救人类</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">一簇西语</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-d">
+        断更A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/400498/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2022/10/eda4b96a-ed69-4419-bc28-05d07c788be1.jpg" alt="遭银龙王女变成幼龙姬的我" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/400498/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">遭银龙王女变成幼龙姬的我</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">漢唐歸來</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/173494/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2019/11/c788d95b-b0d5-41df-8cfb-1fa228a7b733.jpg" alt="我的徒儿竟然全是反派" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/173494/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">我的徒儿竟然全是反派</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">徐夫人匕首</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        玄幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/540307/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/05/b6bab5c6-6055-4098-8a97-832a252ffe80.jpg" alt="凤傲天小说里的黄毛反派也想幸福" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/540307/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">凤傲天小说里的黄毛反派也想幸福</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">子与我非鱼</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/210448/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/04/60df0b02-7c1c-4e47-8a2e-1a1a0f2ad51b.jpg" alt="我转生就超神" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/210448/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">我转生就超神</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">疯花</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        游戏
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/154390/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2018/10/16d9d1b7-d42b-40d2-8a98-6541129a8789.jpg" alt="领主什么的无所谓啦" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/154390/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">领主什么的无所谓啦</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">怀世</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/27454/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2020/02/39a7fd9d-9afb-4c4c-8f9e-9e0ff09e605d.jpg" alt="我是高富帅" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/27454/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">我是高富帅</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">小花同学</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-d">
+        断更A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        校园
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/572669/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2024/01/e62691ab-8d25-4e99-8f7a-9d98c1f9c1b9.jpg" alt="认清现实后，她们开始追夫火葬场" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/572669/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">认清现实后，她们开始追夫火葬场</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">闻香识狐</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        玄幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/666497/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/03/6b484797-7ca1-4b43-96ef-a9b777d55d58.jpg" alt="闭嘴恶龙我不想再跟你带孩子了" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/666497/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">闭嘴恶龙我不想再跟你带孩子了</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">奶昔尾尾酱</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/567122/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2025/02/ee2b0fb9-639d-47b3-aa05-ab97bb09f063.jpg" alt="屠龙失败变成龙族公主很好笑吗？" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/567122/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">屠龙失败变成龙族公主很好笑吗？</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">mika的瑞士卷</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/470728/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2025/12/8d6a9652-9e42-4595-a7b3-60fa8bf2358f.jpg" alt="原本是舰长的我却变成了女武神" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/470728/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">原本是舰长的我却变成了女武神</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">爱捉迷藏的里昂</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-finished">
+        已完结
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        同人
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/49038/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2024/11/b68534e1-231c-4640-a00f-22c52c9f6e58.jpg" alt="从随时会死的暗世界里活下去" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/49038/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">从随时会死的暗世界里活下去</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">静介</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        悬疑
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/84520/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2018/11/e3dc8c5e-4075-4912-aab6-5a399c75be1a.jpg" alt="卷刃长剑和某失恋村民" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/84520/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">卷刃长剑和某失恋村民</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">位面苹果</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/161173/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2019/02/f4ecbfe0-70d0-408f-8439-362f66f9e29a.jpg" alt="我不要做首席真传啦" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/161173/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">我不要做首席真传啦</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">高冷的作者</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        古风
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/148042/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2026/02/34717794-f944-4974-93ad-bf1717ea3f08.jpg" alt="在这大佬横行的时代只有我是萌新" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/148042/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">在这大佬横行的时代只有我是萌新</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">作死菌</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-ongoing">
+        连载中
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/169535/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2019/10/f802b660-4791-4190-aa7e-f5953ef409be.jpg" alt="黑化的少女们与我支离破碎的日常" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/169535/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">黑化的少女们与我支离破碎的日常</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">那盛开的繁华</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-d">
+        断更A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        校园
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+  
+<div class="card card-hover group">
+  <a href="https://book.sfacg.com/Novel/96192/" target="_blank" class="block">
+    <div class="relative aspect-[4/5] bg-gray-100 dark:bg-gray-800 overflow-hidden">
+      <img src="https://rs.sfacg.com/web/novel/images/NovelCover/Big/2020/02/e51e180d-aaa8-4361-b28d-eb7d57155a7a.jpg" alt="捡个魔王当女仆" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+    </div>
+  </a>
+  <div class="p-2">
+    <a href="https://book.sfacg.com/Novel/96192/" target="_blank" class="block">
+      <h3 class="text-[10px] md:text-sm font-bold truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">捡个魔王当女仆</h3>
+    </a>
+    <p class="hidden md:block text-secondary mt-0.5 truncate">半筐桃子</p>
+    <div class="hidden md:flex items-center gap-1 mt-1">
+      <span class="badge badge-sm badge-square badge-active-f">
+        完结A
+      </span>
+      <span class="badge badge-sm badge-square badge-genre">
+        魔幻
+      </span>
+    </div>
+  </div>
+</div>
+
+  
+</div>
+
+    </div>
+    
+
+  
+
+
+
+
+  </div>
+</main>
+
+
+
+  
+
+<footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-sm text-gray-500 dark:text-gray-400">
+        &copy; 2026 light-nook-labs &mdash; Novel Hub (static preview)
+      </div>
+      <nav class="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
+        <a href="/novel_hub/index.html" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">首页</a>
+        <a href="/novel_hub/about/index.html" class="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">关于</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+
+
+
+
+
+<script src="/novel_hub/static/js/main.js"></script>
+
+
+</body>
+</html>
